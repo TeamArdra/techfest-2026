@@ -27,10 +27,12 @@ feature distribution → **retrain the ML model** (`aegis train`) and re-benchma
 - `protocol.*` — expected sysids/compids, `max_msg_rate_hz` (400),
   `nominal_msg_rate_hz` (28), `msg_rate_spike_factor` (3), `max_seq_gap` (30),
   `heartbeat_timeout_s` (3), `gps_dropout_s` (2), sensitive commands, burst
-  limits, `require_signing`.
+  limits, `require_signing`, `startup_grace_s` (0; optional - ignore the
+  "no heartbeat/GPS seen yet" sentinel for the first N seconds).
 - `physics.*` — `gps_pos_residual_m` (12) + hard (30), `gps_speed_consistency_ms`
   (5), `alt_consistency_m` (8), `alt_jump_ms` (25), `max_accel_ms2` (20),
-  `battery_rise_v` (0.4), `battery_drop_rate_v_s` (2), `hysteresis_ticks` (2).
+  `battery_rise_v` (0.4), `battery_drop_rate_v_s` (2), `hysteresis_ticks` (2),
+  `yaw_course_deg` (25; optional key - previously a hard-coded constant).
 - `anomaly.*` — `model_path`, `score_threshold` (0.62), `contamination` (0.02),
   `n_estimators` (200), `warmup_ticks` (20).
 - `fusion.*` — `weights` (protocol 0.30 / physics 0.34 / ml 0.16 / firmware
@@ -42,6 +44,13 @@ feature distribution → **retrain the ML model** (`aegis train`) and re-benchma
 positives; raising `msg_rate_spike_factor` or `max_seq_gap` reduces DoS
 sensitivity. Fusion `weights` are max-normalised (relative trust); `n_estimators`
 must match the trained model's metadata.
+
+## `configs/px4_sitl/detector.yaml` (per-vehicle profile, overrides only)
+A **separate, generated** profile for PX4 SITL (`load_config("configs/px4_sitl")`); Stage-1
+`configs/detector.yaml` is the reference condition and is never edited for it. Every override
+is derived from the benign calibration flights and commented with its evidence; see
+`docs/CALIBRATION_PX4.md`. It reduces benign false alarms on that stack only - it is not
+attack detection and not valid for the simulator or other vehicles.
 
 ## `configs/attacks.yaml`
 Per-scenario `mode`, `start_s`, `duration_s`, and mode-specific magnitudes (e.g.

@@ -1,0 +1,31 @@
+# AegisFlight - PX4 SITL calibration PROFILE (overrides only; GENERATED - do not hand-edit)
+#
+# Regenerate: .venv/Scripts/python.exe scripts/sitl/calib_derive.py
+# Load:       aegisflight.config.load_config('configs/px4_sitl')   (deep-merged over built-in defaults;
+#             simulation.yaml / attacks.yaml are intentionally absent -> built-in defaults, unused on replay)
+# Evidence:   artifacts/sitl/calibration/derivation.json (numbers below) from the CALIBRATION flights
+#             benign_001..005 only. Environment SITL, attack NONE. This is false-alarm calibration, NOT
+#             attack detection, and says nothing about real vehicles. configs/detector.yaml (Stage-1) is
+#             untouched and remains the reference condition.
+# Margin policy: M = 1.25 x the largest steady-state benign value; thresholds are only
+#             raised (never lowered); a Stage-1 value already >= M x benign max is not overridden.
+
+protocol:
+  # observed vehicle sysid(s) [3] (Stage-1 expects [1]): clears 'rogue telemetry source' AND the command-source rule (PX4's own COMMAND_LONG is sys3/comp1)
+  expected_sysids: [3]
+  # median of rate/RTF over calibration flights (Stage-1: 28.0; derivation.json -> msg_rate)
+  nominal_msg_rate_hz: 378.0
+  # spike = nominal*factor = 529 msg/s = ceil(M x max benign rate normalised to RTF=1 (412))
+  msg_rate_spike_factor: 1.4
+  # Stage-1 hard/nominal ratio (400/28) kept; Stage-1's 400 is below the RTF=1 benign max (412)
+  max_msg_rate_hz: 5400.0
+  # NEW additive key (default 0 = Stage-1 behaviour): ignore only the never-seen-yet heartbeat/GPS
+  # sentinel during the first 1.4 s (derivation.json -> startup_grace_s)
+  startup_grace_s: 1.4
+
+physics:
+  # battery_v_rise: Stage-1 0.4, calibration max 0.810, M x max = 1.013 (derivation.json -> physics.battery_rise_v)
+  battery_rise_v: 1.05
+  # yaw_course_diff_deg: Stage-1 25.0, calibration max 85.233, M x max = 106.541 (derivation.json -> physics.yaw_course_deg)
+  # NEW additive key (default 25 = Stage-1 value)
+  yaw_course_deg: 110.0

@@ -1,0 +1,280 @@
+{
+  "schema": "aegisflight.sitl_calibration_derivation/1",
+  "environment": "SITL (replayed tlog)",
+  "attack_status": "NONE",
+  "claim_class": "none (false-alarm calibration; NOT attack detection)",
+  "split": "calibration = benign_001..005; held-out 006..010 NOT read by this script",
+  "margin_M": 1.25,
+  "flights": {
+    "benign_001": {
+      "tlog": "data/sitl/raw/benign_001.tlog",
+      "tlog_sha256": "9686c31dee3b34aac5c885a9b0066e541a564c7b639d020b0eb04cfeeb0a1569",
+      "rtf": 0.9000105,
+      "decisions": 519,
+      "steady_decisions": 515,
+      "cold_start_decisions": 4,
+      "first_heartbeat_decision_t": 0.8,
+      "first_gps_decision_t": 0.0
+    },
+    "benign_002": {
+      "tlog": "data/sitl/raw/benign_002.tlog",
+      "tlog_sha256": "53d38fcc25716dd850b72c9f757c177f0d571bd8c65a8f61cdc2fc34b96427ba",
+      "rtf": 0.8670496,
+      "decisions": 537,
+      "steady_decisions": 535,
+      "cold_start_decisions": 2,
+      "first_heartbeat_decision_t": 0.4,
+      "first_gps_decision_t": 0.2
+    },
+    "benign_003": {
+      "tlog": "data/sitl/raw/benign_003.tlog",
+      "tlog_sha256": "44fc1025c181335af1d44b703545072e4bbea463f6634ba758c2972efd4e8c67",
+      "rtf": 0.8994943,
+      "decisions": 662,
+      "steady_decisions": 661,
+      "cold_start_decisions": 1,
+      "first_heartbeat_decision_t": 0.2,
+      "first_gps_decision_t": 0.2
+    },
+    "benign_004": {
+      "tlog": "data/sitl/raw/benign_004.tlog",
+      "tlog_sha256": "8a8d3d7ccf60bb8943bcc0cf48d78e89bba2a3eaadaf5691baad61da3967157e",
+      "rtf": 0.8981039,
+      "decisions": 449,
+      "steady_decisions": 444,
+      "cold_start_decisions": 5,
+      "first_heartbeat_decision_t": 1.0,
+      "first_gps_decision_t": 0.0
+    },
+    "benign_005": {
+      "tlog": "data/sitl/raw/benign_005.tlog",
+      "tlog_sha256": "78350f17811c84919cd7c33d004c6aae1c4e13ffac4ba8bcc90952400d8a62ec",
+      "rtf": 0.8984558,
+      "decisions": 593,
+      "steady_decisions": 588,
+      "cold_start_decisions": 5,
+      "first_heartbeat_decision_t": 1.0,
+      "first_gps_decision_t": 0.2
+    }
+  },
+  "provenance": {
+    "git_commit": "5c009484abc5a9bd2b667a4e826955b7539175c9",
+    "python": "3.13.15",
+    "numpy": "2.5.3",
+    "script": "scripts/sitl/calib_derive.py"
+  },
+  "derivations": {
+    "expected_sysids": {
+      "rule": "vehicle sysids observed in the stream, excluding default GCS ids",
+      "stage1": [
+        1
+      ],
+      "observed": [
+        3
+      ],
+      "profile": [
+        3
+      ]
+    },
+    "msg_rate": {
+      "rule": "nominal=median(rate/RTF); spike=M*max(rate/RTF); factor=ceil_0.05(spike/nominal); hard=ceil_50(nominal*400/28)",
+      "stage1": {
+        "nominal": 28.0,
+        "spike_factor": 3.0,
+        "max_msg_rate_hz": 400.0
+      },
+      "observed_raw": {
+        "median": 338.0,
+        "p99": 347.0,
+        "max": 369.0
+      },
+      "observed_rtf_normalised": {
+        "median": 377.9901662523042,
+        "p99": 396.7477754444498,
+        "max_over_flights": 411.7411506792691,
+        "per_flight_max": {
+          "benign_001": 395.5509407945796,
+          "benign_002": 411.7411506792691,
+          "benign_003": 391.3309956494444,
+          "benign_004": 389.70992109042174,
+          "benign_005": 410.70467795967255
+        }
+      },
+      "stage1_hard_limit_vs_rtf1_benign_max": {
+        "hard_limit": 400.0,
+        "benign_max_at_rtf1": 411.7411506792691,
+        "stage1_hard_limit_would_fire": true
+      },
+      "profile": {
+        "nominal": 378.0,
+        "spike_factor": 1.4,
+        "spike_threshold_msgs": 529.1999999999999,
+        "max_msg_rate_hz": 5400.0
+      }
+    },
+    "startup_grace_s": {
+      "rule": "ceil_0.2(M * max over flights of first-observed heartbeat/GPS decision time)",
+      "stage1": 0.0,
+      "max_first_seen_t": 1.0,
+      "profile": 1.4,
+      "stage1_cold_start_decisions_per_flight": {
+        "benign_001": 4,
+        "benign_002": 2,
+        "benign_003": 1,
+        "benign_004": 5,
+        "benign_005": 5
+      }
+    },
+    "physics.gps_pos_residual_m": {
+      "feature": "pos_residual_m",
+      "stage1": 12.0,
+      "x_star_max_steady": 2.4303288247081007,
+      "per_flight_max": {
+        "benign_001": 0.2575454605790574,
+        "benign_002": 2.4303288247081007,
+        "benign_003": 0.25779343973214036,
+        "benign_004": 0.3236201425012748,
+        "benign_005": 0.47628383493688037
+      },
+      "M_x_star": 3.037911030885126,
+      "changed": false,
+      "profile": 12.0
+    },
+    "physics.gps_pos_residual_hard_m": {
+      "feature": "pos_residual_m",
+      "stage1": 30.0,
+      "x_star_max_steady": 2.4303288247081007,
+      "per_flight_max": {
+        "benign_001": 0.2575454605790574,
+        "benign_002": 2.4303288247081007,
+        "benign_003": 0.25779343973214036,
+        "benign_004": 0.3236201425012748,
+        "benign_005": 0.47628383493688037
+      },
+      "M_x_star": 3.037911030885126,
+      "changed": false,
+      "profile": 30.0
+    },
+    "physics.gps_speed_consistency_ms": {
+      "feature": "gps_vfr_speed_diff_ms",
+      "stage1": 5.0,
+      "x_star_max_steady": 0.7092825811231873,
+      "per_flight_max": {
+        "benign_001": 0.6266405252565912,
+        "benign_002": 0.6769642778246681,
+        "benign_003": 0.7092825811231873,
+        "benign_004": 0.6867109719297897,
+        "benign_005": 0.6459991814105543
+      },
+      "M_x_star": 0.8866032264039841,
+      "changed": false,
+      "profile": 5.0
+    },
+    "physics.alt_consistency_m": {
+      "feature": "gps_baro_alt_diff_m",
+      "stage1": 8.0,
+      "x_star_max_steady": 0.7000625000000014,
+      "per_flight_max": {
+        "benign_001": 0.5803835449218582,
+        "benign_002": 0.6351918945312605,
+        "benign_003": 0.6679833984375136,
+        "benign_004": 0.4628156738281177,
+        "benign_005": 0.7000625000000014
+      },
+      "M_x_star": 0.8750781250000017,
+      "changed": false,
+      "profile": 8.0
+    },
+    "physics.alt_jump_ms": {
+      "feature": "alt_rate_ms",
+      "stage1": 25.0,
+      "x_star_max_steady": 3.9173889160156388,
+      "per_flight_max": {
+        "benign_001": 3.7167358398437633,
+        "benign_002": 3.6907958984375133,
+        "benign_003": 3.7933349609375133,
+        "benign_004": 2.5978088378906343,
+        "benign_005": 3.9173889160156388
+      },
+      "M_x_star": 4.896736145019548,
+      "changed": false,
+      "profile": 25.0
+    },
+    "physics.max_accel_ms2": {
+      "feature": "accel_ms2",
+      "stage1": 20.0,
+      "x_star_max_steady": 3.728556513110687,
+      "per_flight_max": {
+        "benign_001": 3.601473129768377,
+        "benign_002": 3.680051920895848,
+        "benign_003": 3.276828310795583,
+        "benign_004": 3.728556513110687,
+        "benign_005": 3.7161824145186158
+      },
+      "M_x_star": 4.660695641388359,
+      "changed": false,
+      "profile": 20.0
+    },
+    "physics.battery_rise_v": {
+      "feature": "battery_v_rise",
+      "stage1": 0.4,
+      "x_star_max_steady": 0.8101648685507516,
+      "per_flight_max": {
+        "benign_001": 0.8094325877559799,
+        "benign_002": 0.8093576128626709,
+        "benign_003": 0.8062803866920633,
+        "benign_004": 0.8060817975982331,
+        "benign_005": 0.8101648685507516
+      },
+      "M_x_star": 1.0127060856884396,
+      "changed": true,
+      "profile": 1.05
+    },
+    "physics.battery_drop_rate_v_s": {
+      "feature": "battery_v_rate",
+      "stage1": 2.0,
+      "x_star_max_steady": 0.027907361962086253,
+      "per_flight_max": {
+        "benign_001": 0.027907361962086253,
+        "benign_002": 0.027101054411688124,
+        "benign_003": 0.027103772212668475,
+        "benign_004": 0.027030070953937307,
+        "benign_005": 0.027052788105427945
+      },
+      "M_x_star": 0.034884202452607815,
+      "changed": false,
+      "profile": 2.0
+    },
+    "physics.yaw_course_deg": {
+      "feature": "yaw_course_diff_deg",
+      "stage1": 25.0,
+      "x_star_max_steady": 85.23281703722756,
+      "per_flight_max": {
+        "benign_001": 85.23281703722756,
+        "benign_002": 81.11923807338428,
+        "benign_003": 80.3048215145144,
+        "benign_004": 80.3325727645281,
+        "benign_005": 80.53064666543622
+      },
+      "M_x_star": 106.54102129653445,
+      "changed": true,
+      "profile": 110.0
+    },
+    "note": "No attack data was used. Unchanged physics thresholds sit >= M * benign max; whether they are too LOOSE for attack sensitivity on this stack is not measured (needs P2 attack data)."
+  },
+  "profile_overrides": {
+    "protocol": {
+      "expected_sysids": [
+        3
+      ],
+      "nominal_msg_rate_hz": 378.0,
+      "msg_rate_spike_factor": 1.4,
+      "max_msg_rate_hz": 5400.0,
+      "startup_grace_s": 1.4
+    },
+    "physics": {
+      "battery_rise_v": 1.05,
+      "yaw_course_deg": 110.0
+    }
+  }
+}

@@ -74,3 +74,12 @@ trusting a stale model.
   no-op; retrain to fix.
 - **Distribution shift** (new simulator settings) → higher benign alarm rate;
   retrain.
+
+## Separate PX4-SITL model (not the Stage-1 model)
+`scripts/train_px4_baseline.py` trains `models/isoforest_px4.joblib` (gitignored) from the five
+PX4 SITL calibration flights with the **same** `ML_FEATURES` order and bundle schema; it never
+touches `models/isoforest.joblib`. With only five flights, the score threshold/scale come from
+leave-one-flight-out out-of-fold scores instead of a validation split, and in-sample scores are
+optimistic. Sidecar (file list, SHA-256, sklearn version, seed):
+`artifacts/sitl/calibration/isoforest_px4_training.json`. Details, limits and results:
+`docs/CALIBRATION_PX4.md`.

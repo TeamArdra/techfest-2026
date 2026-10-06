@@ -1,0 +1,56 @@
+{
+  "schema": "aegisflight.sitl_rtf_probe/1",
+  "environment": "SITL data, analytic counterfactual",
+  "attack_status": "NONE",
+  "claim_class": "none",
+  "n_decisions": 2635,
+  "spike_threshold_msgs": 529.1999999999999,
+  "targets": {
+    "rtf_0.60": {
+      "ml_C_alarm_rate": 0.0007590132827324478,
+      "rate_rule_spike_rate": 0.0,
+      "median_msg_rate": 226.79409975138253
+    },
+    "rtf_0.70": {
+      "ml_C_alarm_rate": 0.0007590132827324478,
+      "rate_rule_spike_rate": 0.0,
+      "median_msg_rate": 264.59311637661295
+    },
+    "rtf_0.80": {
+      "ml_C_alarm_rate": 0.0007590132827324478,
+      "rate_rule_spike_rate": 0.0,
+      "median_msg_rate": 302.39213300184343
+    },
+    "rtf_0.90": {
+      "ml_C_alarm_rate": 0.0007590132827324478,
+      "rate_rule_spike_rate": 0.0,
+      "median_msg_rate": 340.1911496270738
+    },
+    "rtf_1.00": {
+      "ml_C_alarm_rate": 0.0007590132827324478,
+      "rate_rule_spike_rate": 0.0,
+      "median_msg_rate": 377.9901662523043
+    },
+    "rtf_1.25": {
+      "ml_C_alarm_rate": 0.0007590132827324478,
+      "rate_rule_spike_rate": 0.0,
+      "median_msg_rate": 472.4877078153803
+    },
+    "rtf_1.50": {
+      "ml_C_alarm_rate": 0.0007590132827324478,
+      "rate_rule_spike_rate": 0.9825426944971537,
+      "median_msg_rate": 566.9852493784564
+    },
+    "rtf_2.00": {
+      "ml_C_alarm_rate": 0.0007590132827324478,
+      "rate_rule_spike_rate": 0.9916508538899431,
+      "median_msg_rate": 755.9803325046086
+    },
+    "rtf_3.00": {
+      "ml_C_alarm_rate": 0.42277039848197345,
+      "rate_rule_spike_rate": 0.9958254269449716,
+      "median_msg_rate": 1133.9704987569128
+    }
+  },
+  "caveat": "linear rescaling of two features; not a measurement at another RTF"
+}

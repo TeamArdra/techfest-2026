@@ -1,0 +1,2752 @@
+{
+  "schema": "aegisflight.sitl_calibration_eval/1",
+  "set": "heldout",
+  "environment": "SITL (replayed tlog)",
+  "attack_status": "NONE",
+  "claim_class": "none (false-alarm only)",
+  "held_out_burned": false,
+  "frozen_inputs": {
+    "profile_yaml_sha256": "4f18f3f0220cecc71229c156ec2f23fc9b23eadb59357f2cde1e8baf6ec04660",
+    "px4_model_sha256": "df540999dc6b43c3981d6ac6ecb91369b56ce1ba8cfdb894b76b195951260c7c",
+    "stage1_model_sha256": "3fe74cddf3689e169610ffd783b109b6539cc6c03629bd1e4bb8b1d3842939c4",
+    "stage1_detector_yaml_sha256": "bc9a4d2618e5e5a0cdc251a35f22ad1cc928343894aa9a66c27ad28196f3cbfa",
+    "derivation_json_sha256": "acb392361f51a55bbede1608e2b9f866f118e93e50d01a8601a07336ac303fdf"
+  },
+  "host": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "cpu_count": 12,
+    "python": "3.13.15",
+    "note": "decision latency is wall time on a shared dev host; load-dependent, not a benchmark"
+  },
+  "flights": [
+    {
+      "tlog": "data/sitl/raw/benign_006.tlog",
+      "sha256": "c540eacaf327ebac84bef94416882374a66e8f7f9efeef484e030ed3d5489318"
+    },
+    {
+      "tlog": "data/sitl/raw/benign_007.tlog",
+      "sha256": "63c67c6eec69090f02cf12cd67757165002f3682c55315e1337276ea79534974"
+    },
+    {
+      "tlog": "data/sitl/raw/benign_008.tlog",
+      "sha256": "2accd023aa14404ea0c4a20600313e4a1c81f8366789980d9516e494daae88df"
+    },
+    {
+      "tlog": "data/sitl/raw/benign_009.tlog",
+      "sha256": "839e8cacfc86890ef5558736fd188a5d7b1cf22e64e3d5500d8fbc0bc72de83f"
+    },
+    {
+      "tlog": "data/sitl/raw/benign_010.tlog",
+      "sha256": "c4cdd13a1569fcafbf702a75dcbf45c693527fe54cdec2fd28b88e8924503083"
+    }
+  ],
+  "conditions": {
+    "A": {
+      "description": "Stage-1 default config + Stage-1 model",
+      "profile": "default",
+      "model": "models/isoforest.joblib",
+      "per_flight": [
+        {
+          "flight": "benign_006.tlog",
+          "decisions": 483,
+          "false_alarm_decisions": 483,
+          "false_alarm_rate": 1.0,
+          "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+            0.9921091377565106,
+            1.0
+          ],
+          "airborne_decisions": 367,
+          "false_alarm_decisions_airborne": 367,
+          "pred_classes": {
+            "DOS": 465,
+            "MAVLINK_ANOMALY": 18
+          },
+          "detector_trigger_rate": {
+            "det_protocol_rule": 1.0,
+            "det_physics_consistency": 0.060041407867494824,
+            "det_ml_anomaly": 0.9606625258799172
+          },
+          "false_alarm_detector_combinations": {
+            "protocol_rule": 19,
+            "ml_anomaly+protocol_rule": 435,
+            "ml_anomaly+physics_consistency+protocol_rule": 29
+          },
+          "evidence_in_false_alarm_decisions": [
+            [
+              "message-rate spike: # msg/s > #\u00d7nominal (#)",
+              482
+            ],
+            [
+              "rogue telemetry source(s): sys#/comp#",
+              465
+            ],
+            [
+              "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+              464
+            ],
+            [
+              "heading/course mismatch #\u00b0 (attitude inconsistent with track)",
+              28
+            ],
+            [
+              "# command(s) from unexpected source sys#/comp#",
+              18
+            ],
+            [
+              "battery voltage rose # V (implausible)",
+              6
+            ],
+            [
+              "heartbeat stale #s > #s",
+              1
+            ],
+            [
+              "GPS dropout #s > #s",
+              1
+            ]
+          ],
+          "evidence_all_decisions": [
+            [
+              "message-rate spike: # msg/s > #\u00d7nominal (#)",
+              482
+            ],
+            [
+              "rogue telemetry source(s): sys#/comp#",
+              465
+            ],
+            [
+              "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+              464
+            ],
+            [
+              "heading/course mismatch #\u00b0 (attitude inconsistent with track)",
+              28
+            ],
+            [
+              "# command(s) from unexpected source sys#/comp#",
+              18
+            ],
+            [
+              "battery voltage rose # V (implausible)",
+              6
+            ],
+            [
+              "heartbeat stale #s > #s",
+              1
+            ],
+            [
+              "GPS dropout #s > #s",
+              1
+            ]
+          ],
+          "decision_latency_ms": {
+            "mean": 12.893645134512248,
+            "p95": 16.554430004907772,
+            "max": 36.152700005914085
+          },
+          "max_seq_gap_ge_30_decisions": 0,
+          "flight_mode_UNKNOWN_decisions": 483,
+          "cold_start_decisions_hb_or_gps_never_seen": 1,
+          "feature_p50_p95_max": {
+            "msg_rate_hz": [
+              338.0,
+              345.0,
+              351.0
+            ],
+            "interarrival_jitter_ms": [
+              2.0253619425339844,
+              2.047645202224079,
+              2.1267930107599287
+            ],
+            "max_seq_gap": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pos_residual_m": [
+              0.015091184373360196,
+              0.19646250830757833,
+              0.24920145604308325
+            ],
+            "gps_vfr_speed_diff_ms": [
+              0.00907999187707901,
+              0.32015529795946346,
+              0.7688197232930682
+            ],
+            "gps_baro_alt_diff_m": [
+              0.0028134765624940883,
+              0.25026113281248275,
+              0.7048459472656532
+            ],
+            "alt_rate_ms": [
+              0.0,
+              1.7581939697265523,
+              3.6396789550780735
+            ],
+            "accel_ms2": [
+              0.0,
+              2.01748933578192,
+              3.6418263759275193
+            ],
+            "yaw_course_diff_deg": [
+              0.0,
+              30.117717019278277,
+              81.33011329289002
+            ],
+            "cmd_rate_hz": [
+              0.0,
+              0.0,
+              3.0
+            ],
+            "loss_ratio": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "flight": "benign_007.tlog",
+          "decisions": 736,
+          "false_alarm_decisions": 736,
+          "false_alarm_rate": 1.0,
+          "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+            0.9948075371809318,
+            1.0
+          ],
+          "airborne_decisions": 618,
+          "false_alarm_decisions_airborne": 618,
+          "pred_classes": {
+            "DOS": 721,
+            "MAVLINK_ANOMALY": 15
+          },
+          "detector_trigger_rate": {
+            "det_protocol_rule": 1.0,
+            "det_physics_consistency": 0.036684782608695655,
+            "det_ml_anomaly": 0.9741847826086957
+          },
+          "false_alarm_detector_combinations": {
+            "protocol_rule": 19,
+            "ml_anomaly+protocol_rule": 690,
+            "ml_anomaly+physics_consistency+protocol_rule": 27
+          },
+          "evidence_in_false_alarm_decisions": [
+            [
+              "message-rate spike: # msg/s > #\u00d7nominal (#)",
+              734
+            ],
+            [
+              "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+              717
+            ],
+            [
+              "rogue telemetry source(s): sys#/comp#",
+              715
+            ],
+            [
+              "heading/course mismatch #\u00b0 (attitude inconsistent with track)",
+              26
+            ],
+            [
+              "# command(s) from unexpected source sys#/comp#",
+              21
+            ],
+            [
+              "battery voltage rose # V (implausible)",
+              6
+            ],
+            [
+              "heartbeat stale #s > #s",
+              4
+            ],
+            [
+              "GPS dropout #s > #s",
+              1
+            ]
+          ],
+          "evidence_all_decisions": [
+            [
+              "message-rate spike: # msg/s > #\u00d7nominal (#)",
+              734
+            ],
+            [
+              "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+              717
+            ],
+            [
+              "rogue telemetry source(s): sys#/comp#",
+              715
+            ],
+            [
+              "heading/course mismatch #\u00b0 (attitude inconsistent with track)",
+              26
+            ],
+            [
+              "# command(s) from unexpected source sys#/comp#",
+              21
+            ],
+            [
+              "battery voltage rose # V (implausible)",
+              6
+            ],
+            [
+              "heartbeat stale #s > #s",
+              4
+            ],
+            [
+              "GPS dropout #s > #s",
+              1
+            ]
+          ],
+          "decision_latency_ms": {
+            "mean": 13.951228396644696,
+            "p95": 20.135249997110805,
+            "max": 35.54519999306649
+          },
+          "max_seq_gap_ge_30_decisions": 0,
+          "flight_mode_UNKNOWN_decisions": 736,
+          "cold_start_decisions_hb_or_gps_never_seen": 4,
+          "feature_p50_p95_max": {
+            "msg_rate_hz": [
+              338.0,
+              344.0,
+              361.0
+            ],
+            "interarrival_jitter_ms": [
+              3.7616056818884616,
+              3.800568268011717,
+              7.132889212611783
+            ],
+            "max_seq_gap": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pos_residual_m": [
+              0.016142649226773952,
+              0.19217465678496387,
+              0.2693737174548443
+            ],
+            "gps_vfr_speed_diff_ms": [
+              0.007601034507532386,
+              0.22154934604744325,
+              0.64923923779372
+            ],
+            "gps_baro_alt_diff_m": [
+              0.0022441406250095497,
+              0.2924522705078232,
+              0.6866037597656032
+            ],
+            "alt_rate_ms": [
+              0.0,
+              1.8566513061523504,
+              3.8101196289062633
+            ],
+            "accel_ms2": [
+              0.0,
+              1.8016603558105175,
+              6.253908692882212
+            ],
+            "yaw_course_diff_deg": [
+              0.0,
+              7.979252441635133,
+              78.95951385202551
+            ],
+            "cmd_rate_hz": [
+              0.0,
+              0.0,
+              2.5
+            ],
+            "loss_ratio": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "flight": "benign_008.tlog",
+          "decisions": 550,
+          "false_alarm_decisions": 550,
+          "false_alarm_rate": 1.0,
+          "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+            0.9930637207461485,
+            1.0
+          ],
+          "airborne_decisions": 435,
+          "false_alarm_decisions_airborne": 435,
+          "pred_classes": {
+            "DOS": 532,
+            "MAVLINK_ANOMALY": 18
+          },
+          "detector_trigger_rate": {
+            "det_protocol_rule": 1.0,
+            "det_physics_consistency": 0.04909090909090909,
+            "det_ml_anomaly": 0.9654545454545455
+          },
+          "false_alarm_detector_combinations": {
+            "protocol_rule": 19,
+            "ml_anomaly+protocol_rule": 504,
+            "ml_anomaly+physics_consistency+protocol_rule": 27
+          },
+          "evidence_in_false_alarm_decisions": [
+            [
+              "message-rate spike: # msg/s > #\u00d7nominal (#)",
+              549
+            ],
+            [
+              "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+              531
+            ],
+            [
+              "rogue telemetry source(s): sys#/comp#",
+              529
+            ],
+            [
+              "heading/course mismatch #\u00b0 (attitude inconsistent with track)",
+              27
+            ],
+            [
+              "# command(s) from unexpected source sys#/comp#",
+              21
+            ],
+            [
+              "battery voltage rose # V (implausible)",
+              5
+            ],
+            [
+              "heartbeat stale #s > #s",
+              1
+            ]
+          ],
+          "evidence_all_decisions": [
+            [
+              "message-rate spike: # msg/s > #\u00d7nominal (#)",
+              549
+            ],
+            [
+              "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+              531
+            ],
+            [
+              "rogue telemetry source(s): sys#/comp#",
+              529
+            ],
+            [
+              "heading/course mismatch #\u00b0 (attitude inconsistent with track)",
+              27
+            ],
+            [
+              "# command(s) from unexpected source sys#/comp#",
+              21
+            ],
+            [
+              "battery voltage rose # V (implausible)",
+              5
+            ],
+            [
+              "heartbeat stale #s > #s",
+              1
+            ]
+          ],
+          "decision_latency_ms": {
+            "mean": 14.081225272754885,
+            "p95": 22.23702999690429,
+            "max": 42.95800000545569
+          },
+          "max_seq_gap_ge_30_decisions": 0,
+          "flight_mode_UNKNOWN_decisions": 550,
+          "cold_start_decisions_hb_or_gps_never_seen": 1,
+          "feature_p50_p95_max": {
+            "msg_rate_hz": [
+              338.0,
+              344.0,
+              355.0
+            ],
+            "interarrival_jitter_ms": [
+              2.965480555638951,
+              3.0183680068978687,
+              7.331744817311448
+            ],
+            "max_seq_gap": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pos_residual_m": [
+              0.01499564386244028,
+              0.19748465839770246,
+              0.30045623295766594
+            ],
+            "gps_vfr_speed_diff_ms": [
+              0.008163237832486629,
+              0.3041766577108522,
+              0.7642505742239973
+            ],
+            "gps_baro_alt_diff_m": [
+              0.00326379394530818,
+              0.29086336669921303,
+              0.6399897460937609
+            ],
+            "alt_rate_ms": [
+              0.0,
+              1.789474487304694,
+              3.8223266601562638
+            ],
+            "accel_ms2": [
+              0.0,
+              1.8452940689939032,
+              3.5854566166940836
+            ],
+            "yaw_course_diff_deg": [
+              0.0,
+              23.668429893419294,
+              82.34786606572715
+            ],
+            "cmd_rate_hz": [
+              0.0,
+              0.0,
+              2.5
+            ],
+            "loss_ratio": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "flight": "benign_009.tlog",
+          "decisions": 631,
+          "false_alarm_decisions": 631,
+          "false_alarm_rate": 1.0,
+          "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+            0.9939487267375043,
+            1.0
+          ],
+          "airborne_decisions": 512,
+          "false_alarm_decisions_airborne": 512,
+          "pred_classes": {
+            "DOS": 616,
+            "MAVLINK_ANOMALY": 15
+          },
+          "detector_trigger_rate": {
+            "det_protocol_rule": 1.0,
+            "det_physics_consistency": 0.042789223454833596,
+            "det_ml_anomaly": 0.9698890649762282
+          },
+          "false_alarm_detector_combinations": {
+            "protocol_rule": 19,
+            "ml_anomaly+protocol_rule": 585,
+            "ml_anomaly+physics_consistency+protocol_rule": 27
+          },
+          "evidence_in_false_alarm_decisions": [
+            [
+              "message-rate spike: # msg/s > #\u00d7nominal (#)",
+              629
+            ],
+            [
+              "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+              612
+            ],
+            [
+              "rogue telemetry source(s): sys#/comp#",
+              610
+            ],
+            [
+              "heading/course mismatch #\u00b0 (attitude inconsistent with track)",
+              26
+            ],
+            [
+              "# command(s) from unexpected source sys#/comp#",
+              21
+            ],
+            [
+              "battery voltage rose # V (implausible)",
+              6
+            ],
+            [
+              "heartbeat stale #s > #s",
+              4
+            ],
+            [
+              "GPS dropout #s > #s",
+              1
+            ]
+          ],
+          "evidence_all_decisions": [
+            [
+              "message-rate spike: # msg/s > #\u00d7nominal (#)",
+              629
+            ],
+            [
+              "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+              612
+            ],
+            [
+              "rogue telemetry source(s): sys#/comp#",
+              610
+            ],
+            [
+              "heading/course mismatch #\u00b0 (attitude inconsistent with track)",
+              26
+            ],
+            [
+              "# command(s) from unexpected source sys#/comp#",
+              21
+            ],
+            [
+              "battery voltage rose # V (implausible)",
+              6
+            ],
+            [
+              "heartbeat stale #s > #s",
+              4
+            ],
+            [
+              "GPS dropout #s > #s",
+              1
+            ]
+          ],
+          "decision_latency_ms": {
+            "mean": 13.234694770321644,
+            "p95": 17.15340000373544,
+            "max": 42.4602999992203
+          },
+          "max_seq_gap_ge_30_decisions": 0,
+          "flight_mode_UNKNOWN_decisions": 631,
+          "cold_start_decisions_hb_or_gps_never_seen": 4,
+          "feature_p50_p95_max": {
+            "msg_rate_hz": [
+              338.0,
+              344.0,
+              363.0
+            ],
+            "interarrival_jitter_ms": [
+              2.0182865486554413,
+              2.0705379612019144,
+              2.3026870617447934
+            ],
+            "max_seq_gap": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pos_residual_m": [
+              0.014540480589782575,
+              0.19243689173564044,
+              0.2590883067164594
+            ],
+            "gps_vfr_speed_diff_ms": [
+              0.007672111038118601,
+              0.23587951817459474,
+              0.6912878742883142
+            ],
+            "gps_baro_alt_diff_m": [
+              0.0022617187499918145,
+              0.2949548339843773,
+              0.6345690917968909
+            ],
+            "alt_rate_ms": [
+              0.0,
+              1.8209075927734277,
+              3.7768554687499463
+            ],
+            "accel_ms2": [
+              0.0,
+              1.8358776950468927,
+              3.7227029359096147
+            ],
+            "yaw_course_diff_deg": [
+              0.0,
+              15.375191538395981,
+              81.41067211418004
+            ],
+            "cmd_rate_hz": [
+              0.0,
+              0.0,
+              2.5
+            ],
+            "loss_ratio": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "flight": "benign_010.tlog",
+          "decisions": 405,
+          "false_alarm_decisions": 405,
+          "false_alarm_rate": 1.0,
+          "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+            0.9906036959057004,
+            1.0
+          ],
+          "airborne_decisions": 285,
+          "false_alarm_decisions_airborne": 285,
+          "pred_classes": {
+            "DOS": 390,
+            "MAVLINK_ANOMALY": 15
+          },
+          "detector_trigger_rate": {
+            "det_protocol_rule": 1.0,
+            "det_physics_consistency": 0.0691358024691358,
+            "det_ml_anomaly": 0.9530864197530864
+          },
+          "false_alarm_detector_combinations": {
+            "protocol_rule": 19,
+            "ml_anomaly+protocol_rule": 358,
+            "ml_anomaly+physics_consistency+protocol_rule": 28
+          },
+          "evidence_in_false_alarm_decisions": [
+            [
+              "message-rate spike: # msg/s > #\u00d7nominal (#)",
+              403
+            ],
+            [
+              "rogue telemetry source(s): sys#/comp#",
+              387
+            ],
+            [
+              "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+              386
+            ],
+            [
+              "heading/course mismatch #\u00b0 (attitude inconsistent with track)",
+              27
+            ],
+            [
+              "# command(s) from unexpected source sys#/comp#",
+              18
+            ],
+            [
+              "battery voltage rose # V (implausible)",
+              6
+            ],
+            [
+              "heartbeat stale #s > #s",
+              4
+            ],
+            [
+              "sequence gap # > #",
+              1
+            ]
+          ],
+          "evidence_all_decisions": [
+            [
+              "message-rate spike: # msg/s > #\u00d7nominal (#)",
+              403
+            ],
+            [
+              "rogue telemetry source(s): sys#/comp#",
+              387
+            ],
+            [
+              "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+              386
+            ],
+            [
+              "heading/course mismatch #\u00b0 (attitude inconsistent with track)",
+              27
+            ],
+            [
+              "# command(s) from unexpected source sys#/comp#",
+              18
+            ],
+            [
+              "battery voltage rose # V (implausible)",
+              6
+            ],
+            [
+              "heartbeat stale #s > #s",
+              4
+            ],
+            [
+              "sequence gap # > #",
+              1
+            ]
+          ],
+          "decision_latency_ms": {
+            "mean": 13.094517530228103,
+            "p95": 17.297520002466623,
+            "max": 37.12739999173209
+          },
+          "max_seq_gap_ge_30_decisions": 1,
+          "flight_mode_UNKNOWN_decisions": 405,
+          "cold_start_decisions_hb_or_gps_never_seen": 4,
+          "feature_p50_p95_max": {
+            "msg_rate_hz": [
+              337.0,
+              345.0,
+              365.0
+            ],
+            "interarrival_jitter_ms": [
+              3.6319429015467675,
+              4.617180468781151,
+              10.205749048559367
+            ],
+            "max_seq_gap": [
+              0.0,
+              0.0,
+              253.0
+            ],
+            "pos_residual_m": [
+              0.016273536569264054,
+              0.20651600409980245,
+              0.3618854310750047
+            ],
+            "gps_vfr_speed_diff_ms": [
+              0.010506971227048259,
+              0.32444178742146834,
+              0.6312573741109899
+            ],
+            "gps_baro_alt_diff_m": [
+              0.0026335449218777285,
+              0.20698510742189435,
+              0.34369604492189865
+            ],
+            "alt_rate_ms": [
+              0.0,
+              1.5894470214843777,
+              1.9505310058593819
+            ],
+            "accel_ms2": [
+              0.0,
+              2.2587687144648014,
+              3.629849060510129
+            ],
+            "yaw_course_diff_deg": [
+              0.0,
+              38.416559527356256,
+              81.25864626478187
+            ],
+            "cmd_rate_hz": [
+              0.0,
+              0.0,
+              3.0
+            ],
+            "loss_ratio": [
+              0.0,
+              0.0,
+              1.0
+            ]
+          }
+        }
+      ],
+      "pooled": {
+        "flight": "POOLED",
+        "decisions": 2805,
+        "false_alarm_decisions": 2805,
+        "false_alarm_rate": 1.0,
+        "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+          0.9986323187466322,
+          1.0
+        ],
+        "airborne_decisions": 2217,
+        "false_alarm_decisions_airborne": 2217,
+        "pred_classes": {
+          "DOS": 2724,
+          "MAVLINK_ANOMALY": 81
+        },
+        "detector_trigger_rate": {
+          "det_protocol_rule": 1.0,
+          "det_physics_consistency": 0.04919786096256684,
+          "det_ml_anomaly": 0.966131907308378
+        },
+        "false_alarm_detector_combinations": {
+          "protocol_rule": 95,
+          "ml_anomaly+protocol_rule": 2572,
+          "ml_anomaly+physics_consistency+protocol_rule": 138
+        },
+        "evidence_in_false_alarm_decisions": [
+          [
+            "message-rate spike: # msg/s > #\u00d7nominal (#)",
+            2797
+          ],
+          [
+            "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+            2710
+          ],
+          [
+            "rogue telemetry source(s): sys#/comp#",
+            2706
+          ],
+          [
+            "heading/course mismatch #\u00b0 (attitude inconsistent with track)",
+            134
+          ],
+          [
+            "# command(s) from unexpected source sys#/comp#",
+            99
+          ],
+          [
+            "battery voltage rose # V (implausible)",
+            29
+          ],
+          [
+            "heartbeat stale #s > #s",
+            14
+          ],
+          [
+            "GPS dropout #s > #s",
+            3
+          ],
+          [
+            "sequence gap # > #",
+            1
+          ]
+        ],
+        "evidence_all_decisions": [
+          [
+            "message-rate spike: # msg/s > #\u00d7nominal (#)",
+            2797
+          ],
+          [
+            "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+            2710
+          ],
+          [
+            "rogue telemetry source(s): sys#/comp#",
+            2706
+          ],
+          [
+            "heading/course mismatch #\u00b0 (attitude inconsistent with track)",
+            134
+          ],
+          [
+            "# command(s) from unexpected source sys#/comp#",
+            99
+          ],
+          [
+            "battery voltage rose # V (implausible)",
+            29
+          ],
+          [
+            "heartbeat stale #s > #s",
+            14
+          ],
+          [
+            "GPS dropout #s > #s",
+            3
+          ],
+          [
+            "sequence gap # > #",
+            1
+          ]
+        ],
+        "decision_latency_ms": {
+          "mean": 13.50972570400372,
+          "p95": 18.72413999808486,
+          "max": 42.95800000545569
+        },
+        "max_seq_gap_ge_30_decisions": 1,
+        "flight_mode_UNKNOWN_decisions": 2805,
+        "cold_start_decisions_hb_or_gps_never_seen": 14,
+        "feature_p50_p95_max": {
+          "msg_rate_hz": [
+            338.0,
+            344.0,
+            365.0
+          ],
+          "interarrival_jitter_ms": [
+            2.966061439658877,
+            3.803891910562108,
+            10.205749048559367
+          ],
+          "max_seq_gap": [
+            0.0,
+            0.0,
+            253.0
+          ],
+          "pos_residual_m": [
+            0.015326415257001081,
+            0.1955523128014375,
+            0.3618854310750047
+          ],
+          "gps_vfr_speed_diff_ms": [
+            0.00820802894381592,
+            0.28860429678163363,
+            0.7688197232930682
+          ],
+          "gps_baro_alt_diff_m": [
+            0.0025449218750281943,
+            0.275761523437495,
+            0.7048459472656532
+          ],
+          "alt_rate_ms": [
+            0.0,
+            1.791748046875006,
+            3.8223266601562638
+          ],
+          "accel_ms2": [
+            0.0,
+            1.883578015237019,
+            6.253908692882212
+          ],
+          "yaw_course_diff_deg": [
+            0.0,
+            22.817699275078766,
+            82.34786606572715
+          ],
+          "cmd_rate_hz": [
+            0.0,
+            0.0,
+            3.0
+          ],
+          "loss_ratio": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      }
+    },
+    "B": {
+      "description": "PX4 profile, ML off",
+      "profile": "px4_sitl",
+      "model": null,
+      "per_flight": [
+        {
+          "flight": "benign_006.tlog",
+          "decisions": 483,
+          "false_alarm_decisions": 0,
+          "false_alarm_rate": 0.0,
+          "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+            0.0,
+            0.007890862243489461
+          ],
+          "airborne_decisions": 367,
+          "false_alarm_decisions_airborne": 0,
+          "pred_classes": {},
+          "detector_trigger_rate": {
+            "det_protocol_rule": 0.0,
+            "det_physics_consistency": 0.0,
+            "det_ml_anomaly": 0.0
+          },
+          "false_alarm_detector_combinations": {},
+          "evidence_in_false_alarm_decisions": [],
+          "evidence_all_decisions": [],
+          "decision_latency_ms": {
+            "mean": 0.2678614903933621,
+            "p95": 0.47551999887218693,
+            "max": 3.9785999979358166
+          },
+          "max_seq_gap_ge_30_decisions": 0,
+          "flight_mode_UNKNOWN_decisions": 483,
+          "cold_start_decisions_hb_or_gps_never_seen": 1,
+          "feature_p50_p95_max": {
+            "msg_rate_hz": [
+              338.0,
+              345.0,
+              351.0
+            ],
+            "interarrival_jitter_ms": [
+              2.0253619425339844,
+              2.047645202224079,
+              2.1267930107599287
+            ],
+            "max_seq_gap": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pos_residual_m": [
+              0.015091184373360196,
+              0.19646250830757833,
+              0.24920145604308325
+            ],
+            "gps_vfr_speed_diff_ms": [
+              0.00907999187707901,
+              0.32015529795946346,
+              0.7688197232930682
+            ],
+            "gps_baro_alt_diff_m": [
+              0.0028134765624940883,
+              0.25026113281248275,
+              0.7048459472656532
+            ],
+            "alt_rate_ms": [
+              0.0,
+              1.7581939697265523,
+              3.6396789550780735
+            ],
+            "accel_ms2": [
+              0.0,
+              2.01748933578192,
+              3.6418263759275193
+            ],
+            "yaw_course_diff_deg": [
+              0.0,
+              30.117717019278277,
+              81.33011329289002
+            ],
+            "cmd_rate_hz": [
+              0.0,
+              0.0,
+              3.0
+            ],
+            "loss_ratio": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "flight": "benign_007.tlog",
+          "decisions": 736,
+          "false_alarm_decisions": 0,
+          "false_alarm_rate": 0.0,
+          "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+            0.0,
+            0.005192462819068298
+          ],
+          "airborne_decisions": 618,
+          "false_alarm_decisions_airborne": 0,
+          "pred_classes": {},
+          "detector_trigger_rate": {
+            "det_protocol_rule": 0.0,
+            "det_physics_consistency": 0.0,
+            "det_ml_anomaly": 0.0
+          },
+          "false_alarm_detector_combinations": {},
+          "evidence_in_false_alarm_decisions": [],
+          "evidence_all_decisions": [],
+          "decision_latency_ms": {
+            "mean": 0.27938288042645104,
+            "p95": 0.4967749955540057,
+            "max": 1.2055999977746978
+          },
+          "max_seq_gap_ge_30_decisions": 0,
+          "flight_mode_UNKNOWN_decisions": 736,
+          "cold_start_decisions_hb_or_gps_never_seen": 4,
+          "feature_p50_p95_max": {
+            "msg_rate_hz": [
+              338.0,
+              344.0,
+              361.0
+            ],
+            "interarrival_jitter_ms": [
+              3.7616056818884616,
+              3.800568268011717,
+              7.132889212611783
+            ],
+            "max_seq_gap": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pos_residual_m": [
+              0.016142649226773952,
+              0.19217465678496387,
+              0.2693737174548443
+            ],
+            "gps_vfr_speed_diff_ms": [
+              0.007601034507532386,
+              0.22154934604744325,
+              0.64923923779372
+            ],
+            "gps_baro_alt_diff_m": [
+              0.0022441406250095497,
+              0.2924522705078232,
+              0.6866037597656032
+            ],
+            "alt_rate_ms": [
+              0.0,
+              1.8566513061523504,
+              3.8101196289062633
+            ],
+            "accel_ms2": [
+              0.0,
+              1.8016603558105175,
+              6.253908692882212
+            ],
+            "yaw_course_diff_deg": [
+              0.0,
+              7.979252441635133,
+              78.95951385202551
+            ],
+            "cmd_rate_hz": [
+              0.0,
+              0.0,
+              2.5
+            ],
+            "loss_ratio": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "flight": "benign_008.tlog",
+          "decisions": 550,
+          "false_alarm_decisions": 0,
+          "false_alarm_rate": 0.0,
+          "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+            0.0,
+            0.006936279253851642
+          ],
+          "airborne_decisions": 435,
+          "false_alarm_decisions_airborne": 0,
+          "pred_classes": {},
+          "detector_trigger_rate": {
+            "det_protocol_rule": 0.0,
+            "det_physics_consistency": 0.0,
+            "det_ml_anomaly": 0.0
+          },
+          "false_alarm_detector_combinations": {},
+          "evidence_in_false_alarm_decisions": [],
+          "evidence_all_decisions": [],
+          "decision_latency_ms": {
+            "mean": 0.2567925456837243,
+            "p95": 0.4334250035753939,
+            "max": 0.6400999991456047
+          },
+          "max_seq_gap_ge_30_decisions": 0,
+          "flight_mode_UNKNOWN_decisions": 550,
+          "cold_start_decisions_hb_or_gps_never_seen": 1,
+          "feature_p50_p95_max": {
+            "msg_rate_hz": [
+              338.0,
+              344.0,
+              355.0
+            ],
+            "interarrival_jitter_ms": [
+              2.965480555638951,
+              3.0183680068978687,
+              7.331744817311448
+            ],
+            "max_seq_gap": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pos_residual_m": [
+              0.01499564386244028,
+              0.19748465839770246,
+              0.30045623295766594
+            ],
+            "gps_vfr_speed_diff_ms": [
+              0.008163237832486629,
+              0.3041766577108522,
+              0.7642505742239973
+            ],
+            "gps_baro_alt_diff_m": [
+              0.00326379394530818,
+              0.29086336669921303,
+              0.6399897460937609
+            ],
+            "alt_rate_ms": [
+              0.0,
+              1.789474487304694,
+              3.8223266601562638
+            ],
+            "accel_ms2": [
+              0.0,
+              1.8452940689939032,
+              3.5854566166940836
+            ],
+            "yaw_course_diff_deg": [
+              0.0,
+              23.668429893419294,
+              82.34786606572715
+            ],
+            "cmd_rate_hz": [
+              0.0,
+              0.0,
+              2.5
+            ],
+            "loss_ratio": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "flight": "benign_009.tlog",
+          "decisions": 631,
+          "false_alarm_decisions": 0,
+          "false_alarm_rate": 0.0,
+          "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+            0.0,
+            0.0060512732624957155
+          ],
+          "airborne_decisions": 512,
+          "false_alarm_decisions_airborne": 0,
+          "pred_classes": {},
+          "detector_trigger_rate": {
+            "det_protocol_rule": 0.0,
+            "det_physics_consistency": 0.0,
+            "det_ml_anomaly": 0.0
+          },
+          "false_alarm_detector_combinations": {},
+          "evidence_in_false_alarm_decisions": [],
+          "evidence_all_decisions": [],
+          "decision_latency_ms": {
+            "mean": 0.2873732171103686,
+            "p95": 0.5080500050098635,
+            "max": 2.8267999878153205
+          },
+          "max_seq_gap_ge_30_decisions": 0,
+          "flight_mode_UNKNOWN_decisions": 631,
+          "cold_start_decisions_hb_or_gps_never_seen": 4,
+          "feature_p50_p95_max": {
+            "msg_rate_hz": [
+              338.0,
+              344.0,
+              363.0
+            ],
+            "interarrival_jitter_ms": [
+              2.0182865486554413,
+              2.0705379612019144,
+              2.3026870617447934
+            ],
+            "max_seq_gap": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pos_residual_m": [
+              0.014540480589782575,
+              0.19243689173564044,
+              0.2590883067164594
+            ],
+            "gps_vfr_speed_diff_ms": [
+              0.007672111038118601,
+              0.23587951817459474,
+              0.6912878742883142
+            ],
+            "gps_baro_alt_diff_m": [
+              0.0022617187499918145,
+              0.2949548339843773,
+              0.6345690917968909
+            ],
+            "alt_rate_ms": [
+              0.0,
+              1.8209075927734277,
+              3.7768554687499463
+            ],
+            "accel_ms2": [
+              0.0,
+              1.8358776950468927,
+              3.7227029359096147
+            ],
+            "yaw_course_diff_deg": [
+              0.0,
+              15.375191538395981,
+              81.41067211418004
+            ],
+            "cmd_rate_hz": [
+              0.0,
+              0.0,
+              2.5
+            ],
+            "loss_ratio": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "flight": "benign_010.tlog",
+          "decisions": 405,
+          "false_alarm_decisions": 1,
+          "false_alarm_rate": 0.0024691358024691358,
+          "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+            0.00043598493285569324,
+            0.013852189264681933
+          ],
+          "airborne_decisions": 285,
+          "false_alarm_decisions_airborne": 0,
+          "pred_classes": {
+            "MAVLINK_ANOMALY": 1
+          },
+          "detector_trigger_rate": {
+            "det_protocol_rule": 0.0024691358024691358,
+            "det_physics_consistency": 0.0,
+            "det_ml_anomaly": 0.0
+          },
+          "false_alarm_detector_combinations": {
+            "protocol_rule": 1
+          },
+          "evidence_in_false_alarm_decisions": [
+            [
+              "sequence gap # > #",
+              1
+            ]
+          ],
+          "evidence_all_decisions": [
+            [
+              "sequence gap # > #",
+              1
+            ]
+          ],
+          "decision_latency_ms": {
+            "mean": 0.24571135829858207,
+            "p95": 0.4090000060386953,
+            "max": 0.5275000003166497
+          },
+          "max_seq_gap_ge_30_decisions": 1,
+          "flight_mode_UNKNOWN_decisions": 405,
+          "cold_start_decisions_hb_or_gps_never_seen": 4,
+          "feature_p50_p95_max": {
+            "msg_rate_hz": [
+              337.0,
+              345.0,
+              365.0
+            ],
+            "interarrival_jitter_ms": [
+              3.6319429015467675,
+              4.617180468781151,
+              10.205749048559367
+            ],
+            "max_seq_gap": [
+              0.0,
+              0.0,
+              253.0
+            ],
+            "pos_residual_m": [
+              0.016273536569264054,
+              0.20651600409980245,
+              0.3618854310750047
+            ],
+            "gps_vfr_speed_diff_ms": [
+              0.010506971227048259,
+              0.32444178742146834,
+              0.6312573741109899
+            ],
+            "gps_baro_alt_diff_m": [
+              0.0026335449218777285,
+              0.20698510742189435,
+              0.34369604492189865
+            ],
+            "alt_rate_ms": [
+              0.0,
+              1.5894470214843777,
+              1.9505310058593819
+            ],
+            "accel_ms2": [
+              0.0,
+              2.2587687144648014,
+              3.629849060510129
+            ],
+            "yaw_course_diff_deg": [
+              0.0,
+              38.416559527356256,
+              81.25864626478187
+            ],
+            "cmd_rate_hz": [
+              0.0,
+              0.0,
+              3.0
+            ],
+            "loss_ratio": [
+              0.0,
+              0.0,
+              1.0
+            ]
+          }
+        }
+      ],
+      "pooled": {
+        "flight": "POOLED",
+        "decisions": 2805,
+        "false_alarm_decisions": 1,
+        "false_alarm_rate": 0.00035650623885918,
+        "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+          6.2933258513439e-05,
+          0.0020167852987736648
+        ],
+        "airborne_decisions": 2217,
+        "false_alarm_decisions_airborne": 0,
+        "pred_classes": {
+          "MAVLINK_ANOMALY": 1
+        },
+        "detector_trigger_rate": {
+          "det_protocol_rule": 0.00035650623885918,
+          "det_physics_consistency": 0.0,
+          "det_ml_anomaly": 0.0
+        },
+        "false_alarm_detector_combinations": {
+          "protocol_rule": 1
+        },
+        "evidence_in_false_alarm_decisions": [
+          [
+            "sequence gap # > #",
+            1
+          ]
+        ],
+        "evidence_all_decisions": [
+          [
+            "sequence gap # > #",
+            1
+          ]
+        ],
+        "decision_latency_ms": {
+          "mean": 0.26990531197414563,
+          "p95": 0.4665200045565138,
+          "max": 3.9785999979358166
+        },
+        "max_seq_gap_ge_30_decisions": 1,
+        "flight_mode_UNKNOWN_decisions": 2805,
+        "cold_start_decisions_hb_or_gps_never_seen": 14,
+        "feature_p50_p95_max": {
+          "msg_rate_hz": [
+            338.0,
+            344.0,
+            365.0
+          ],
+          "interarrival_jitter_ms": [
+            2.966061439658877,
+            3.803891910562108,
+            10.205749048559367
+          ],
+          "max_seq_gap": [
+            0.0,
+            0.0,
+            253.0
+          ],
+          "pos_residual_m": [
+            0.015326415257001081,
+            0.1955523128014375,
+            0.3618854310750047
+          ],
+          "gps_vfr_speed_diff_ms": [
+            0.00820802894381592,
+            0.28860429678163363,
+            0.7688197232930682
+          ],
+          "gps_baro_alt_diff_m": [
+            0.0025449218750281943,
+            0.275761523437495,
+            0.7048459472656532
+          ],
+          "alt_rate_ms": [
+            0.0,
+            1.791748046875006,
+            3.8223266601562638
+          ],
+          "accel_ms2": [
+            0.0,
+            1.883578015237019,
+            6.253908692882212
+          ],
+          "yaw_course_diff_deg": [
+            0.0,
+            22.817699275078766,
+            82.34786606572715
+          ],
+          "cmd_rate_hz": [
+            0.0,
+            0.0,
+            3.0
+          ],
+          "loss_ratio": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      }
+    },
+    "B2": {
+      "description": "PX4 profile + Stage-1 model (diagnostic)",
+      "profile": "px4_sitl",
+      "model": "models/isoforest.joblib",
+      "per_flight": [
+        {
+          "flight": "benign_006.tlog",
+          "decisions": 483,
+          "false_alarm_decisions": 464,
+          "false_alarm_rate": 0.9606625258799172,
+          "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+            0.9393807061294296,
+            0.9746742965654921
+          ],
+          "airborne_decisions": 367,
+          "false_alarm_decisions_airborne": 367,
+          "pred_classes": {
+            "DOS": 464
+          },
+          "detector_trigger_rate": {
+            "det_protocol_rule": 0.0,
+            "det_physics_consistency": 0.0,
+            "det_ml_anomaly": 0.9606625258799172
+          },
+          "false_alarm_detector_combinations": {
+            "ml_anomaly": 464
+          },
+          "evidence_in_false_alarm_decisions": [
+            [
+              "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+              464
+            ]
+          ],
+          "evidence_all_decisions": [
+            [
+              "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+              464
+            ]
+          ],
+          "decision_latency_ms": {
+            "mean": 12.96961511400076,
+            "p95": 16.880560012941714,
+            "max": 39.51589998905547
+          },
+          "max_seq_gap_ge_30_decisions": 0,
+          "flight_mode_UNKNOWN_decisions": 483,
+          "cold_start_decisions_hb_or_gps_never_seen": 1,
+          "feature_p50_p95_max": {
+            "msg_rate_hz": [
+              338.0,
+              345.0,
+              351.0
+            ],
+            "interarrival_jitter_ms": [
+              2.0253619425339844,
+              2.047645202224079,
+              2.1267930107599287
+            ],
+            "max_seq_gap": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pos_residual_m": [
+              0.015091184373360196,
+              0.19646250830757833,
+              0.24920145604308325
+            ],
+            "gps_vfr_speed_diff_ms": [
+              0.00907999187707901,
+              0.32015529795946346,
+              0.7688197232930682
+            ],
+            "gps_baro_alt_diff_m": [
+              0.0028134765624940883,
+              0.25026113281248275,
+              0.7048459472656532
+            ],
+            "alt_rate_ms": [
+              0.0,
+              1.7581939697265523,
+              3.6396789550780735
+            ],
+            "accel_ms2": [
+              0.0,
+              2.01748933578192,
+              3.6418263759275193
+            ],
+            "yaw_course_diff_deg": [
+              0.0,
+              30.117717019278277,
+              81.33011329289002
+            ],
+            "cmd_rate_hz": [
+              0.0,
+              0.0,
+              3.0
+            ],
+            "loss_ratio": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "flight": "benign_007.tlog",
+          "decisions": 736,
+          "false_alarm_decisions": 717,
+          "false_alarm_rate": 0.9741847826086957,
+          "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+            0.9600330050354869,
+            0.9834121864757773
+          ],
+          "airborne_decisions": 618,
+          "false_alarm_decisions_airborne": 618,
+          "pred_classes": {
+            "DOS": 717
+          },
+          "detector_trigger_rate": {
+            "det_protocol_rule": 0.0,
+            "det_physics_consistency": 0.0,
+            "det_ml_anomaly": 0.9741847826086957
+          },
+          "false_alarm_detector_combinations": {
+            "ml_anomaly": 717
+          },
+          "evidence_in_false_alarm_decisions": [
+            [
+              "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+              717
+            ]
+          ],
+          "evidence_all_decisions": [
+            [
+              "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+              717
+            ]
+          ],
+          "decision_latency_ms": {
+            "mean": 13.303963043792622,
+            "p95": 17.46087500214344,
+            "max": 42.78020000492688
+          },
+          "max_seq_gap_ge_30_decisions": 0,
+          "flight_mode_UNKNOWN_decisions": 736,
+          "cold_start_decisions_hb_or_gps_never_seen": 4,
+          "feature_p50_p95_max": {
+            "msg_rate_hz": [
+              338.0,
+              344.0,
+              361.0
+            ],
+            "interarrival_jitter_ms": [
+              3.7616056818884616,
+              3.800568268011717,
+              7.132889212611783
+            ],
+            "max_seq_gap": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pos_residual_m": [
+              0.016142649226773952,
+              0.19217465678496387,
+              0.2693737174548443
+            ],
+            "gps_vfr_speed_diff_ms": [
+              0.007601034507532386,
+              0.22154934604744325,
+              0.64923923779372
+            ],
+            "gps_baro_alt_diff_m": [
+              0.0022441406250095497,
+              0.2924522705078232,
+              0.6866037597656032
+            ],
+            "alt_rate_ms": [
+              0.0,
+              1.8566513061523504,
+              3.8101196289062633
+            ],
+            "accel_ms2": [
+              0.0,
+              1.8016603558105175,
+              6.253908692882212
+            ],
+            "yaw_course_diff_deg": [
+              0.0,
+              7.979252441635133,
+              78.95951385202551
+            ],
+            "cmd_rate_hz": [
+              0.0,
+              0.0,
+              2.5
+            ],
+            "loss_ratio": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "flight": "benign_008.tlog",
+          "decisions": 550,
+          "false_alarm_decisions": 531,
+          "false_alarm_rate": 0.9654545454545455,
+          "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+            0.9466773056573693,
+            0.9777747398372271
+          ],
+          "airborne_decisions": 435,
+          "false_alarm_decisions_airborne": 435,
+          "pred_classes": {
+            "DOS": 531
+          },
+          "detector_trigger_rate": {
+            "det_protocol_rule": 0.0,
+            "det_physics_consistency": 0.0,
+            "det_ml_anomaly": 0.9654545454545455
+          },
+          "false_alarm_detector_combinations": {
+            "ml_anomaly": 531
+          },
+          "evidence_in_false_alarm_decisions": [
+            [
+              "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+              531
+            ]
+          ],
+          "evidence_all_decisions": [
+            [
+              "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+              531
+            ]
+          ],
+          "decision_latency_ms": {
+            "mean": 13.870898181974718,
+            "p95": 20.74024000612553,
+            "max": 43.08839999430347
+          },
+          "max_seq_gap_ge_30_decisions": 0,
+          "flight_mode_UNKNOWN_decisions": 550,
+          "cold_start_decisions_hb_or_gps_never_seen": 1,
+          "feature_p50_p95_max": {
+            "msg_rate_hz": [
+              338.0,
+              344.0,
+              355.0
+            ],
+            "interarrival_jitter_ms": [
+              2.965480555638951,
+              3.0183680068978687,
+              7.331744817311448
+            ],
+            "max_seq_gap": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pos_residual_m": [
+              0.01499564386244028,
+              0.19748465839770246,
+              0.30045623295766594
+            ],
+            "gps_vfr_speed_diff_ms": [
+              0.008163237832486629,
+              0.3041766577108522,
+              0.7642505742239973
+            ],
+            "gps_baro_alt_diff_m": [
+              0.00326379394530818,
+              0.29086336669921303,
+              0.6399897460937609
+            ],
+            "alt_rate_ms": [
+              0.0,
+              1.789474487304694,
+              3.8223266601562638
+            ],
+            "accel_ms2": [
+              0.0,
+              1.8452940689939032,
+              3.5854566166940836
+            ],
+            "yaw_course_diff_deg": [
+              0.0,
+              23.668429893419294,
+              82.34786606572715
+            ],
+            "cmd_rate_hz": [
+              0.0,
+              0.0,
+              2.5
+            ],
+            "loss_ratio": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "flight": "benign_009.tlog",
+          "decisions": 631,
+          "false_alarm_decisions": 612,
+          "false_alarm_rate": 0.9698890649762282,
+          "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+            0.9534512244444542,
+            0.9806400512375426
+          ],
+          "airborne_decisions": 512,
+          "false_alarm_decisions_airborne": 512,
+          "pred_classes": {
+            "DOS": 612
+          },
+          "detector_trigger_rate": {
+            "det_protocol_rule": 0.0,
+            "det_physics_consistency": 0.0,
+            "det_ml_anomaly": 0.9698890649762282
+          },
+          "false_alarm_detector_combinations": {
+            "ml_anomaly": 612
+          },
+          "evidence_in_false_alarm_decisions": [
+            [
+              "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+              612
+            ]
+          ],
+          "evidence_all_decisions": [
+            [
+              "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+              612
+            ]
+          ],
+          "decision_latency_ms": {
+            "mean": 14.210948653095926,
+            "p95": 22.141499997815117,
+            "max": 44.02919999847654
+          },
+          "max_seq_gap_ge_30_decisions": 0,
+          "flight_mode_UNKNOWN_decisions": 631,
+          "cold_start_decisions_hb_or_gps_never_seen": 4,
+          "feature_p50_p95_max": {
+            "msg_rate_hz": [
+              338.0,
+              344.0,
+              363.0
+            ],
+            "interarrival_jitter_ms": [
+              2.0182865486554413,
+              2.0705379612019144,
+              2.3026870617447934
+            ],
+            "max_seq_gap": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pos_residual_m": [
+              0.014540480589782575,
+              0.19243689173564044,
+              0.2590883067164594
+            ],
+            "gps_vfr_speed_diff_ms": [
+              0.007672111038118601,
+              0.23587951817459474,
+              0.6912878742883142
+            ],
+            "gps_baro_alt_diff_m": [
+              0.0022617187499918145,
+              0.2949548339843773,
+              0.6345690917968909
+            ],
+            "alt_rate_ms": [
+              0.0,
+              1.8209075927734277,
+              3.7768554687499463
+            ],
+            "accel_ms2": [
+              0.0,
+              1.8358776950468927,
+              3.7227029359096147
+            ],
+            "yaw_course_diff_deg": [
+              0.0,
+              15.375191538395981,
+              81.41067211418004
+            ],
+            "cmd_rate_hz": [
+              0.0,
+              0.0,
+              2.5
+            ],
+            "loss_ratio": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "flight": "benign_010.tlog",
+          "decisions": 405,
+          "false_alarm_decisions": 386,
+          "false_alarm_rate": 0.9530864197530864,
+          "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+            0.9278944452261428,
+            0.969763718718035
+          ],
+          "airborne_decisions": 285,
+          "false_alarm_decisions_airborne": 285,
+          "pred_classes": {
+            "DOS": 385,
+            "MAVLINK_ANOMALY": 1
+          },
+          "detector_trigger_rate": {
+            "det_protocol_rule": 0.0024691358024691358,
+            "det_physics_consistency": 0.0,
+            "det_ml_anomaly": 0.9530864197530864
+          },
+          "false_alarm_detector_combinations": {
+            "ml_anomaly": 385,
+            "ml_anomaly+protocol_rule": 1
+          },
+          "evidence_in_false_alarm_decisions": [
+            [
+              "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+              386
+            ],
+            [
+              "sequence gap # > #",
+              1
+            ]
+          ],
+          "evidence_all_decisions": [
+            [
+              "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+              386
+            ],
+            [
+              "sequence gap # > #",
+              1
+            ]
+          ],
+          "decision_latency_ms": {
+            "mean": 13.148385185114522,
+            "p95": 17.355959987617098,
+            "max": 29.969299997901544
+          },
+          "max_seq_gap_ge_30_decisions": 1,
+          "flight_mode_UNKNOWN_decisions": 405,
+          "cold_start_decisions_hb_or_gps_never_seen": 4,
+          "feature_p50_p95_max": {
+            "msg_rate_hz": [
+              337.0,
+              345.0,
+              365.0
+            ],
+            "interarrival_jitter_ms": [
+              3.6319429015467675,
+              4.617180468781151,
+              10.205749048559367
+            ],
+            "max_seq_gap": [
+              0.0,
+              0.0,
+              253.0
+            ],
+            "pos_residual_m": [
+              0.016273536569264054,
+              0.20651600409980245,
+              0.3618854310750047
+            ],
+            "gps_vfr_speed_diff_ms": [
+              0.010506971227048259,
+              0.32444178742146834,
+              0.6312573741109899
+            ],
+            "gps_baro_alt_diff_m": [
+              0.0026335449218777285,
+              0.20698510742189435,
+              0.34369604492189865
+            ],
+            "alt_rate_ms": [
+              0.0,
+              1.5894470214843777,
+              1.9505310058593819
+            ],
+            "accel_ms2": [
+              0.0,
+              2.2587687144648014,
+              3.629849060510129
+            ],
+            "yaw_course_diff_deg": [
+              0.0,
+              38.416559527356256,
+              81.25864626478187
+            ],
+            "cmd_rate_hz": [
+              0.0,
+              0.0,
+              3.0
+            ],
+            "loss_ratio": [
+              0.0,
+              0.0,
+              1.0
+            ]
+          }
+        }
+      ],
+      "pooled": {
+        "flight": "POOLED",
+        "decisions": 2805,
+        "false_alarm_decisions": 2710,
+        "false_alarm_rate": 0.966131907308378,
+        "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+          0.958774388076416,
+          0.9722143867978953
+        ],
+        "airborne_decisions": 2217,
+        "false_alarm_decisions_airborne": 2217,
+        "pred_classes": {
+          "DOS": 2709,
+          "MAVLINK_ANOMALY": 1
+        },
+        "detector_trigger_rate": {
+          "det_protocol_rule": 0.00035650623885918,
+          "det_physics_consistency": 0.0,
+          "det_ml_anomaly": 0.966131907308378
+        },
+        "false_alarm_detector_combinations": {
+          "ml_anomaly": 2709,
+          "ml_anomaly+protocol_rule": 1
+        },
+        "evidence_in_false_alarm_decisions": [
+          [
+            "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+            2710
+          ],
+          [
+            "sequence gap # > #",
+            1
+          ]
+        ],
+        "evidence_all_decisions": [
+          [
+            "ML anomaly score # \u2265 # (driver: msg_rate_hz, z=+#)",
+            2710
+          ],
+          [
+            "sequence gap # > #",
+            1
+          ]
+        ],
+        "decision_latency_ms": {
+          "mean": 13.539122816561406,
+          "p95": 18.835219999891706,
+          "max": 44.02919999847654
+        },
+        "max_seq_gap_ge_30_decisions": 1,
+        "flight_mode_UNKNOWN_decisions": 2805,
+        "cold_start_decisions_hb_or_gps_never_seen": 14,
+        "feature_p50_p95_max": {
+          "msg_rate_hz": [
+            338.0,
+            344.0,
+            365.0
+          ],
+          "interarrival_jitter_ms": [
+            2.966061439658877,
+            3.803891910562108,
+            10.205749048559367
+          ],
+          "max_seq_gap": [
+            0.0,
+            0.0,
+            253.0
+          ],
+          "pos_residual_m": [
+            0.015326415257001081,
+            0.1955523128014375,
+            0.3618854310750047
+          ],
+          "gps_vfr_speed_diff_ms": [
+            0.00820802894381592,
+            0.28860429678163363,
+            0.7688197232930682
+          ],
+          "gps_baro_alt_diff_m": [
+            0.0025449218750281943,
+            0.275761523437495,
+            0.7048459472656532
+          ],
+          "alt_rate_ms": [
+            0.0,
+            1.791748046875006,
+            3.8223266601562638
+          ],
+          "accel_ms2": [
+            0.0,
+            1.883578015237019,
+            6.253908692882212
+          ],
+          "yaw_course_diff_deg": [
+            0.0,
+            22.817699275078766,
+            82.34786606572715
+          ],
+          "cmd_rate_hz": [
+            0.0,
+            0.0,
+            3.0
+          ],
+          "loss_ratio": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      }
+    },
+    "C": {
+      "description": "PX4 profile + PX4-benign model",
+      "profile": "px4_sitl",
+      "model": "models/isoforest_px4.joblib",
+      "per_flight": [
+        {
+          "flight": "benign_006.tlog",
+          "decisions": 483,
+          "false_alarm_decisions": 0,
+          "false_alarm_rate": 0.0,
+          "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+            0.0,
+            0.007890862243489461
+          ],
+          "airborne_decisions": 367,
+          "false_alarm_decisions_airborne": 0,
+          "pred_classes": {},
+          "detector_trigger_rate": {
+            "det_protocol_rule": 0.0,
+            "det_physics_consistency": 0.0,
+            "det_ml_anomaly": 0.0
+          },
+          "false_alarm_detector_combinations": {},
+          "evidence_in_false_alarm_decisions": [],
+          "evidence_all_decisions": [],
+          "decision_latency_ms": {
+            "mean": 13.57896107664249,
+            "p95": 17.750140000134706,
+            "max": 48.29560000507627
+          },
+          "max_seq_gap_ge_30_decisions": 0,
+          "flight_mode_UNKNOWN_decisions": 483,
+          "cold_start_decisions_hb_or_gps_never_seen": 1,
+          "feature_p50_p95_max": {
+            "msg_rate_hz": [
+              338.0,
+              345.0,
+              351.0
+            ],
+            "interarrival_jitter_ms": [
+              2.0253619425339844,
+              2.047645202224079,
+              2.1267930107599287
+            ],
+            "max_seq_gap": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pos_residual_m": [
+              0.015091184373360196,
+              0.19646250830757833,
+              0.24920145604308325
+            ],
+            "gps_vfr_speed_diff_ms": [
+              0.00907999187707901,
+              0.32015529795946346,
+              0.7688197232930682
+            ],
+            "gps_baro_alt_diff_m": [
+              0.0028134765624940883,
+              0.25026113281248275,
+              0.7048459472656532
+            ],
+            "alt_rate_ms": [
+              0.0,
+              1.7581939697265523,
+              3.6396789550780735
+            ],
+            "accel_ms2": [
+              0.0,
+              2.01748933578192,
+              3.6418263759275193
+            ],
+            "yaw_course_diff_deg": [
+              0.0,
+              30.117717019278277,
+              81.33011329289002
+            ],
+            "cmd_rate_hz": [
+              0.0,
+              0.0,
+              3.0
+            ],
+            "loss_ratio": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "flight": "benign_007.tlog",
+          "decisions": 736,
+          "false_alarm_decisions": 0,
+          "false_alarm_rate": 0.0,
+          "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+            0.0,
+            0.005192462819068298
+          ],
+          "airborne_decisions": 618,
+          "false_alarm_decisions_airborne": 0,
+          "pred_classes": {},
+          "detector_trigger_rate": {
+            "det_protocol_rule": 0.0,
+            "det_physics_consistency": 0.0,
+            "det_ml_anomaly": 0.0
+          },
+          "false_alarm_detector_combinations": {},
+          "evidence_in_false_alarm_decisions": [],
+          "evidence_all_decisions": [],
+          "decision_latency_ms": {
+            "mean": 14.450275135637323,
+            "p95": 18.97310000640573,
+            "max": 43.655700006638654
+          },
+          "max_seq_gap_ge_30_decisions": 0,
+          "flight_mode_UNKNOWN_decisions": 736,
+          "cold_start_decisions_hb_or_gps_never_seen": 4,
+          "feature_p50_p95_max": {
+            "msg_rate_hz": [
+              338.0,
+              344.0,
+              361.0
+            ],
+            "interarrival_jitter_ms": [
+              3.7616056818884616,
+              3.800568268011717,
+              7.132889212611783
+            ],
+            "max_seq_gap": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pos_residual_m": [
+              0.016142649226773952,
+              0.19217465678496387,
+              0.2693737174548443
+            ],
+            "gps_vfr_speed_diff_ms": [
+              0.007601034507532386,
+              0.22154934604744325,
+              0.64923923779372
+            ],
+            "gps_baro_alt_diff_m": [
+              0.0022441406250095497,
+              0.2924522705078232,
+              0.6866037597656032
+            ],
+            "alt_rate_ms": [
+              0.0,
+              1.8566513061523504,
+              3.8101196289062633
+            ],
+            "accel_ms2": [
+              0.0,
+              1.8016603558105175,
+              6.253908692882212
+            ],
+            "yaw_course_diff_deg": [
+              0.0,
+              7.979252441635133,
+              78.95951385202551
+            ],
+            "cmd_rate_hz": [
+              0.0,
+              0.0,
+              2.5
+            ],
+            "loss_ratio": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "flight": "benign_008.tlog",
+          "decisions": 550,
+          "false_alarm_decisions": 0,
+          "false_alarm_rate": 0.0,
+          "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+            0.0,
+            0.006936279253851642
+          ],
+          "airborne_decisions": 435,
+          "false_alarm_decisions_airborne": 0,
+          "pred_classes": {},
+          "detector_trigger_rate": {
+            "det_protocol_rule": 0.0,
+            "det_physics_consistency": 0.0,
+            "det_ml_anomaly": 0.0
+          },
+          "false_alarm_detector_combinations": {},
+          "evidence_in_false_alarm_decisions": [],
+          "evidence_all_decisions": [],
+          "decision_latency_ms": {
+            "mean": 13.59620727291754,
+            "p95": 18.463725004403383,
+            "max": 42.34600000199862
+          },
+          "max_seq_gap_ge_30_decisions": 0,
+          "flight_mode_UNKNOWN_decisions": 550,
+          "cold_start_decisions_hb_or_gps_never_seen": 1,
+          "feature_p50_p95_max": {
+            "msg_rate_hz": [
+              338.0,
+              344.0,
+              355.0
+            ],
+            "interarrival_jitter_ms": [
+              2.965480555638951,
+              3.0183680068978687,
+              7.331744817311448
+            ],
+            "max_seq_gap": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pos_residual_m": [
+              0.01499564386244028,
+              0.19748465839770246,
+              0.30045623295766594
+            ],
+            "gps_vfr_speed_diff_ms": [
+              0.008163237832486629,
+              0.3041766577108522,
+              0.7642505742239973
+            ],
+            "gps_baro_alt_diff_m": [
+              0.00326379394530818,
+              0.29086336669921303,
+              0.6399897460937609
+            ],
+            "alt_rate_ms": [
+              0.0,
+              1.789474487304694,
+              3.8223266601562638
+            ],
+            "accel_ms2": [
+              0.0,
+              1.8452940689939032,
+              3.5854566166940836
+            ],
+            "yaw_course_diff_deg": [
+              0.0,
+              23.668429893419294,
+              82.34786606572715
+            ],
+            "cmd_rate_hz": [
+              0.0,
+              0.0,
+              2.5
+            ],
+            "loss_ratio": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "flight": "benign_009.tlog",
+          "decisions": 631,
+          "false_alarm_decisions": 0,
+          "false_alarm_rate": 0.0,
+          "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+            0.0,
+            0.0060512732624957155
+          ],
+          "airborne_decisions": 512,
+          "false_alarm_decisions_airborne": 0,
+          "pred_classes": {},
+          "detector_trigger_rate": {
+            "det_protocol_rule": 0.0,
+            "det_physics_consistency": 0.0,
+            "det_ml_anomaly": 0.0
+          },
+          "false_alarm_detector_combinations": {},
+          "evidence_in_false_alarm_decisions": [],
+          "evidence_all_decisions": [],
+          "decision_latency_ms": {
+            "mean": 16.015603961929475,
+            "p95": 26.71714999451069,
+            "max": 49.368399995728396
+          },
+          "max_seq_gap_ge_30_decisions": 0,
+          "flight_mode_UNKNOWN_decisions": 631,
+          "cold_start_decisions_hb_or_gps_never_seen": 4,
+          "feature_p50_p95_max": {
+            "msg_rate_hz": [
+              338.0,
+              344.0,
+              363.0
+            ],
+            "interarrival_jitter_ms": [
+              2.0182865486554413,
+              2.0705379612019144,
+              2.3026870617447934
+            ],
+            "max_seq_gap": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pos_residual_m": [
+              0.014540480589782575,
+              0.19243689173564044,
+              0.2590883067164594
+            ],
+            "gps_vfr_speed_diff_ms": [
+              0.007672111038118601,
+              0.23587951817459474,
+              0.6912878742883142
+            ],
+            "gps_baro_alt_diff_m": [
+              0.0022617187499918145,
+              0.2949548339843773,
+              0.6345690917968909
+            ],
+            "alt_rate_ms": [
+              0.0,
+              1.8209075927734277,
+              3.7768554687499463
+            ],
+            "accel_ms2": [
+              0.0,
+              1.8358776950468927,
+              3.7227029359096147
+            ],
+            "yaw_course_diff_deg": [
+              0.0,
+              15.375191538395981,
+              81.41067211418004
+            ],
+            "cmd_rate_hz": [
+              0.0,
+              0.0,
+              2.5
+            ],
+            "loss_ratio": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "flight": "benign_010.tlog",
+          "decisions": 405,
+          "false_alarm_decisions": 1,
+          "false_alarm_rate": 0.0024691358024691358,
+          "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+            0.00043598493285569324,
+            0.013852189264681933
+          ],
+          "airborne_decisions": 285,
+          "false_alarm_decisions_airborne": 0,
+          "pred_classes": {
+            "MAVLINK_ANOMALY": 1
+          },
+          "detector_trigger_rate": {
+            "det_protocol_rule": 0.0024691358024691358,
+            "det_physics_consistency": 0.0,
+            "det_ml_anomaly": 0.0024691358024691358
+          },
+          "false_alarm_detector_combinations": {
+            "ml_anomaly+protocol_rule": 1
+          },
+          "evidence_in_false_alarm_decisions": [
+            [
+              "sequence gap # > #",
+              1
+            ],
+            [
+              "ML anomaly score # \u2265 # (driver: max_seq_gap, z=+#)",
+              1
+            ]
+          ],
+          "evidence_all_decisions": [
+            [
+              "sequence gap # > #",
+              1
+            ],
+            [
+              "ML anomaly score # \u2265 # (driver: max_seq_gap, z=+#)",
+              1
+            ]
+          ],
+          "decision_latency_ms": {
+            "mean": 14.528918271865638,
+            "p95": 20.012899997527708,
+            "max": 37.048500002129
+          },
+          "max_seq_gap_ge_30_decisions": 1,
+          "flight_mode_UNKNOWN_decisions": 405,
+          "cold_start_decisions_hb_or_gps_never_seen": 4,
+          "feature_p50_p95_max": {
+            "msg_rate_hz": [
+              337.0,
+              345.0,
+              365.0
+            ],
+            "interarrival_jitter_ms": [
+              3.6319429015467675,
+              4.617180468781151,
+              10.205749048559367
+            ],
+            "max_seq_gap": [
+              0.0,
+              0.0,
+              253.0
+            ],
+            "pos_residual_m": [
+              0.016273536569264054,
+              0.20651600409980245,
+              0.3618854310750047
+            ],
+            "gps_vfr_speed_diff_ms": [
+              0.010506971227048259,
+              0.32444178742146834,
+              0.6312573741109899
+            ],
+            "gps_baro_alt_diff_m": [
+              0.0026335449218777285,
+              0.20698510742189435,
+              0.34369604492189865
+            ],
+            "alt_rate_ms": [
+              0.0,
+              1.5894470214843777,
+              1.9505310058593819
+            ],
+            "accel_ms2": [
+              0.0,
+              2.2587687144648014,
+              3.629849060510129
+            ],
+            "yaw_course_diff_deg": [
+              0.0,
+              38.416559527356256,
+              81.25864626478187
+            ],
+            "cmd_rate_hz": [
+              0.0,
+              0.0,
+              3.0
+            ],
+            "loss_ratio": [
+              0.0,
+              0.0,
+              1.0
+            ]
+          }
+        }
+      ],
+      "pooled": {
+        "flight": "POOLED",
+        "decisions": 2805,
+        "false_alarm_decisions": 1,
+        "false_alarm_rate": 0.00035650623885918,
+        "false_alarm_rate_wilson95_DECISION_LEVEL_optimistic": [
+          6.2933258513439e-05,
+          0.0020167852987736648
+        ],
+        "airborne_decisions": 2217,
+        "false_alarm_decisions_airborne": 0,
+        "pred_classes": {
+          "MAVLINK_ANOMALY": 1
+        },
+        "detector_trigger_rate": {
+          "det_protocol_rule": 0.00035650623885918,
+          "det_physics_consistency": 0.0,
+          "det_ml_anomaly": 0.00035650623885918
+        },
+        "false_alarm_detector_combinations": {
+          "ml_anomaly+protocol_rule": 1
+        },
+        "evidence_in_false_alarm_decisions": [
+          [
+            "sequence gap # > #",
+            1
+          ],
+          [
+            "ML anomaly score # \u2265 # (driver: max_seq_gap, z=+#)",
+            1
+          ]
+        ],
+        "evidence_all_decisions": [
+          [
+            "sequence gap # > #",
+            1
+          ],
+          [
+            "ML anomaly score # \u2265 # (driver: max_seq_gap, z=+#)",
+            1
+          ]
+        ],
+        "decision_latency_ms": {
+          "mean": 14.496261212133733,
+          "p95": 20.121120000840154,
+          "max": 49.368399995728396
+        },
+        "max_seq_gap_ge_30_decisions": 1,
+        "flight_mode_UNKNOWN_decisions": 2805,
+        "cold_start_decisions_hb_or_gps_never_seen": 14,
+        "feature_p50_p95_max": {
+          "msg_rate_hz": [
+            338.0,
+            344.0,
+            365.0
+          ],
+          "interarrival_jitter_ms": [
+            2.966061439658877,
+            3.803891910562108,
+            10.205749048559367
+          ],
+          "max_seq_gap": [
+            0.0,
+            0.0,
+            253.0
+          ],
+          "pos_residual_m": [
+            0.015326415257001081,
+            0.1955523128014375,
+            0.3618854310750047
+          ],
+          "gps_vfr_speed_diff_ms": [
+            0.00820802894381592,
+            0.28860429678163363,
+            0.7688197232930682
+          ],
+          "gps_baro_alt_diff_m": [
+            0.0025449218750281943,
+            0.275761523437495,
+            0.7048459472656532
+          ],
+          "alt_rate_ms": [
+            0.0,
+            1.791748046875006,
+            3.8223266601562638
+          ],
+          "accel_ms2": [
+            0.0,
+            1.883578015237019,
+            6.253908692882212
+          ],
+          "yaw_course_diff_deg": [
+            0.0,
+            22.817699275078766,
+            82.34786606572715
+          ],
+          "cmd_rate_hz": [
+            0.0,
+            0.0,
+            3.0
+          ],
+          "loss_ratio": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      }
+    }
+  },
+  "wall_s": 135.66958610000438
+}

@@ -15,6 +15,8 @@ from ..features.extractor import FeatureFrame
 from ..mavlink.codec import command_name_from_id
 from .base import Detector, ramp
 
+_NEVER_SEEN_S = 999.0  # FeatureExtractor sentinel age for "no such message received yet"
+
 
 class ProtocolDetector(Detector):
     name = DetectorName.PROTOCOL
@@ -39,6 +41,12 @@ class ProtocolDetector(Detector):
         self.min_sats = int(p.get("min_gnss_satellites", 5))
         self.gnss_loss_ticks = int(p.get("gnss_loss_ticks", 5))
         self._gnss_bad = 0
+        # Start-of-stream grace (additive, default 0 = Stage-1 behaviour): for this many
+        # seconds after the first decision, the "never seen yet" sentinel (extractor
+        # reports 999 s before the first heartbeat / GPS message) is not a liveness fault.
+        # Once a message has been seen, staleness is judged exactly as before.
+        self.startup_grace_s = float(p.get("startup_grace_s", 0.0))
+        self._t0: float | None = None
 
     def process(self, frame: FeatureFrame) -> DetectorResult:
         evidence: list[str] = []
@@ -91,11 +99,14 @@ class ProtocolDetector(Detector):
         signals["n_sources"] = float(frame.n_sources)
 
         # ---- liveness (heartbeat / GPS dropout -> DoS/blackout) ----
-        if frame.heartbeat_age_s > self.hb_timeout:
+        if self._t0 is None:
+            self._t0 = frame.t
+        in_grace = self.startup_grace_s > 0.0 and (frame.t - self._t0) < self.startup_grace_s
+        if frame.heartbeat_age_s > self.hb_timeout and not (in_grace and frame.heartbeat_age_s >= _NEVER_SEEN_S):
             s = ramp(frame.heartbeat_age_s, self.hb_timeout, self.hb_timeout * 2)
             bump(AttackType.DOS, max(0.6, s))
             evidence.append(f"heartbeat stale {frame.heartbeat_age_s:.1f}s > {self.hb_timeout:.1f}s")
-        if frame.gps_age_s > self.gps_dropout:
+        if frame.gps_age_s > self.gps_dropout and not (in_grace and frame.gps_age_s >= _NEVER_SEEN_S):
             s = ramp(frame.gps_age_s, self.gps_dropout, self.gps_dropout * 3)
             bump(AttackType.DOS, max(0.5, s))
             evidence.append(f"GPS dropout {frame.gps_age_s:.1f}s > {self.gps_dropout:.1f}s")
@@ -153,3 +164,4 @@ class ProtocolDetector(Detector):
 
     def reset(self) -> None:
         self._gnss_bad = 0
+        self._t0 = None

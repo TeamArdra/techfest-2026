@@ -24,7 +24,7 @@ detector score is their max); each casts a vote for the attack it implies:
 | Message flood | `msg_rate ≥ max_msg_rate_hz` (400) → 1.0; `> spike_factor×nominal` (84) → ramp | DOS |
 | Sequence gaps | `max_seq_gap > max_seq_gap` (30) | DOS if rate high, else MAVLINK_ANOMALY |
 | Rogue telemetry source | sysid ∉ expected & not a command source | MAVLINK_ANOMALY |
-| Heartbeat stale | `heartbeat_age > heartbeat_timeout_s` (3) | DOS |
+| Heartbeat stale | `heartbeat_age > heartbeat_timeout_s` (3); the never-seen sentinel is ignored for `startup_grace_s` (0 = off) | DOS |
 | GPS dropout | `gps_age > gps_dropout_s` (2) | DOS |
 | Command provenance | command from sysid ∉ `expected_gcs_sysids`; sensitive cmd / burst | COMMAND_INJECTION |
 | Signing | `require_signing` and unsigned present | MAVLINK_ANOMALY |
@@ -41,7 +41,7 @@ Cross-checks physically-coupled channels an attacker can't falsify all at once:
 | Altitude rate plausibility | `> alt_jump_ms` (25) | TELEMETRY_MANIPULATION |
 | Acceleration plausibility | `> max_accel_ms2` (20) | GPS_SPOOFING |
 | Battery voltage rise / collapse | `> battery_rise_v` (0.4) / `battery_drop_rate_v_s` (2) | TELEMETRY_MANIPULATION |
-| Heading (attitude) vs course-over-ground | `> 25°` | TELEMETRY_MANIPULATION |
+| Heading (attitude) vs course-over-ground | `> yaw_course_deg` (25; configurable) | TELEMETRY_MANIPULATION |
 
 A **hysteresis** (`hysteresis_ticks`) damps soft triggers until they persist,
 suppressing single-tick GPS-noise spikes; a hard position residual fires
@@ -102,3 +102,10 @@ baseline benchmark every false positive is of this kind (compare the ML-off abla
 
 Every alert carries the concatenated evidence from all firing detectors — there
 are no unexplained black-box alerts.
+
+## Per-vehicle calibration (PX4 SITL)
+Thresholds above are the **Stage-1 simulator** values and are the reference condition. A
+separate, generated PX4-SITL profile (`configs/px4_sitl/detector.yaml`) and a separate
+PX4-benign anomaly model (`models/isoforest_px4.joblib`) exist for false-alarm reduction on
+that stack only; methodology, held-out evaluation and the cost side (what the loosened
+rules may no longer catch) are in `docs/CALIBRATION_PX4.md`. It is not attack detection.

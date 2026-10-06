@@ -1,0 +1,145 @@
+{
+  "schema": "aegisflight.sitl_calibration_lofo_rules/1",
+  "environment": "SITL (replayed tlog)",
+  "attack_status": "NONE",
+  "condition": "B (profile derived from 4 flights, ML off)",
+  "folds": {
+    "benign_001": {
+      "derived_from": [
+        "benign_002",
+        "benign_003",
+        "benign_004",
+        "benign_005"
+      ],
+      "overrides": {
+        "protocol": {
+          "expected_sysids": [
+            3
+          ],
+          "nominal_msg_rate_hz": 379.0,
+          "msg_rate_spike_factor": 1.4,
+          "max_msg_rate_hz": 5450.0,
+          "startup_grace_s": 1.4
+        },
+        "physics": {
+          "battery_rise_v": 1.05,
+          "yaw_course_deg": 105.0
+        }
+      },
+      "decisions": 519,
+      "false_alarm_decisions": 2,
+      "evidence": [
+        "sequence gap 253 > 30"
+      ]
+    },
+    "benign_002": {
+      "derived_from": [
+        "benign_001",
+        "benign_003",
+        "benign_004",
+        "benign_005"
+      ],
+      "overrides": {
+        "protocol": {
+          "expected_sysids": [
+            3
+          ],
+          "nominal_msg_rate_hz": 376.0,
+          "msg_rate_spike_factor": 1.4,
+          "max_msg_rate_hz": 5400.0,
+          "startup_grace_s": 1.4
+        },
+        "physics": {
+          "battery_rise_v": 1.05,
+          "yaw_course_deg": 110.0
+        }
+      },
+      "decisions": 537,
+      "false_alarm_decisions": 0,
+      "evidence": []
+    },
+    "benign_003": {
+      "derived_from": [
+        "benign_001",
+        "benign_002",
+        "benign_004",
+        "benign_005"
+      ],
+      "overrides": {
+        "protocol": {
+          "expected_sysids": [
+            3
+          ],
+          "nominal_msg_rate_hz": 379.0,
+          "msg_rate_spike_factor": 1.4,
+          "max_msg_rate_hz": 5450.0,
+          "startup_grace_s": 1.4
+        },
+        "physics": {
+          "battery_rise_v": 1.05,
+          "yaw_course_deg": 110.0
+        }
+      },
+      "decisions": 662,
+      "false_alarm_decisions": 0,
+      "evidence": []
+    },
+    "benign_004": {
+      "derived_from": [
+        "benign_001",
+        "benign_002",
+        "benign_003",
+        "benign_005"
+      ],
+      "overrides": {
+        "protocol": {
+          "expected_sysids": [
+            3
+          ],
+          "nominal_msg_rate_hz": 379.0,
+          "msg_rate_spike_factor": 1.4,
+          "max_msg_rate_hz": 5450.0,
+          "startup_grace_s": 1.4
+        },
+        "physics": {
+          "battery_rise_v": 1.05,
+          "yaw_course_deg": 110.0
+        }
+      },
+      "decisions": 449,
+      "false_alarm_decisions": 0,
+      "evidence": []
+    },
+    "benign_005": {
+      "derived_from": [
+        "benign_001",
+        "benign_002",
+        "benign_003",
+        "benign_004"
+      ],
+      "overrides": {
+        "protocol": {
+          "expected_sysids": [
+            3
+          ],
+          "nominal_msg_rate_hz": 379.0,
+          "msg_rate_spike_factor": 1.4,
+          "max_msg_rate_hz": 5450.0,
+          "startup_grace_s": 1.4
+        },
+        "physics": {
+          "battery_rise_v": 1.05,
+          "yaw_course_deg": 110.0
+        }
+      },
+      "decisions": 593,
+      "false_alarm_decisions": 0,
+      "evidence": []
+    }
+  },
+  "pooled": {
+    "decisions": 2760,
+    "false_alarm_decisions": 2
+  },
+  "caveat": "within the calibration set; same route/host; not independent of the held-out question"
+}

@@ -1,0 +1,75 @@
+{
+  "schema": "aegisflight.px4_baseline_training/1",
+  "environment": "SITL (replayed tlog)",
+  "attack_status": "NONE",
+  "model_path": "models\\isoforest_px4.joblib",
+  "model_sha256": "df540999dc6b43c3981d6ac6ecb91369b56ce1ba8cfdb894b76b195951260c7c",
+  "stage1_model_untouched_sha256": "3fe74cddf3689e169610ffd783b109b6539cc6c03629bd1e4bb8b1d3842939c4",
+  "training_files": [
+    {
+      "tlog": "data/sitl/raw/benign_001.tlog",
+      "sha256": "9686c31dee3b34aac5c885a9b0066e541a564c7b639d020b0eb04cfeeb0a1569",
+      "train_vectors": 494
+    },
+    {
+      "tlog": "data/sitl/raw/benign_002.tlog",
+      "sha256": "53d38fcc25716dd850b72c9f757c177f0d571bd8c65a8f61cdc2fc34b96427ba",
+      "train_vectors": 512
+    },
+    {
+      "tlog": "data/sitl/raw/benign_003.tlog",
+      "sha256": "44fc1025c181335af1d44b703545072e4bbea463f6634ba758c2972efd4e8c67",
+      "train_vectors": 637
+    },
+    {
+      "tlog": "data/sitl/raw/benign_004.tlog",
+      "sha256": "8a8d3d7ccf60bb8943bcc0cf48d78e89bba2a3eaadaf5691baad61da3967157e",
+      "train_vectors": 424
+    },
+    {
+      "tlog": "data/sitl/raw/benign_005.tlog",
+      "sha256": "78350f17811c84919cd7c33d004c6aae1c4e13ffac4ba8bcc90952400d8a62ec",
+      "train_vectors": 568
+    }
+  ],
+  "warmup_excluded_s": 5.0,
+  "seed": 100,
+  "n_estimators": 200,
+  "contamination": 0.02,
+  "ml_features_order": [
+    "msg_rate_hz",
+    "interarrival_jitter_ms",
+    "max_seq_gap",
+    "pos_residual_m",
+    "gps_vfr_speed_diff_ms",
+    "gps_baro_alt_diff_m",
+    "alt_rate_ms",
+    "accel_ms2",
+    "yaw_course_diff_deg",
+    "cmd_rate_hz",
+    "loss_ratio"
+  ],
+  "score_thr": 12.993870944293704,
+  "score_scale": 4.171019345036831,
+  "alarm_norm_threshold": 0.62,
+  "benign_alarm_rate_leave_one_flight_out": {
+    "benign_001": 0.004048582995951417,
+    "benign_002": 0.02734375,
+    "benign_003": 0.0,
+    "benign_004": 0.0,
+    "benign_005": 0.0
+  },
+  "benign_alarm_rate_in_sample_OPTIMISTIC": {
+    "benign_001": 0.004048582995951417,
+    "benign_002": 0.0,
+    "benign_003": 0.0,
+    "benign_004": 0.0,
+    "benign_005": 0.0
+  },
+  "versions": {
+    "sklearn": "1.9.1",
+    "numpy": "2.5.3",
+    "python": "3.13.15"
+  },
+  "caveat": "5 flights of one scripted route on one host; in-sample rates are optimistic; rate features embed this host's real-time factor (~0.87-0.90)."
+}

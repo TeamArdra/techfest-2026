@@ -1,0 +1,2835 @@
+{
+  "schema": "aegisflight.sitl_calibration_sim_sanity/1",
+  "environment": "SIM (in-process simulator) - EXPLORATORY, not SITL, not the committed benchmark",
+  "claim_class": "none (cost-side sanity check of loosened thresholds)",
+  "seeds": [
+    42,
+    43
+  ],
+  "model": "models/isoforest.joblib",
+  "profile_yaml_sha256": "4f18f3f0220cecc71229c156ec2f23fc9b23eadb59357f2cde1e8baf6ec04660",
+  "per_session": [
+    {
+      "config": "default",
+      "scenario": "benign",
+      "mode": "",
+      "seed": 42,
+      "in_window_decisions": 0,
+      "in_window_detected": 0,
+      "benign_scored_decisions": 575,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": null
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "benign",
+      "mode": "",
+      "seed": 42,
+      "in_window_decisions": 0,
+      "in_window_detected": 0,
+      "benign_scored_decisions": 575,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": null
+    },
+    {
+      "config": "profile_raw",
+      "scenario": "benign",
+      "mode": "",
+      "seed": 42,
+      "in_window_decisions": 0,
+      "in_window_detected": 0,
+      "benign_scored_decisions": 575,
+      "benign_false_alarms": 575,
+      "time_to_detect_s": null
+    },
+    {
+      "config": "default_noml",
+      "scenario": "benign",
+      "mode": "",
+      "seed": 42,
+      "in_window_decisions": 0,
+      "in_window_detected": 0,
+      "benign_scored_decisions": 575,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": null
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "benign",
+      "mode": "",
+      "seed": 42,
+      "in_window_decisions": 0,
+      "in_window_detected": 0,
+      "benign_scored_decisions": 575,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": null
+    },
+    {
+      "config": "default",
+      "scenario": "gps_spoofing",
+      "mode": "gradual_drift",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 143,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 1.4000000000000057
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "gps_spoofing",
+      "mode": "gradual_drift",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 143,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 1.4000000000000057
+    },
+    {
+      "config": "default_noml",
+      "scenario": "gps_spoofing",
+      "mode": "gradual_drift",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 138,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 2.4000000000000057
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "gps_spoofing",
+      "mode": "gradual_drift",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 138,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 2.4000000000000057
+    },
+    {
+      "config": "default",
+      "scenario": "gps_spoofing",
+      "mode": "sudden_offset",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 15,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "gps_spoofing",
+      "mode": "sudden_offset",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 15,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default_noml",
+      "scenario": "gps_spoofing",
+      "mode": "sudden_offset",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 14,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "gps_spoofing",
+      "mode": "sudden_offset",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 14,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "default",
+      "scenario": "gps_spoofing",
+      "mode": "replay_freeze",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 147,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.6000000000000014
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "gps_spoofing",
+      "mode": "replay_freeze",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 147,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.6000000000000014
+    },
+    {
+      "config": "default_noml",
+      "scenario": "gps_spoofing",
+      "mode": "replay_freeze",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 144,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 1.2000000000000028
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "gps_spoofing",
+      "mode": "replay_freeze",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 144,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 1.2000000000000028
+    },
+    {
+      "config": "default",
+      "scenario": "mavlink_anomaly",
+      "mode": "rogue_sysid",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 1,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "mavlink_anomaly",
+      "mode": "rogue_sysid",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 1,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default_noml",
+      "scenario": "mavlink_anomaly",
+      "mode": "rogue_sysid",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "mavlink_anomaly",
+      "mode": "rogue_sysid",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default",
+      "scenario": "mavlink_anomaly",
+      "mode": "rate_spike",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "mavlink_anomaly",
+      "mode": "rate_spike",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default_noml",
+      "scenario": "mavlink_anomaly",
+      "mode": "rate_spike",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "mavlink_anomaly",
+      "mode": "rate_spike",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default",
+      "scenario": "mavlink_anomaly",
+      "mode": "seq_scramble",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 149,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "mavlink_anomaly",
+      "mode": "seq_scramble",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 149,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "default_noml",
+      "scenario": "mavlink_anomaly",
+      "mode": "seq_scramble",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 147,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "mavlink_anomaly",
+      "mode": "seq_scramble",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 147,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "default",
+      "scenario": "mavlink_anomaly",
+      "mode": "packet_loss",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 149,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "mavlink_anomaly",
+      "mode": "packet_loss",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 149,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "default_noml",
+      "scenario": "mavlink_anomaly",
+      "mode": "packet_loss",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 4,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 14.200000000000003
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "mavlink_anomaly",
+      "mode": "packet_loss",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 4,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 14.200000000000003
+    },
+    {
+      "config": "default",
+      "scenario": "command_injection",
+      "mode": "rogue_command",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "command_injection",
+      "mode": "rogue_command",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default_noml",
+      "scenario": "command_injection",
+      "mode": "rogue_command",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "command_injection",
+      "mode": "rogue_command",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default",
+      "scenario": "command_injection",
+      "mode": "mode_flip",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "command_injection",
+      "mode": "mode_flip",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default_noml",
+      "scenario": "command_injection",
+      "mode": "mode_flip",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "command_injection",
+      "mode": "mode_flip",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default",
+      "scenario": "command_injection",
+      "mode": "arm_disarm_burst",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "command_injection",
+      "mode": "arm_disarm_burst",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default_noml",
+      "scenario": "command_injection",
+      "mode": "arm_disarm_burst",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "command_injection",
+      "mode": "arm_disarm_burst",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default",
+      "scenario": "command_injection",
+      "mode": "gcs_replay",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 0,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": null
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "command_injection",
+      "mode": "gcs_replay",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 0,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": null
+    },
+    {
+      "config": "default_noml",
+      "scenario": "command_injection",
+      "mode": "gcs_replay",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 0,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": null
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "command_injection",
+      "mode": "gcs_replay",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 0,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": null
+    },
+    {
+      "config": "default",
+      "scenario": "telemetry_manipulation",
+      "mode": "altitude_bias",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "telemetry_manipulation",
+      "mode": "altitude_bias",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default_noml",
+      "scenario": "telemetry_manipulation",
+      "mode": "altitude_bias",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 149,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "telemetry_manipulation",
+      "mode": "altitude_bias",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 149,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "default",
+      "scenario": "telemetry_manipulation",
+      "mode": "speed_mismatch",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "telemetry_manipulation",
+      "mode": "speed_mismatch",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default_noml",
+      "scenario": "telemetry_manipulation",
+      "mode": "speed_mismatch",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 149,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "telemetry_manipulation",
+      "mode": "speed_mismatch",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 149,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "default",
+      "scenario": "telemetry_manipulation",
+      "mode": "battery_jump",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 149,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "telemetry_manipulation",
+      "mode": "battery_jump",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 149,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "default_noml",
+      "scenario": "telemetry_manipulation",
+      "mode": "battery_jump",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 149,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "telemetry_manipulation",
+      "mode": "battery_jump",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 149,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "default",
+      "scenario": "telemetry_manipulation",
+      "mode": "frozen_attitude",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 93,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 11.400000000000006
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "telemetry_manipulation",
+      "mode": "frozen_attitude",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 93,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 11.400000000000006
+    },
+    {
+      "config": "default_noml",
+      "scenario": "telemetry_manipulation",
+      "mode": "frozen_attitude",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 89,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 12.200000000000003
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "telemetry_manipulation",
+      "mode": "frozen_attitude",
+      "seed": 42,
+      "in_window_decisions": 150,
+      "in_window_detected": 76,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 14.800000000000004
+    },
+    {
+      "config": "default",
+      "scenario": "dos",
+      "mode": "flood",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "dos",
+      "mode": "flood",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default_noml",
+      "scenario": "dos",
+      "mode": "flood",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "dos",
+      "mode": "flood",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default",
+      "scenario": "dos",
+      "mode": "blackout",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 99,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "dos",
+      "mode": "blackout",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 99,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "default_noml",
+      "scenario": "dos",
+      "mode": "blackout",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 89,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 2.200000000000003
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "dos",
+      "mode": "blackout",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 89,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 2.200000000000003
+    },
+    {
+      "config": "default",
+      "scenario": "dos",
+      "mode": "latency",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "dos",
+      "mode": "latency",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default_noml",
+      "scenario": "dos",
+      "mode": "latency",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "dos",
+      "mode": "latency",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default",
+      "scenario": "dos",
+      "mode": "gnss_jamming",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 96,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.8000000000000043
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "dos",
+      "mode": "gnss_jamming",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 96,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.8000000000000043
+    },
+    {
+      "config": "default_noml",
+      "scenario": "dos",
+      "mode": "gnss_jamming",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 96,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.8000000000000043
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "dos",
+      "mode": "gnss_jamming",
+      "seed": 42,
+      "in_window_decisions": 100,
+      "in_window_detected": 96,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.8000000000000043
+    },
+    {
+      "config": "default",
+      "scenario": "firmware_integrity",
+      "mode": "default",
+      "seed": 42,
+      "in_window_decisions": 450,
+      "in_window_detected": 446,
+      "benign_scored_decisions": 125,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.8000000000000007
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "firmware_integrity",
+      "mode": "default",
+      "seed": 42,
+      "in_window_decisions": 450,
+      "in_window_detected": 446,
+      "benign_scored_decisions": 125,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.8000000000000007
+    },
+    {
+      "config": "default_noml",
+      "scenario": "firmware_integrity",
+      "mode": "default",
+      "seed": 42,
+      "in_window_decisions": 450,
+      "in_window_detected": 446,
+      "benign_scored_decisions": 125,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.8000000000000007
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "firmware_integrity",
+      "mode": "default",
+      "seed": 42,
+      "in_window_decisions": 450,
+      "in_window_detected": 446,
+      "benign_scored_decisions": 125,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.8000000000000007
+    },
+    {
+      "config": "default",
+      "scenario": "benign",
+      "mode": "",
+      "seed": 43,
+      "in_window_decisions": 0,
+      "in_window_detected": 0,
+      "benign_scored_decisions": 575,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": null
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "benign",
+      "mode": "",
+      "seed": 43,
+      "in_window_decisions": 0,
+      "in_window_detected": 0,
+      "benign_scored_decisions": 575,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": null
+    },
+    {
+      "config": "profile_raw",
+      "scenario": "benign",
+      "mode": "",
+      "seed": 43,
+      "in_window_decisions": 0,
+      "in_window_detected": 0,
+      "benign_scored_decisions": 575,
+      "benign_false_alarms": 575,
+      "time_to_detect_s": null
+    },
+    {
+      "config": "default_noml",
+      "scenario": "benign",
+      "mode": "",
+      "seed": 43,
+      "in_window_decisions": 0,
+      "in_window_detected": 0,
+      "benign_scored_decisions": 575,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": null
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "benign",
+      "mode": "",
+      "seed": 43,
+      "in_window_decisions": 0,
+      "in_window_detected": 0,
+      "benign_scored_decisions": 575,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": null
+    },
+    {
+      "config": "default",
+      "scenario": "gps_spoofing",
+      "mode": "gradual_drift",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 143,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 1.4000000000000057
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "gps_spoofing",
+      "mode": "gradual_drift",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 143,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 1.4000000000000057
+    },
+    {
+      "config": "default_noml",
+      "scenario": "gps_spoofing",
+      "mode": "gradual_drift",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 138,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 2.4000000000000057
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "gps_spoofing",
+      "mode": "gradual_drift",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 138,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 2.4000000000000057
+    },
+    {
+      "config": "default",
+      "scenario": "gps_spoofing",
+      "mode": "sudden_offset",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 15,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "gps_spoofing",
+      "mode": "sudden_offset",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 15,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default_noml",
+      "scenario": "gps_spoofing",
+      "mode": "sudden_offset",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 15,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "gps_spoofing",
+      "mode": "sudden_offset",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 15,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default",
+      "scenario": "gps_spoofing",
+      "mode": "replay_freeze",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 147,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.6000000000000014
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "gps_spoofing",
+      "mode": "replay_freeze",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 147,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.6000000000000014
+    },
+    {
+      "config": "default_noml",
+      "scenario": "gps_spoofing",
+      "mode": "replay_freeze",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 143,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 1.4000000000000057
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "gps_spoofing",
+      "mode": "replay_freeze",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 143,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 1.4000000000000057
+    },
+    {
+      "config": "default",
+      "scenario": "mavlink_anomaly",
+      "mode": "rogue_sysid",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "mavlink_anomaly",
+      "mode": "rogue_sysid",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default_noml",
+      "scenario": "mavlink_anomaly",
+      "mode": "rogue_sysid",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "mavlink_anomaly",
+      "mode": "rogue_sysid",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default",
+      "scenario": "mavlink_anomaly",
+      "mode": "rate_spike",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "mavlink_anomaly",
+      "mode": "rate_spike",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default_noml",
+      "scenario": "mavlink_anomaly",
+      "mode": "rate_spike",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "mavlink_anomaly",
+      "mode": "rate_spike",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default",
+      "scenario": "mavlink_anomaly",
+      "mode": "seq_scramble",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "mavlink_anomaly",
+      "mode": "seq_scramble",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default_noml",
+      "scenario": "mavlink_anomaly",
+      "mode": "seq_scramble",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 148,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "mavlink_anomaly",
+      "mode": "seq_scramble",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 148,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default",
+      "scenario": "mavlink_anomaly",
+      "mode": "packet_loss",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 149,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "mavlink_anomaly",
+      "mode": "packet_loss",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 149,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "default_noml",
+      "scenario": "mavlink_anomaly",
+      "mode": "packet_loss",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 28,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 13.200000000000003
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "mavlink_anomaly",
+      "mode": "packet_loss",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 28,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 13.200000000000003
+    },
+    {
+      "config": "default",
+      "scenario": "command_injection",
+      "mode": "rogue_command",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "command_injection",
+      "mode": "rogue_command",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default_noml",
+      "scenario": "command_injection",
+      "mode": "rogue_command",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "command_injection",
+      "mode": "rogue_command",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default",
+      "scenario": "command_injection",
+      "mode": "mode_flip",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "command_injection",
+      "mode": "mode_flip",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default_noml",
+      "scenario": "command_injection",
+      "mode": "mode_flip",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "command_injection",
+      "mode": "mode_flip",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default",
+      "scenario": "command_injection",
+      "mode": "arm_disarm_burst",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "command_injection",
+      "mode": "arm_disarm_burst",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default_noml",
+      "scenario": "command_injection",
+      "mode": "arm_disarm_burst",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "command_injection",
+      "mode": "arm_disarm_burst",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default",
+      "scenario": "command_injection",
+      "mode": "gcs_replay",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 0,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": null
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "command_injection",
+      "mode": "gcs_replay",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 0,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": null
+    },
+    {
+      "config": "default_noml",
+      "scenario": "command_injection",
+      "mode": "gcs_replay",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 0,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": null
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "command_injection",
+      "mode": "gcs_replay",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 0,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": null
+    },
+    {
+      "config": "default",
+      "scenario": "telemetry_manipulation",
+      "mode": "altitude_bias",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "telemetry_manipulation",
+      "mode": "altitude_bias",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default_noml",
+      "scenario": "telemetry_manipulation",
+      "mode": "altitude_bias",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 149,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "telemetry_manipulation",
+      "mode": "altitude_bias",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 149,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "default",
+      "scenario": "telemetry_manipulation",
+      "mode": "speed_mismatch",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "telemetry_manipulation",
+      "mode": "speed_mismatch",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 150,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default_noml",
+      "scenario": "telemetry_manipulation",
+      "mode": "speed_mismatch",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 149,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "telemetry_manipulation",
+      "mode": "speed_mismatch",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 149,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "default",
+      "scenario": "telemetry_manipulation",
+      "mode": "battery_jump",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 149,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "telemetry_manipulation",
+      "mode": "battery_jump",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 149,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "default_noml",
+      "scenario": "telemetry_manipulation",
+      "mode": "battery_jump",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 149,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "telemetry_manipulation",
+      "mode": "battery_jump",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 149,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "default",
+      "scenario": "telemetry_manipulation",
+      "mode": "frozen_attitude",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 93,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 11.400000000000006
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "telemetry_manipulation",
+      "mode": "frozen_attitude",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 93,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 11.400000000000006
+    },
+    {
+      "config": "default_noml",
+      "scenario": "telemetry_manipulation",
+      "mode": "frozen_attitude",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 89,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 12.200000000000003
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "telemetry_manipulation",
+      "mode": "frozen_attitude",
+      "seed": 43,
+      "in_window_decisions": 150,
+      "in_window_detected": 77,
+      "benign_scored_decisions": 401,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 14.600000000000001
+    },
+    {
+      "config": "default",
+      "scenario": "dos",
+      "mode": "flood",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "dos",
+      "mode": "flood",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default_noml",
+      "scenario": "dos",
+      "mode": "flood",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "dos",
+      "mode": "flood",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default",
+      "scenario": "dos",
+      "mode": "blackout",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 99,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "dos",
+      "mode": "blackout",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 99,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.20000000000000284
+    },
+    {
+      "config": "default_noml",
+      "scenario": "dos",
+      "mode": "blackout",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 89,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 2.200000000000003
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "dos",
+      "mode": "blackout",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 89,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 2.200000000000003
+    },
+    {
+      "config": "default",
+      "scenario": "dos",
+      "mode": "latency",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "dos",
+      "mode": "latency",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 100,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default_noml",
+      "scenario": "dos",
+      "mode": "latency",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 96,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "dos",
+      "mode": "latency",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 96,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.0
+    },
+    {
+      "config": "default",
+      "scenario": "dos",
+      "mode": "gnss_jamming",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 96,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.8000000000000043
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "dos",
+      "mode": "gnss_jamming",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 96,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.8000000000000043
+    },
+    {
+      "config": "default_noml",
+      "scenario": "dos",
+      "mode": "gnss_jamming",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 96,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.8000000000000043
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "dos",
+      "mode": "gnss_jamming",
+      "seed": 43,
+      "in_window_decisions": 100,
+      "in_window_detected": 96,
+      "benign_scored_decisions": 451,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.8000000000000043
+    },
+    {
+      "config": "default",
+      "scenario": "firmware_integrity",
+      "mode": "default",
+      "seed": 43,
+      "in_window_decisions": 450,
+      "in_window_detected": 446,
+      "benign_scored_decisions": 125,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.8000000000000007
+    },
+    {
+      "config": "profile_sysid1",
+      "scenario": "firmware_integrity",
+      "mode": "default",
+      "seed": 43,
+      "in_window_decisions": 450,
+      "in_window_detected": 446,
+      "benign_scored_decisions": 125,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.8000000000000007
+    },
+    {
+      "config": "default_noml",
+      "scenario": "firmware_integrity",
+      "mode": "default",
+      "seed": 43,
+      "in_window_decisions": 450,
+      "in_window_detected": 446,
+      "benign_scored_decisions": 125,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.8000000000000007
+    },
+    {
+      "config": "profile_sysid1_noml",
+      "scenario": "firmware_integrity",
+      "mode": "default",
+      "seed": 43,
+      "in_window_decisions": 450,
+      "in_window_detected": 446,
+      "benign_scored_decisions": 125,
+      "benign_false_alarms": 0,
+      "time_to_detect_s": 0.8000000000000007
+    }
+  ],
+  "per_mode": {
+    "benign": {
+      "default": {
+        "in_window": 0,
+        "detected": 0,
+        "ttd": [],
+        "benign_dec": 1150,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1": {
+        "in_window": 0,
+        "detected": 0,
+        "ttd": [],
+        "benign_dec": 1150,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_raw": {
+        "in_window": 0,
+        "detected": 0,
+        "ttd": [],
+        "benign_dec": 1150,
+        "benign_fa": 1150,
+        "sessions": 2
+      },
+      "default_noml": {
+        "in_window": 0,
+        "detected": 0,
+        "ttd": [],
+        "benign_dec": 1150,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1_noml": {
+        "in_window": 0,
+        "detected": 0,
+        "ttd": [],
+        "benign_dec": 1150,
+        "benign_fa": 0,
+        "sessions": 2
+      }
+    },
+    "gps_spoofing:gradual_drift": {
+      "default": {
+        "in_window": 300,
+        "detected": 286,
+        "ttd": [
+          1.4000000000000057,
+          1.4000000000000057
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1": {
+        "in_window": 300,
+        "detected": 286,
+        "ttd": [
+          1.4000000000000057,
+          1.4000000000000057
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "default_noml": {
+        "in_window": 300,
+        "detected": 276,
+        "ttd": [
+          2.4000000000000057,
+          2.4000000000000057
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1_noml": {
+        "in_window": 300,
+        "detected": 276,
+        "ttd": [
+          2.4000000000000057,
+          2.4000000000000057
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      }
+    },
+    "gps_spoofing:sudden_offset": {
+      "default": {
+        "in_window": 300,
+        "detected": 30,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1": {
+        "in_window": 300,
+        "detected": 30,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "default_noml": {
+        "in_window": 300,
+        "detected": 29,
+        "ttd": [
+          0.20000000000000284,
+          0.0
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1_noml": {
+        "in_window": 300,
+        "detected": 29,
+        "ttd": [
+          0.20000000000000284,
+          0.0
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      }
+    },
+    "gps_spoofing:replay_freeze": {
+      "default": {
+        "in_window": 300,
+        "detected": 294,
+        "ttd": [
+          0.6000000000000014,
+          0.6000000000000014
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1": {
+        "in_window": 300,
+        "detected": 294,
+        "ttd": [
+          0.6000000000000014,
+          0.6000000000000014
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "default_noml": {
+        "in_window": 300,
+        "detected": 287,
+        "ttd": [
+          1.2000000000000028,
+          1.4000000000000057
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1_noml": {
+        "in_window": 300,
+        "detected": 287,
+        "ttd": [
+          1.2000000000000028,
+          1.4000000000000057
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      }
+    },
+    "mavlink_anomaly:rogue_sysid": {
+      "default": {
+        "in_window": 300,
+        "detected": 300,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 802,
+        "benign_fa": 1,
+        "sessions": 2
+      },
+      "profile_sysid1": {
+        "in_window": 300,
+        "detected": 300,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 802,
+        "benign_fa": 1,
+        "sessions": 2
+      },
+      "default_noml": {
+        "in_window": 300,
+        "detected": 300,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1_noml": {
+        "in_window": 300,
+        "detected": 300,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      }
+    },
+    "mavlink_anomaly:rate_spike": {
+      "default": {
+        "in_window": 300,
+        "detected": 300,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1": {
+        "in_window": 300,
+        "detected": 300,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "default_noml": {
+        "in_window": 300,
+        "detected": 300,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1_noml": {
+        "in_window": 300,
+        "detected": 300,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      }
+    },
+    "mavlink_anomaly:seq_scramble": {
+      "default": {
+        "in_window": 300,
+        "detected": 299,
+        "ttd": [
+          0.20000000000000284,
+          0.0
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1": {
+        "in_window": 300,
+        "detected": 299,
+        "ttd": [
+          0.20000000000000284,
+          0.0
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "default_noml": {
+        "in_window": 300,
+        "detected": 295,
+        "ttd": [
+          0.20000000000000284,
+          0.0
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1_noml": {
+        "in_window": 300,
+        "detected": 295,
+        "ttd": [
+          0.20000000000000284,
+          0.0
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      }
+    },
+    "mavlink_anomaly:packet_loss": {
+      "default": {
+        "in_window": 300,
+        "detected": 298,
+        "ttd": [
+          0.20000000000000284,
+          0.20000000000000284
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1": {
+        "in_window": 300,
+        "detected": 298,
+        "ttd": [
+          0.20000000000000284,
+          0.20000000000000284
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "default_noml": {
+        "in_window": 300,
+        "detected": 32,
+        "ttd": [
+          14.200000000000003,
+          13.200000000000003
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1_noml": {
+        "in_window": 300,
+        "detected": 32,
+        "ttd": [
+          14.200000000000003,
+          13.200000000000003
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      }
+    },
+    "command_injection:rogue_command": {
+      "default": {
+        "in_window": 200,
+        "detected": 200,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1": {
+        "in_window": 200,
+        "detected": 200,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "default_noml": {
+        "in_window": 200,
+        "detected": 200,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1_noml": {
+        "in_window": 200,
+        "detected": 200,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      }
+    },
+    "command_injection:mode_flip": {
+      "default": {
+        "in_window": 200,
+        "detected": 200,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1": {
+        "in_window": 200,
+        "detected": 200,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "default_noml": {
+        "in_window": 200,
+        "detected": 200,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1_noml": {
+        "in_window": 200,
+        "detected": 200,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      }
+    },
+    "command_injection:arm_disarm_burst": {
+      "default": {
+        "in_window": 200,
+        "detected": 200,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1": {
+        "in_window": 200,
+        "detected": 200,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "default_noml": {
+        "in_window": 200,
+        "detected": 200,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1_noml": {
+        "in_window": 200,
+        "detected": 200,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      }
+    },
+    "command_injection:gcs_replay": {
+      "default": {
+        "in_window": 200,
+        "detected": 0,
+        "ttd": [],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1": {
+        "in_window": 200,
+        "detected": 0,
+        "ttd": [],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "default_noml": {
+        "in_window": 200,
+        "detected": 0,
+        "ttd": [],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1_noml": {
+        "in_window": 200,
+        "detected": 0,
+        "ttd": [],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      }
+    },
+    "telemetry_manipulation:altitude_bias": {
+      "default": {
+        "in_window": 300,
+        "detected": 300,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1": {
+        "in_window": 300,
+        "detected": 300,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "default_noml": {
+        "in_window": 300,
+        "detected": 298,
+        "ttd": [
+          0.20000000000000284,
+          0.20000000000000284
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1_noml": {
+        "in_window": 300,
+        "detected": 298,
+        "ttd": [
+          0.20000000000000284,
+          0.20000000000000284
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      }
+    },
+    "telemetry_manipulation:speed_mismatch": {
+      "default": {
+        "in_window": 300,
+        "detected": 300,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1": {
+        "in_window": 300,
+        "detected": 300,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "default_noml": {
+        "in_window": 300,
+        "detected": 298,
+        "ttd": [
+          0.20000000000000284,
+          0.20000000000000284
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1_noml": {
+        "in_window": 300,
+        "detected": 298,
+        "ttd": [
+          0.20000000000000284,
+          0.20000000000000284
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      }
+    },
+    "telemetry_manipulation:battery_jump": {
+      "default": {
+        "in_window": 300,
+        "detected": 298,
+        "ttd": [
+          0.20000000000000284,
+          0.20000000000000284
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1": {
+        "in_window": 300,
+        "detected": 298,
+        "ttd": [
+          0.20000000000000284,
+          0.20000000000000284
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "default_noml": {
+        "in_window": 300,
+        "detected": 298,
+        "ttd": [
+          0.20000000000000284,
+          0.20000000000000284
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1_noml": {
+        "in_window": 300,
+        "detected": 298,
+        "ttd": [
+          0.20000000000000284,
+          0.20000000000000284
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      }
+    },
+    "telemetry_manipulation:frozen_attitude": {
+      "default": {
+        "in_window": 300,
+        "detected": 186,
+        "ttd": [
+          11.400000000000006,
+          11.400000000000006
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1": {
+        "in_window": 300,
+        "detected": 186,
+        "ttd": [
+          11.400000000000006,
+          11.400000000000006
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "default_noml": {
+        "in_window": 300,
+        "detected": 178,
+        "ttd": [
+          12.200000000000003,
+          12.200000000000003
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1_noml": {
+        "in_window": 300,
+        "detected": 153,
+        "ttd": [
+          14.800000000000004,
+          14.600000000000001
+        ],
+        "benign_dec": 802,
+        "benign_fa": 0,
+        "sessions": 2
+      }
+    },
+    "dos:flood": {
+      "default": {
+        "in_window": 200,
+        "detected": 200,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1": {
+        "in_window": 200,
+        "detected": 200,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "default_noml": {
+        "in_window": 200,
+        "detected": 200,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1_noml": {
+        "in_window": 200,
+        "detected": 200,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      }
+    },
+    "dos:blackout": {
+      "default": {
+        "in_window": 200,
+        "detected": 198,
+        "ttd": [
+          0.20000000000000284,
+          0.20000000000000284
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1": {
+        "in_window": 200,
+        "detected": 198,
+        "ttd": [
+          0.20000000000000284,
+          0.20000000000000284
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "default_noml": {
+        "in_window": 200,
+        "detected": 178,
+        "ttd": [
+          2.200000000000003,
+          2.200000000000003
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1_noml": {
+        "in_window": 200,
+        "detected": 178,
+        "ttd": [
+          2.200000000000003,
+          2.200000000000003
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      }
+    },
+    "dos:latency": {
+      "default": {
+        "in_window": 200,
+        "detected": 200,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1": {
+        "in_window": 200,
+        "detected": 200,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "default_noml": {
+        "in_window": 200,
+        "detected": 196,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1_noml": {
+        "in_window": 200,
+        "detected": 196,
+        "ttd": [
+          0.0,
+          0.0
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      }
+    },
+    "dos:gnss_jamming": {
+      "default": {
+        "in_window": 200,
+        "detected": 192,
+        "ttd": [
+          0.8000000000000043,
+          0.8000000000000043
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1": {
+        "in_window": 200,
+        "detected": 192,
+        "ttd": [
+          0.8000000000000043,
+          0.8000000000000043
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "default_noml": {
+        "in_window": 200,
+        "detected": 192,
+        "ttd": [
+          0.8000000000000043,
+          0.8000000000000043
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1_noml": {
+        "in_window": 200,
+        "detected": 192,
+        "ttd": [
+          0.8000000000000043,
+          0.8000000000000043
+        ],
+        "benign_dec": 902,
+        "benign_fa": 0,
+        "sessions": 2
+      }
+    },
+    "firmware_integrity:default": {
+      "default": {
+        "in_window": 900,
+        "detected": 892,
+        "ttd": [
+          0.8000000000000007,
+          0.8000000000000007
+        ],
+        "benign_dec": 250,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1": {
+        "in_window": 900,
+        "detected": 892,
+        "ttd": [
+          0.8000000000000007,
+          0.8000000000000007
+        ],
+        "benign_dec": 250,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "default_noml": {
+        "in_window": 900,
+        "detected": 892,
+        "ttd": [
+          0.8000000000000007,
+          0.8000000000000007
+        ],
+        "benign_dec": 250,
+        "benign_fa": 0,
+        "sessions": 2
+      },
+      "profile_sysid1_noml": {
+        "in_window": 900,
+        "detected": 892,
+        "ttd": [
+          0.8000000000000007,
+          0.8000000000000007
+        ],
+        "benign_dec": 250,
+        "benign_fa": 0,
+        "sessions": 2
+      }
+    }
+  }
+}

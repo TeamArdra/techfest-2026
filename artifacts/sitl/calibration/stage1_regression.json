@@ -1,0 +1,19 @@
+{
+  "schema": "aegisflight.stage1_regression/1",
+  "environment": "SIM",
+  "committed": {
+    "TP": 6535,
+    "FP": 4,
+    "TN": 16826,
+    "FN": 65
+  },
+  "after_change": {
+    "TP": 6535,
+    "FP": 4,
+    "TN": 16826,
+    "FN": 65
+  },
+  "identical": true,
+  "command": "aegis benchmark --out <scratch> --no-figures",
+  "change_under_test": "detectors/protocol.py startup_grace_s (default 0), detectors/physics.py yaw_course_deg (default 25.0)"
+}

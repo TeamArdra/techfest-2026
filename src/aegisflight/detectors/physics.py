@@ -31,7 +31,9 @@ class PhysicsDetector(Detector):
         self.max_jerk = float(p.get("max_jerk_ms3", 60.0))
         self.batt_rise = float(p.get("battery_rise_v", 0.4))
         self.batt_drop = float(p.get("battery_drop_rate_v_s", 2.0))
-        self.yaw_course_deg = 25.0  # heading-vs-course tolerance (deg)
+        # heading-vs-course tolerance (deg); config key added for per-vehicle profiles,
+        # the default stays the Stage-1 constant 25.0
+        self.yaw_course_deg = float(p.get("yaw_course_deg", 25.0))
         self.hysteresis_ticks = int(p.get("hysteresis_ticks", 2))
         self._soft_streak = 0
 
