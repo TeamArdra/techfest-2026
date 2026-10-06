@@ -1,0 +1,106 @@
+{
+  "trial_id": "p2i_trial_005",
+  "seed": 2001,
+  "trial_index": 1,
+  "provenance": {
+    "px4_git_describe": "v1.18.0-rc1-27-gc239c63807",
+    "aegisflight_git_commit": "3fb8cb6a73b0bb6c95d55724b074d66a3b10f6e7",
+    "python_version": "3.13.15",
+    "pymavlink_version": "2.4.50"
+  },
+  "attack_type": "COMMAND_INJECTION",
+  "attack_mode": "rogue_force_disarm_live",
+  "message_type": "COMMAND_LONG",
+  "target_system": 0,
+  "target_component": 0,
+  "injection_point": "uplink",
+  "claim_class": "wire-level fact; command-path effect (SITL) only if acked",
+  "environment": "SITL",
+  "attack_action": "injected",
+  "parameters": {
+    "onset_s": 55.550374294120715,
+    "burst_count": 6,
+    "inter_injection_gap_s": 1.589735133645358,
+    "command": "MAV_CMD_COMPONENT_ARM_DISARM",
+    "detector_profile": "configs/px4_sitl",
+    "model_choice": "px4"
+  },
+  "attack_start_utc": "2026-10-06T17:56:33.635629+00:00",
+  "attack_end_utc": "2026-10-06T17:58:13.909078+00:00",
+  "frames_seen": 37397,
+  "frames_modified": 0,
+  "frames_dropped": 0,
+  "frames_injected": 6,
+  "expected_effect": {
+    "command": "MAV_CMD_COMPONENT_ARM_DISARM",
+    "burst_count": 6,
+    "expected_result_if_accepted": "MAV_RESULT_ACCEPTED (0)"
+  },
+  "actual_effect": {
+    "frames_injected": 6,
+    "acked": true,
+    "ack_count": 6,
+    "first_ack_result": 0,
+    "first_ack_result_name": "MAV_RESULT_ACCEPTED",
+    "time_to_first_ack_s": 0.0182102
+  },
+  "frames_skipped_signed": 0,
+  "holdout_seeds": [],
+  "schema_id": "aegisflight.proxy.groundtruth",
+  "schema_version": "1.0.0",
+  "detector_decision": null,
+  "time_to_detection_s": null,
+  "full_provenance": {
+    "collected_utc": "2026-10-06T17:58:13.762326+00:00",
+    "aegisflight_commit": "3fb8cb6a73b0bb6c95d55724b074d66a3b10f6e7",
+    "working_tree_dirty": true,
+    "dirty_paths_count": 1,
+    "python": "3.13.15",
+    "packages": {
+      "pymavlink": "2.4.50",
+      "numpy": "2.5.3",
+      "scikit-learn": "1.9.1",
+      "joblib": "1.6.0",
+      "scipy": "1.18.1"
+    },
+    "model_sha256": "3fe74cddf3689e169610ffd783b109b6539cc6c03629bd1e4bb8b1d3842939c4",
+    "configs_sha256": "f9f7de15a4127dab1260a32c9412a0a051d3b5b68530eced074ae87c2693cb23",
+    "command_line": "scripts/sitl/run_p2_injection_trial.py --px4-port 18572 --seed 2001 --trial-index 1 --seconds 100 --out artifacts/sitl/p2i_trial_005",
+    "python_version": "3.13.15"
+  },
+  "ids_summary": {
+    "decisions": 500,
+    "threat_decisions": 166,
+    "source_stats": {
+      "datagrams_received": 36421,
+      "frames_received": 36421,
+      "bad_frames": 0,
+      "unverified_frames": 437,
+      "ticks_emitted": 1000,
+      "late_ticks": 0,
+      "late_frames": 0,
+      "dropped_overflow": 0,
+      "dropped_overflow_bytes": 0
+    },
+    "relay_stats": {
+      "datagrams_down": 37197,
+      "datagrams_up": 200,
+      "frames_down": 37197,
+      "frames_up": 200,
+      "forwarded": 37403,
+      "forwarded_down": 37197,
+      "forwarded_up": 206,
+      "mirrored_up": 205,
+      "dropped_by_hook": 0,
+      "hook_errors": 0,
+      "bad_segments": 0,
+      "send_failures": 0,
+      "down_no_client": 871,
+      "clients": 2,
+      "clients_seen": 2,
+      "rejected_clients": 0,
+      "overflow": 0,
+      "pump_errors": 0
+    }
+  }
+}
