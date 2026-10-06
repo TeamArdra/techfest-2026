@@ -322,13 +322,22 @@ this is fixed.** A genuine root-cause fix (if one exists beyond timing variance)
 remaining work, not closed.
 
 **Unrelated, pre-existing experimental artifact, caught before writing up the detection numbers:** every
-trial's pre-onset "false alarms" count (37-102 per trial) is **not** a benign false-alarm-rate measurement -
-the topology's inert "carrier" client (sysid 252/compid 193, needed so `mirror_uplink_to_clients` has a
-non-IDS uplink sender to mirror from, per the prior checkpoint's own finding) sits outside the PX4 profile's
-`expected_sysids`/`expected_gcs_sysids`, so the protocol detector's rogue-telemetry-source rule correctly
-flags its mirrored heartbeat on nearly every decision that observes it. This is a property of this specific
-experimental harness, disclosed in `P2_injection_summary.md`'s own section, and must not be merged with the
-real `docs/CALIBRATION_PX4.md` false-alarm numbers (which use no such carrier).
+trial's pre-onset "false alarms" count (37-102 per trial) is **not** a benign false-alarm-rate measurement.
+**Correction (caught by `aegis-reviewer`, not by the original write-up):** the first draft of this entry
+blamed this solely on the inert "carrier" client (sysid 252/compid 193, needed so `mirror_uplink_to_clients`
+has a non-IDS uplink sender to mirror from) - that client does sit outside the PX4 profile's
+`expected_sysids`/`expected_gcs_sysids` and does trigger the protocol detector's rogue-telemetry-source rule
+on its mirrored heartbeat, but it is not the only such source: the benign flight-driver client (sysid
+253/compid 192, `data/sitl/raw/p2i_driver_*.json`, `"role": "GCS sysid=253 compid=192"`) is *also* outside
+`expected_gcs_sysids: [255, 254]` and triggers the identical rule independently. In trial_005's pre-onset
+portion the two contribute almost equally (49 decisions cite only sys252, 48 cite only sys253, 5 cite both);
+`P2_injection_summary.md`'s "carrier-artifact decisions" column counts only the sys252 occurrences and so
+understates the total taint by roughly 2x. Neither source affects the `COMMAND_INJECTION`-type evidence
+(keyed to sys66/comp200, verified distinct) or the 5/10 / 10/10 headline numbers - this is a property of this
+specific experimental topology (an uplink-mirroring harness needs non-IDS uplink clients, and this topology
+happens to have two that are both outside the PX4 profile's expected-identity lists), not a general benign
+false-alarm measurement, and must not be merged with the real `docs/CALIBRATION_PX4.md` false-alarm numbers
+(which use neither client).
 
 **Honesty note on provenance:** all 10 trials ran with 8 dirty paths in the working tree (`full_provenance.
 working_tree_dirty: true, dirty_paths_count: 8` in every manifest) - primarily `scripts/sitl/
@@ -347,8 +356,9 @@ level detection ceiling, explicitly flagged as "may not be detected" given the j
 `command_injection:gcs_replay` gap, live; **command-path-effect ceiling only, no detection claim** - under
 `require_signing: false` a replay is wire-identical to the original, so no detector signal is expected by
 design; this is reserved as the P4 signing before/after baseline). New module
-`src/aegisflight/proxy/attacks_live_dos_replay.py`, 48 new unit tests (no SITL needed for these - all pass
-against synthetic frames over real loopback sockets), additive `groundtruth.py` effect functions, new trial
+`src/aegisflight/proxy/attacks_live_dos_replay.py`, 46 new unit tests (the building agent's handback said 48;
+`grep -c "^def test_"` on the file gives 46 - corrected by `aegis-reviewer`'s check; no SITL needed for these,
+all pass against synthetic frames over real loopback sockets), additive `groundtruth.py` effect functions, new trial
 drivers `run_p2_{drop,delay,replay}_trial.py` sharing a new `scripts/sitl/p2_trial_common.py` helper (the two
 existing drivers untouched). Verified independently before trusting the handback: full suite 264 tests
 collected / exit 0, `ruff check src tests scripts backend` clean, `git status` touched only the owner's paths,

@@ -14,13 +14,15 @@ attack). Two claims, never merged:
 This experimental topology requires an inert "carrier" client (sysid 252/compid 193, not in
 the PX4 profile's `expected_sysids`/`expected_gcs_sysids`) purely to give the attack an
 uplink frame to piggyback on and to let `mirror_uplink_to_clients` reach a non-sender (see
-module docstring of `attacks_live.CommandInjectionAttack`). Once the carrier's own heartbeat
-is mirrored to the IDS, the protocol detector's rogue-telemetry-source rule correctly fires
-on it every time it is in a decision's window -- this is a known ARTIFACT of this specific
-experimental harness (the carrier is not a real deployment entity), not a general benign
-false-alarm measurement, and must never be read as a Stage-1/P3 false-alarm-rate result.
-It is reported here, counted separately from the command-injection evidence, and excluded
-from the "command-evidence" detection column.
+module docstring of `attacks_live.CommandInjectionAttack`). The benign flight-driver client
+(sysid 253/compid 192, `data/sitl/raw/p2i_driver_*.json`) is ALSO outside those same expected-
+identity lists. Once either client's heartbeat is mirrored to the IDS, the protocol
+detector's rogue-telemetry-source rule correctly fires on it every time it is in a decision's
+window -- this is a known ARTIFACT of this specific experimental harness (neither client is a
+real deployment entity), not a general benign false-alarm measurement, and must never be read
+as a Stage-1/P3 false-alarm-rate result. It is reported here (counting both sources together,
+since they are the same artifact), separately from the command-injection evidence, and
+excluded from the "command-evidence" detection column.
 """
 
 from __future__ import annotations
@@ -37,7 +39,13 @@ def load_trial(manifest_path: Path) -> dict:
     rows = [json.loads(ln) for ln in dec_path.read_text().splitlines() if ln]
     onset = m["parameters"]["onset_s"]
     cmd_rows = [r for r in rows if any("command(s) from unexpected source" in e for e in r["evidence"])]
-    carrier_rogue_rows = [r for r in rows if any("sys252/comp193" in e for e in r["evidence"])]
+    # Two non-expected-GCS identities trigger the same protocol rogue-source rule in this
+    # topology: the inert "carrier" (sys252/comp193) AND the benign flight-driver client
+    # (sys253/comp192, data/sitl/raw/p2i_driver_*.json) -- caught by aegis-reviewer after the
+    # first version of this script named only the carrier. Counted together, not separately,
+    # since both are the same artifact (a non-expected-GCS client being correctly flagged).
+    carrier_rogue_rows = [r for r in rows
+                          if any("sys252/comp193" in e or "sys253/comp192" in e for e in r["evidence"])]
     effect = m.get("actual_effect") or {}
     return {
         "trial": m["trial_id"], "seed": m["seed"], "trial_index": m["trial_index"],
@@ -91,14 +99,18 @@ def main(argv: list[str] | None = None) -> int:
         f"(`sources/mavlink_live.py` `UdpMavlinkTransport`), the same open hypothesis raised before this "
         f"batch; the parser, extractor, and detector logic were independently verified correct in isolation "
         f"before this batch (see `docs/STAGE2_PROGRESS.md`) and are not implicated by this result.", "",
-        "**Known experimental artifact, not a false-alarm-rate result:** every trial's inert \"carrier\" "
-        "client (sysid 252/compid 193) is outside the PX4 profile's `expected_sysids`/`expected_gcs_sysids`; "
-        "once its heartbeat is mirrored to the IDS, the protocol detector's rogue-telemetry-source rule "
-        "correctly flags it on every decision that observes it. This is a property of this specific "
-        "experimental topology (an uplink-mirroring harness needs a non-IDS uplink client to mirror), not a "
-        "general benign false-alarm measurement -- it must never be merged with the `docs/CALIBRATION_PX4.md` "
-        "false-alarm numbers, which use no such carrier.", "",
-        "| trial | idx | ingest tap | onset s | acked | ack result | ttfa s | detected | latency s (from onset) | carrier-artifact decisions |",
+        "**Known experimental artifact, not a false-alarm-rate result:** TWO non-expected-GCS identities in "
+        "this topology trigger the same protocol rogue-telemetry-source rule -- the inert \"carrier\" client "
+        "(sysid 252/compid 193) and the benign flight-driver client (sysid 253/compid 192); both are outside "
+        "the PX4 profile's `expected_sysids`/`expected_gcs_sysids`, and once either's heartbeat is mirrored "
+        "to the IDS, the rule correctly flags it on every decision that observes it (an earlier draft of this "
+        "summary named only the carrier -- caught and corrected after `aegis-reviewer` traced the actual "
+        "evidence strings and found the driver contributing an equal, independent share). This is a property "
+        "of this specific experimental topology (an uplink-mirroring harness needs non-IDS uplink clients to "
+        "mirror, and this one happens to have two outside the expected-identity lists), not a general benign "
+        "false-alarm measurement -- it must never be merged with the `docs/CALIBRATION_PX4.md` false-alarm "
+        "numbers, which use neither client.", "",
+        "| trial | idx | ingest tap | onset s | acked | ack result | ttfa s | detected | latency s (from onset) | carrier/driver-artifact decisions |",
         "|---|---|---|---|---|---|---|---|---|---|"]
     for t in trials:
         L.append(f"| {t['trial']} | {t['trial_index']} | {'yes' if t['has_ids_ingest_tap'] else 'no'} | "
