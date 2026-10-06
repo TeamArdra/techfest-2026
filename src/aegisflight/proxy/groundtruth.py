@@ -59,8 +59,15 @@ _VALID_INJECTION_POINTS = ("downlink", "uplink")
 #: a modification/drop/injection of the ack frame itself (the ack always passes through
 #: unchanged) -- it is a ground-truth observation, which is why it is a distinct action from
 #: ``forwarded``.
+#: ``captured``/``replayed`` are additive (``attacks_live_dos_replay.ReplayAttack``): a
+#: one-time capture of a legitimate uplink frame, and the one-time re-send of that exact
+#: frame later. Neither modifies the frame it names -- ``captured`` is a pure observation
+#: (the real frame still passes through, logged separately or not at all depending on
+#: whether the caller also logs "forwarded"); ``replayed`` names the *re-sent* bytes, a
+#: distinct ground-truth fact from the real carrier frame it was piggybacked onto.
 _VALID_ACTIONS = frozenset(
-    {"modified", "forwarded", "dropped", "injected", "delayed", "observed_ack"}
+    {"modified", "forwarded", "dropped", "injected", "delayed", "observed_ack",
+     "captured", "replayed"}
 )
 
 
@@ -163,7 +170,7 @@ class FrameLogEntry:
     sysid: int
     compid: int
     mavlink_seq: int
-    action: str  # "modified" | "forwarded" | "dropped" | "injected" | "delayed"
+    action: str  # modified|forwarded|dropped|injected|delayed|observed_ack|captured|replayed
     field_deltas: Mapping[str, int]
     crc_recomputed: bool
     original_len: int
@@ -328,3 +335,110 @@ def _mav_result_names() -> dict[int, str]:
 
 
 _MAV_RESULT_NAMES: dict[int, str] = _mav_result_names()
+
+
+def compute_drop_effect(frame_log_path: Path) -> dict[str, Any]:
+    """Measure what the live drop attack actually suppressed -- derived **only** from the
+    frame log's ``"dropped"`` entries (never from detector output), for
+    ``attacks_live_dos_replay.DropAttack``.
+
+    Returns a dict with ``frames_dropped``, ``first_dropped_recv_ns``,
+    ``last_dropped_recv_ns``, ``observed_duration_s`` (the span between the first and
+    last dropped frame, a lower bound on the drawn ``duration_s`` since it is measured
+    between *frames that existed to drop*, not the window boundaries themselves), and
+    ``by_msgid`` (msgid -> count of dropped frames of that type).
+    """
+    entries = [e for e in read_frame_log(frame_log_path) if e.action == "dropped"]
+    if not entries:
+        return {
+            "frames_dropped": 0, "first_dropped_recv_ns": None, "last_dropped_recv_ns": None,
+            "observed_duration_s": 0.0, "by_msgid": {},
+        }
+    first_ns, last_ns = entries[0].recv_ns, entries[-1].recv_ns
+    by_msgid: dict[int, int] = {}
+    for e in entries:
+        by_msgid[e.msgid] = by_msgid.get(e.msgid, 0) + 1
+    return {
+        "frames_dropped": len(entries),
+        "first_dropped_recv_ns": first_ns,
+        "last_dropped_recv_ns": last_ns,
+        "observed_duration_s": (last_ns - first_ns) / 1e9,
+        "by_msgid": by_msgid,
+    }
+
+
+def compute_delay_effect(frame_log_path: Path) -> dict[str, Any]:
+    """Measure the delays the live delay attack actually applied -- derived **only** from
+    the frame log's ``"delayed"`` entries' ``field_deltas["delay_ns"]`` (never from
+    detector output), for ``attacks_live_dos_replay.DelayAttack``.
+
+    Returns a dict with ``frames_delayed``, ``mean_delay_s``, ``max_delay_s``,
+    ``min_delay_s``. Does not (and cannot, from the frame log alone) confirm every held
+    frame was eventually forwarded exactly once -- that is a structural guarantee of the
+    hook's own queue discipline, checked directly against the hook's live output in
+    ``tests/unit/test_proxy_attacks_live_dos_replay.py``, not re-derived here.
+    """
+    entries = [e for e in read_frame_log(frame_log_path) if e.action == "delayed"]
+    if not entries:
+        return {"frames_delayed": 0, "mean_delay_s": 0.0, "max_delay_s": 0.0, "min_delay_s": 0.0}
+    delays_s = [e.field_deltas.get("delay_ns", 0) / 1e9 for e in entries]
+    return {
+        "frames_delayed": len(entries),
+        "mean_delay_s": sum(delays_s) / len(delays_s),
+        "max_delay_s": max(delays_s),
+        "min_delay_s": min(delays_s),
+    }
+
+
+def compute_replay_effect(frame_log_path: Path) -> dict[str, Any]:
+    """Measure what the live replay attack actually did, and what PX4 acked -- derived
+    **only** from the frame log's ``"captured"``, ``"replayed"`` and ``"observed_ack"``
+    entries (never from detector output), for ``attacks_live_dos_replay.ReplayAttack``.
+
+    Acks are bucketed by wall-clock position relative to the replay: the first
+    ``observed_ack`` strictly before the replay's ``recv_ns`` is reported as
+    ``original_ack`` (the real GCS's own command being answered); the first at or after
+    is reported as ``replay_ack``. Same "matched by command id alone" limitation as
+    ``compute_command_injection_effect`` -- disclosed there and in
+    ``ReplayAttack``'s own docstring, not fixed here.
+
+    Returns a dict with ``captured`` (bool), ``capture_recv_ns``, ``replayed`` (bool),
+    ``replay_recv_ns``, ``actual_delay_s`` (replay minus capture, or ``None``), ``seq``
+    (the captured/replayed frame's MAVLink sequence number, identical for both since the
+    replay is a byte-identical re-send), ``original_ack`` and ``replay_ack`` (each either
+    ``None`` or a dict with ``result``, ``result_name``, ``recv_ns``).
+    """
+    entries = read_frame_log(frame_log_path)
+    captured = [e for e in entries if e.action == "captured"]
+    replayed = [e for e in entries if e.action == "replayed"]
+    acks = [e for e in entries if e.action == "observed_ack"]
+
+    result: dict[str, Any] = {
+        "captured": bool(captured),
+        "capture_recv_ns": captured[0].recv_ns if captured else None,
+        "replayed": bool(replayed),
+        "replay_recv_ns": replayed[0].recv_ns if replayed else None,
+        "actual_delay_s": None,
+        "seq": captured[0].mavlink_seq if captured else None,
+        "original_ack": None,
+        "replay_ack": None,
+    }
+    if captured and replayed:
+        result["actual_delay_s"] = (replayed[0].recv_ns - captured[0].recv_ns) / 1e9
+
+    if replayed:
+        cutoff = replayed[0].recv_ns
+        before = [a for a in acks if a.recv_ns < cutoff]
+        after = [a for a in acks if a.recv_ns >= cutoff]
+    else:
+        before, after = acks, []
+
+    def _ack_dict(e: FrameLogEntry) -> dict[str, Any]:
+        res = e.field_deltas.get("result")
+        return {"result": res, "result_name": _MAV_RESULT_NAMES.get(res), "recv_ns": e.recv_ns}
+
+    if before:
+        result["original_ack"] = _ack_dict(before[0])
+    if after:
+        result["replay_ack"] = _ack_dict(after[0])
+    return result
