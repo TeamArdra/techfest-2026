@@ -19,6 +19,31 @@ generated files it links (`artifacts/**/summary.md`, `artifacts/validation/valid
 in this session (the UAV Attack Dataset requires an IEEE account). Real data here measures
 **false alarms and fault reactions only**. ALFA faults are physical, not cyber.
 
+## 1b. PX4 SITL evidence (Stage 2, live software-in-the-loop — not real hardware, not public data)
+
+Distinct from Section 1 (real public flight logs) and Section 2 (in-process simulation). Environment tag `SITL`
+throughout. Full detail: `docs/PX4_SITL_INTEGRATION.md`, `docs/CALIBRATION_PX4.md`, `artifacts/sitl/P1_summary.md`,
+`artifacts/sitl/P2_summary.md`, `artifacts/sitl/calibration/*.json`.
+
+| Claim we can make | Evidence |
+|---|---|
+| Live MAVLink ingestion over UDP from a real PX4 SITL + Gazebo instance reproduces the offline replay of the identical bytes, per-decision | `artifacts/sitl/live_run_002_equivalence.json` |
+| With the Stage-1 (simulator-calibrated) configuration, PX4 SITL benign flights false-alarm on **every** decision (same transfer failure as the real ArduPilot link in Section 1, different vehicle/transport) | `artifacts/sitl/P1_summary.md` |
+| A documented, additive PX4-SITL calibration profile (held-out flights, never iterated on) reduces that to 1 false alarm in 2805 held-out decisions, with one quantified, un-fixed cause remaining (extractor sequence-reorder artifact) | `docs/CALIBRATION_PX4.md`, `artifacts/sitl/calibration/evaluation_heldout.json` |
+| A live MAVLink-aware attack proxy (separate from the Stage-1 simulator attack system) modifying real downlink `GLOBAL_POSITION_INT` frames in transit is detected (`GPS_SPOOFING`) in 10/10 independent trials, 0 false alarms in 1404 pooled pre-attack decisions, with ground truth authored by the proxy itself (never from detector output) | `artifacts/sitl/P2_summary.md` |
+| An unauthenticated, rogue-identity `COMMAND_LONG` (force-disarm) injected on the uplink is **accepted and acted on by PX4** (`MAV_RESULT_ACCEPTED`, ~7-18ms) in **10/10** live trials — **command-path effect (SITL)**, independent of whether the IDS flagged it | `artifacts/sitl/P2_injection_summary.md` |
+| The IDS's detection of that same live command injection is **intermittent**: `COMMAND_INJECTION` evidence fired in 5/10 trials, including a split 3-miss/1-hit result across 4 live runs of the *identical* attack draw — not a proven detector/parser/extractor bug (those were independently verified correct in isolation first), consistent with (not proven to be) timing/concurrency sensitivity in the live threaded UDP transport | `artifacts/sitl/P2_injection_summary.md`, `docs/STAGE2_PROGRESS.md` 2026-10-07 entry |
+| Pilot (n=1) live trials of two more attacks: downlink GPS-channel **drop** is detected (`DOS`, "GPS dropout") ~2.8s after onset, 0 pre-onset false alarms; downlink **delay**-and-release (no frame loss, byte-identical, order-preserving) produces almost no detector signal (1/500 decisions), as the attack's own design hypothesised | `artifacts/sitl/p2d_trial_001.manifest.json`, `artifacts/sitl/p2l_trial_001.manifest.json` |
+| A third pilot (uplink **replay** of a captured command) is **inconclusive by design and reported as such**: the chosen command was rejected by PX4 identically both as original and replay (no accept/reject asymmetry shown), and the capture used a non-GCS identity, so it does not yet test the documented `command_injection:gcs_replay` gap — needs redesign before any claim | `artifacts/sitl/p2r_trial_001.manifest.json`, `docs/STAGE2_PROGRESS.md` 2026-10-07 entry |
+
+**Not claimed:** PX4's own estimator/trajectory is affected (the proxy's uplink stays unmodified by construction);
+anything about real RF, hardware, or MAVLink signing (the SITL link is unsigned); a statistically powered detection
+rate (n=10 is the design floor, reported as counts); that the IDS would reliably detect this live command injection
+(5/10, see above — reported as an intermittent result, not a rate); a clean-commit result for the GPS-drift trials —
+the working tree was **dirty** (8 uncommitted paths) during all ten of those trials, and dirty again (8 paths) during
+the command-injection batch; each manifest's `full_provenance.working_tree_dirty`/`dirty_paths_count` records this
+per trial. The GPS-drift/calibration/live-ingestion code itself is now committed (`cbda253`, `7e7631b`, `3fb8cb6`).
+
 ## 2. Simulation-only evidence
 
 | Claim | Evidence | Caveat |
@@ -39,6 +64,10 @@ in this session (the UAV Attack Dataset requires an IEEE account). Real data her
   jump (see v2 per-mode recall).
 * Link-impairment stress shows the sequence/rate rules and ML network features are
   brittle to realistic loss and reordering.
+* On PX4 SITL, a backward MAVLink sequence step (benign UDP reordering) is read by the frozen extractor as a
+  253-frame loss, costing 1 benign decision in 2805 held-out — quantified, not fixed (needs a frozen-contract
+  change + retrain; see `docs/CALIBRATION_PX4.md` proposal 1). PX4's flight mode decodes to `UNKNOWN` through the
+  Stage-1 ArduCopter mode table — no detector reads it, so it costs 0 false alarms (explainability/dashboard gap only).
 
 ## 4. Future work (not implemented)
 
@@ -52,6 +81,14 @@ in this session (the UAV Attack Dataset requires an IEEE account). Real data her
 4. MAVLink-2 message signing (fixes command replay), signed firmware manifest (Ed25519).
 5. A separate fault class (ALFA shows physical faults and attacks overlap in feature space).
 6. A dedicated GPS_JAMMING class in the enum / dashboard.
+7. A concurrency-focused test of `UdpMavlinkTransport` (no SITL needed) to pin down the command-injection
+   detection intermittency (5/10, see Section 1b) to a specific cause, rather than the current "consistent
+   with timing sensitivity, not proven" statement; re-tightening the PX4-SITL physics/rate thresholds now
+   that real attack-trial data exists (`docs/CALIBRATION_PX4.md` proposal 4); MAVLink-2 signing on the SITL
+   link (P4, scoped but not started — PX4 supports runtime `SETUP_SIGNING` key exchange and a fixed
+   per-build unsigned-message allowlist, read-only from `mavlink_sign_control.cpp`, no PX4 build changes
+   needed); drop/delay/replay attacks are implemented and unit-tested (`attacks_live_dos_replay.py`) with
+   pilot (n=1) live-SITL trials in progress at the time of writing — see `docs/STAGE2_PROGRESS.md`.
 
 ## 5. Overclaim audit (documentation language)
 
