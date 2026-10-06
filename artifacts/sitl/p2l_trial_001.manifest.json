@@ -1,0 +1,104 @@
+{
+  "trial_id": "p2l_trial_001",
+  "seed": 4001,
+  "trial_index": 0,
+  "provenance": {
+    "px4_git_describe": "v1.18.0-rc1-27-gc239c63807",
+    "aegisflight_git_commit": "767774b75e80f9003909046f2f7dabd7498dbdf4",
+    "python_version": "3.13.15",
+    "pymavlink_version": "2.4.50"
+  },
+  "attack_type": "MAVLINK_ANOMALY",
+  "attack_mode": "downlink_hold_and_release_live",
+  "message_type": "ALL",
+  "target_system": 0,
+  "target_component": 0,
+  "injection_point": "downlink",
+  "claim_class": "link-level detection (SITL), hypothesis only",
+  "environment": "SITL",
+  "attack_action": "delayed",
+  "parameters": {
+    "onset_s": 22.657870119032182,
+    "duration_s": 9.361460838393494,
+    "delay_s": 0.6903292100248223,
+    "detector_profile": "configs/px4_sitl",
+    "model_choice": "px4"
+  },
+  "attack_start_utc": "2026-10-06T18:32:04.148198+00:00",
+  "attack_end_utc": "2026-10-06T18:33:42.748181+00:00",
+  "frames_seen": 36061,
+  "frames_modified": 0,
+  "frames_dropped": 0,
+  "frames_injected": 0,
+  "expected_effect": {
+    "feature": "interarrival_mean_ms",
+    "detector": "protocol (jitter/rate)",
+    "predicted_detection": "may well be a negative result -- see module docstring"
+  },
+  "actual_effect": {
+    "frames_delayed": 3359,
+    "mean_delay_s": 0.69032921,
+    "max_delay_s": 0.69032921,
+    "min_delay_s": 0.69032921
+  },
+  "frames_skipped_signed": 0,
+  "holdout_seeds": [],
+  "schema_id": "aegisflight.proxy.groundtruth",
+  "schema_version": "1.0.0",
+  "detector_decision": null,
+  "time_to_detection_s": null,
+  "full_provenance": {
+    "collected_utc": "2026-10-06T18:33:42.570325+00:00",
+    "aegisflight_commit": "767774b75e80f9003909046f2f7dabd7498dbdf4",
+    "working_tree_dirty": true,
+    "dirty_paths_count": 2,
+    "python": "3.13.15",
+    "packages": {
+      "pymavlink": "2.4.50",
+      "numpy": "2.5.3",
+      "scikit-learn": "1.9.1",
+      "joblib": "1.6.0",
+      "scipy": "1.18.1"
+    },
+    "model_sha256": "3fe74cddf3689e169610ffd783b109b6539cc6c03629bd1e4bb8b1d3842939c4",
+    "configs_sha256": "f9f7de15a4127dab1260a32c9412a0a051d3b5b68530eced074ae87c2693cb23",
+    "command_line": "scripts/sitl/run_p2_delay_trial.py --px4-port 18572 --seed 4001 --seconds 100 --out artifacts/sitl/p2l_trial_001",
+    "python_version": "3.13.15"
+  },
+  "ids_summary": {
+    "decisions": 500,
+    "threat_decisions": 1,
+    "source_stats": {
+      "datagrams_received": 35811,
+      "frames_received": 35811,
+      "bad_frames": 0,
+      "unverified_frames": 418,
+      "ticks_emitted": 1000,
+      "late_ticks": 16,
+      "late_frames": 0,
+      "dropped_overflow": 0,
+      "dropped_overflow_bytes": 0
+    },
+    "relay_stats": {
+      "datagrams_down": 36061,
+      "datagrams_up": 99,
+      "frames_down": 36061,
+      "frames_up": 99,
+      "forwarded": 35920,
+      "forwarded_down": 35821,
+      "forwarded_up": 99,
+      "mirrored_up": 0,
+      "dropped_by_hook": 1874,
+      "hook_errors": 1,
+      "bad_segments": 0,
+      "send_failures": 0,
+      "down_no_client": 8,
+      "clients": 1,
+      "clients_seen": 1,
+      "rejected_clients": 0,
+      "overflow": 0,
+      "pump_errors": 0
+    },
+    "frames_delayed": 3359
+  }
+}

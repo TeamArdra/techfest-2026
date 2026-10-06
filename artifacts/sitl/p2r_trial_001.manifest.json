@@ -1,0 +1,115 @@
+{
+  "trial_id": "p2r_trial_001",
+  "seed": 5001,
+  "trial_index": 0,
+  "provenance": {
+    "px4_git_describe": "v1.18.0-rc1-27-gc239c63807",
+    "aegisflight_git_commit": "767774b75e80f9003909046f2f7dabd7498dbdf4",
+    "python_version": "3.13.15",
+    "pymavlink_version": "2.4.50"
+  },
+  "attack_type": "COMMAND_INJECTION",
+  "attack_mode": "gcs_replay_live",
+  "message_type": "COMMAND_LONG",
+  "target_system": 3,
+  "target_component": 1,
+  "injection_point": "uplink",
+  "claim_class": "command-path effect (SITL) only if acked; NO detection claim (see module docstring)",
+  "environment": "SITL",
+  "attack_action": "replayed",
+  "parameters": {
+    "replay_delay_s": 18.47272400670385,
+    "capture_sysid": 252,
+    "capture_compid": 193,
+    "capture_command": 511,
+    "detector_profile": "configs/px4_sitl",
+    "model_choice": "px4"
+  },
+  "attack_start_utc": "2026-10-06T18:34:10.869129+00:00",
+  "attack_end_utc": "2026-10-06T18:35:49.620157+00:00",
+  "frames_seen": 29851,
+  "frames_modified": 0,
+  "frames_dropped": 0,
+  "frames_injected": 1,
+  "expected_effect": {
+    "expected_detector_signal": "none expected under require_signing=false -- this IS the P4 before/after baseline, not an incidental negative result",
+    "expected_result_if_accepted": "MAV_RESULT_ACCEPTED (0) on both the original and the replay ack"
+  },
+  "actual_effect": {
+    "captured": true,
+    "capture_recv_ns": 9070584785700,
+    "replayed": true,
+    "replay_recv_ns": 9089746791900,
+    "actual_delay_s": 19.1620062,
+    "seq": 0,
+    "original_ack": {
+      "result": 4,
+      "result_name": "MAV_RESULT_FAILED",
+      "recv_ns": 9070587829900
+    },
+    "replay_ack": {
+      "result": 4,
+      "result_name": "MAV_RESULT_FAILED",
+      "recv_ns": 9089752017100
+    }
+  },
+  "frames_skipped_signed": 0,
+  "holdout_seeds": [],
+  "schema_id": "aegisflight.proxy.groundtruth",
+  "schema_version": "1.0.0",
+  "detector_decision": null,
+  "time_to_detection_s": null,
+  "full_provenance": {
+    "collected_utc": "2026-10-06T18:35:49.387602+00:00",
+    "aegisflight_commit": "767774b75e80f9003909046f2f7dabd7498dbdf4",
+    "working_tree_dirty": true,
+    "dirty_paths_count": 2,
+    "python": "3.13.15",
+    "packages": {
+      "pymavlink": "2.4.50",
+      "numpy": "2.5.3",
+      "scikit-learn": "1.9.1",
+      "joblib": "1.6.0",
+      "scipy": "1.18.1"
+    },
+    "model_sha256": "3fe74cddf3689e169610ffd783b109b6539cc6c03629bd1e4bb8b1d3842939c4",
+    "configs_sha256": "f9f7de15a4127dab1260a32c9412a0a051d3b5b68530eced074ae87c2693cb23",
+    "command_line": "scripts/sitl/run_p2_replay_trial.py --px4-port 18572 --seed 5001 --seconds 100 --out artifacts/sitl/p2r_trial_001",
+    "python_version": "3.13.15"
+  },
+  "ids_summary": {
+    "decisions": 500,
+    "threat_decisions": 173,
+    "source_stats": {
+      "datagrams_received": 29736,
+      "frames_received": 29736,
+      "bad_frames": 0,
+      "unverified_frames": 357,
+      "ticks_emitted": 1000,
+      "late_ticks": 16,
+      "late_frames": 0,
+      "dropped_overflow": 0,
+      "dropped_overflow_bytes": 0
+    },
+    "relay_stats": {
+      "datagrams_down": 29650,
+      "datagrams_up": 201,
+      "frames_down": 29650,
+      "frames_up": 201,
+      "forwarded": 29852,
+      "forwarded_down": 29650,
+      "forwarded_up": 202,
+      "mirrored_up": 200,
+      "dropped_by_hook": 0,
+      "hook_errors": 0,
+      "bad_segments": 0,
+      "send_failures": 0,
+      "down_no_client": 10,
+      "clients": 2,
+      "clients_seen": 2,
+      "rejected_clients": 0,
+      "overflow": 0,
+      "pump_errors": 0
+    }
+  }
+}
