@@ -1,0 +1,102 @@
+{
+  "trial_id": "p2_trial_008",
+  "seed": 1001,
+  "trial_index": 6,
+  "provenance": {
+    "px4_git_describe": "v1.18.0-rc1-27-gc239c63807",
+    "aegisflight_git_commit": "5c009484abc5a9bd2b667a4e826955b7539175c9",
+    "python_version": "3.13.15",
+    "pymavlink_version": "2.4.50"
+  },
+  "attack_type": "GPS_SPOOFING",
+  "attack_mode": "gradual_drift_live",
+  "message_type": "GLOBAL_POSITION_INT",
+  "target_system": 0,
+  "target_component": 0,
+  "injection_point": "downlink",
+  "claim_class": "link-level detection (SITL)",
+  "environment": "SITL",
+  "attack_action": "modified",
+  "parameters": {
+    "onset_s": 22.84899749843543,
+    "duration_s": 35.39950862944858,
+    "drift_rate_ms": 7.143428103349258,
+    "bearing_deg": 70.77428813795345,
+    "detector_profile": "configs/px4_sitl",
+    "model_choice": "px4"
+  },
+  "attack_start_utc": "2026-10-06T13:16:24.289394+00:00",
+  "attack_end_utc": "2026-10-06T13:17:52.743414+00:00",
+  "frames_seen": 33202,
+  "frames_modified": 1745,
+  "frames_dropped": 0,
+  "frames_injected": 0,
+  "expected_effect": {
+    "max_displacement_m": 252.8738447883576,
+    "bearing_deg": 70.77428813795345
+  },
+  "actual_effect": {
+    "max_lat_lon_delta_m": 252.8464092379785,
+    "mean_lat_lon_delta_m": 126.4298569570076,
+    "position_residual_proxy_estimate_m": 126.4298569570076,
+    "frames_counted": 1745
+  },
+  "frames_skipped_signed": 0,
+  "holdout_seeds": [],
+  "schema_id": "aegisflight.proxy.groundtruth",
+  "schema_version": "1.0.0",
+  "detector_decision": null,
+  "time_to_detection_s": null,
+  "full_provenance": {
+    "collected_utc": "2026-10-06T13:17:52.597577+00:00",
+    "aegisflight_commit": "5c009484abc5a9bd2b667a4e826955b7539175c9",
+    "working_tree_dirty": true,
+    "dirty_paths_count": 8,
+    "python": "3.13.15",
+    "packages": {
+      "pymavlink": "2.4.50",
+      "numpy": "2.5.3",
+      "scikit-learn": "1.9.1",
+      "joblib": "1.6.0",
+      "scipy": "1.18.1"
+    },
+    "model_sha256": "3fe74cddf3689e169610ffd783b109b6539cc6c03629bd1e4bb8b1d3842939c4",
+    "configs_sha256": "f9f7de15a4127dab1260a32c9412a0a051d3b5b68530eced074ae87c2693cb23",
+    "command_line": "scripts/sitl/run_p2_trial.py --px4-port 18572 --seed 1001 --trial-index 6 --seconds 90 --out artifacts/sitl/p2_trial_008",
+    "python_version": "3.13.15"
+  },
+  "ids_summary": {
+    "decisions": 450,
+    "threat_decisions": 2,
+    "source_stats": {
+      "datagrams_received": 33188,
+      "frames_received": 33188,
+      "bad_frames": 0,
+      "unverified_frames": 385,
+      "ticks_emitted": 900,
+      "late_ticks": 17,
+      "late_frames": 0,
+      "dropped_overflow": 0,
+      "dropped_overflow_bytes": 0
+    },
+    "relay_stats": {
+      "datagrams_down": 33202,
+      "datagrams_up": 90,
+      "frames_down": 33202,
+      "frames_up": 90,
+      "forwarded": 33292,
+      "forwarded_down": 33202,
+      "forwarded_up": 90,
+      "dropped_by_hook": 0,
+      "hook_errors": 0,
+      "bad_segments": 0,
+      "send_failures": 0,
+      "down_no_client": 11,
+      "clients": 1,
+      "clients_seen": 1,
+      "rejected_clients": 0,
+      "overflow": 0,
+      "pump_errors": 0
+    }
+  }
+}
