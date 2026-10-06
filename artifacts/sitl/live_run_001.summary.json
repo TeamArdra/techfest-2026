@@ -1,0 +1,48 @@
+{
+  "schema": "aegisflight.sitl_live_run/1",
+  "environment": "SITL (live UDP)",
+  "attack_status": "NONE (no injector)",
+  "started_utc": "2026-10-06T07:19:33.396303+00:00",
+  "host": "172.29.115.208",
+  "port": 18572,
+  "decisions": 675,
+  "threat_decisions": 675,
+  "classes": {
+    "DOS": 659,
+    "MAVLINK_ANOMALY": 16
+  },
+  "source_stats": {
+    "datagrams_received": 45687,
+    "frames_received": 45687,
+    "bad_frames": 0,
+    "ticks_emitted": 1350,
+    "late_ticks": 0,
+    "late_frames": 0,
+    "dropped_overflow": 0
+  },
+  "ml_enabled": true,
+  "decision_latency_ms": {
+    "mean": 27.686333481364677,
+    "p95": 38.18409999803407
+  },
+  "provenance": {
+    "collected_utc": "2026-10-06T07:39:52.359758+00:00",
+    "aegisflight_commit": "5c009484abc5a9bd2b667a4e826955b7539175c9",
+    "working_tree_dirty": true,
+    "dirty_paths_count": 4,
+    "python": "3.13.15",
+    "packages": {
+      "pymavlink": "2.4.50",
+      "numpy": "2.5.3",
+      "scikit-learn": "1.9.1",
+      "joblib": "1.6.0",
+      "scipy": "1.18.1"
+    },
+    "model_sha256": "3fe74cddf3689e169610ffd783b109b6539cc6c03629bd1e4bb8b1d3842939c4",
+    "configs_sha256": "f9f7de15a4127dab1260a32c9412a0a051d3b5b68530eced074ae87c2693cb23",
+    "command_line": "scripts/sitl/provenance.py --backfill data/sitl/raw/benign_001.json data/sitl/raw/benign_002.json data/sitl/raw/benign_003.json data/sitl/raw/benign_004.json data/sitl/raw/benign_005.json data/sitl/raw/benign_006.json data/sitl/raw/benign_007.json data/sitl/raw/benign_008.json data/sitl/raw/benign_009.json data/sitl/raw/benign_010.json data/sitl/raw/live_driver_001.json artifacts/sitl/live_run_001.summary.json",
+    "backfilled": true,
+    "note": "backfilled after the fact: commit/dirty/versions describe the repo at backfill time, not capture time",
+    "tlog_sha256": null
+  }
+}

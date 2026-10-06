@@ -1,0 +1,391 @@
+{
+  "frames": 34957,
+  "bad_data": 0,
+  "duration_s": 107.27,
+  "first_recv_unix": 1791269713.7300558,
+  "recv_clock_backsteps": 0,
+  "framing_magic": {
+    "0xFD": 34957
+  },
+  "signed_frames": 0,
+  "sources": {
+    "3/1": {
+      "frames": 34957,
+      "seq_forward_gaps": 0,
+      "seq_reordered": 0,
+      "seq_span": 34957,
+      "seq_unique": 34957,
+      "seq_net_missing": 0,
+      "seq_duplicates": 0,
+      "net_loss_pct": 0.0
+    }
+  },
+  "seq_gap_events": 0,
+  "seq_gap_sizes_top": [],
+  "seq_gap_t_offsets_s": [],
+  "seq_reorder_events": 0,
+  "seq_reorder_t_offsets_s": [],
+  "seq_reorder_depths": [],
+  "heartbeat": {
+    "type": 2,
+    "autopilot": 12,
+    "base_mode_last": 29,
+    "system_status_last": 3,
+    "mavlink_version": 3,
+    "custom_mode_last_hex": "0x3040000"
+  },
+  "modes": {
+    "AUTO/LOITER": 55,
+    "AUTO/TAKEOFF": 16,
+    "AUTO/LAND": 22
+  },
+  "mode_transitions": [
+    [
+      0.33,
+      "AUTO/LOITER"
+    ],
+    [
+      5.89,
+      "AUTO/TAKEOFF"
+    ],
+    [
+      23.67,
+      "AUTO/LOITER"
+    ],
+    [
+      77.99,
+      "AUTO/LAND"
+    ],
+    [
+      104.27,
+      "AUTO/LOITER"
+    ]
+  ],
+  "boot_clock_vs_recv_drift_ppm": -132950.4,
+  "messages": [
+    {
+      "src": "3/1",
+      "msg": "POSITION_TARGET_LOCAL_NED",
+      "count": 4651,
+      "rate_hz": 43.358,
+      "dt_median_ms": 22.23,
+      "dt_p99_ms": 38.4,
+      "dt_max_ms": 234.69
+    },
+    {
+      "src": "3/1",
+      "msg": "GLOBAL_POSITION_INT",
+      "count": 4651,
+      "rate_hz": 43.358,
+      "dt_median_ms": 22.23,
+      "dt_p99_ms": 37.21,
+      "dt_max_ms": 268.76
+    },
+    {
+      "src": "3/1",
+      "msg": "SERVO_OUTPUT_RAW",
+      "count": 4651,
+      "rate_hz": 43.358,
+      "dt_median_ms": 22.23,
+      "dt_p99_ms": 37.1,
+      "dt_max_ms": 269.41
+    },
+    {
+      "src": "3/1",
+      "msg": "ATTITUDE",
+      "count": 4651,
+      "rate_hz": 43.358,
+      "dt_median_ms": 22.23,
+      "dt_p99_ms": 37.08,
+      "dt_max_ms": 231.79
+    },
+    {
+      "src": "3/1",
+      "msg": "ATTITUDE_QUATERNION",
+      "count": 4650,
+      "rate_hz": 43.349,
+      "dt_median_ms": 22.23,
+      "dt_p99_ms": 37.39,
+      "dt_max_ms": 231.19
+    },
+    {
+      "src": "3/1",
+      "msg": "ATTITUDE_TARGET",
+      "count": 4650,
+      "rate_hz": 43.349,
+      "dt_median_ms": 22.23,
+      "dt_p99_ms": 37.38,
+      "dt_max_ms": 231.49
+    },
+    {
+      "src": "3/1",
+      "msg": "LOCAL_POSITION_NED",
+      "count": 4649,
+      "rate_hz": 43.339,
+      "dt_median_ms": 22.23,
+      "dt_p99_ms": 38.33,
+      "dt_max_ms": 234.79
+    },
+    {
+      "src": "3/1",
+      "msg": "GPS_RAW_INT",
+      "count": 465,
+      "rate_hz": 4.335,
+      "dt_median_ms": 222.3,
+      "dt_p99_ms": 355.13,
+      "dt_max_ms": 1433.12
+    },
+    {
+      "src": "3/1",
+      "msg": "VFR_HUD",
+      "count": 372,
+      "rate_hz": 3.468,
+      "dt_median_ms": 278.88,
+      "dt_p99_ms": 431.16,
+      "dt_max_ms": 1541.86
+    },
+    {
+      "src": "3/1",
+      "msg": "HEARTBEAT",
+      "count": 93,
+      "rate_hz": 0.867,
+      "dt_median_ms": 1111.27,
+      "dt_p99_ms": 2337.89,
+      "dt_max_ms": 2387.52
+    },
+    {
+      "src": "3/1",
+      "msg": "ALTITUDE",
+      "count": 93,
+      "rate_hz": 0.867,
+      "dt_median_ms": 1111.27,
+      "dt_p99_ms": 2337.86,
+      "dt_max_ms": 2387.35
+    },
+    {
+      "src": "3/1",
+      "msg": "MSG_290",
+      "count": 93,
+      "rate_hz": 0.867,
+      "dt_median_ms": 1111.35,
+      "dt_p99_ms": 2338.13,
+      "dt_max_ms": 2387.53
+    },
+    {
+      "src": "3/1",
+      "msg": "MSG_291",
+      "count": 93,
+      "rate_hz": 0.867,
+      "dt_median_ms": 1111.36,
+      "dt_p99_ms": 2338.05,
+      "dt_max_ms": 2387.48
+    },
+    {
+      "src": "3/1",
+      "msg": "EXTENDED_SYS_STATE",
+      "count": 93,
+      "rate_hz": 0.867,
+      "dt_median_ms": 1111.4,
+      "dt_p99_ms": 2338.04,
+      "dt_max_ms": 2387.53
+    },
+    {
+      "src": "3/1",
+      "msg": "GNSS_INTEGRITY",
+      "count": 93,
+      "rate_hz": 0.867,
+      "dt_median_ms": 1111.45,
+      "dt_p99_ms": 2337.99,
+      "dt_max_ms": 2387.46
+    },
+    {
+      "src": "3/1",
+      "msg": "OPEN_DRONE_ID_LOCATION",
+      "count": 93,
+      "rate_hz": 0.867,
+      "dt_median_ms": 1111.46,
+      "dt_p99_ms": 2337.46,
+      "dt_max_ms": 2387.27
+    },
+    {
+      "src": "3/1",
+      "msg": "OPEN_DRONE_ID_SYSTEM",
+      "count": 93,
+      "rate_hz": 0.867,
+      "dt_median_ms": 1111.43,
+      "dt_p99_ms": 2337.33,
+      "dt_max_ms": 2387.14
+    },
+    {
+      "src": "3/1",
+      "msg": "SCALED_PRESSURE",
+      "count": 93,
+      "rate_hz": 0.867,
+      "dt_median_ms": 1111.44,
+      "dt_p99_ms": 2337.11,
+      "dt_max_ms": 2387.22
+    },
+    {
+      "src": "3/1",
+      "msg": "SYS_STATUS",
+      "count": 93,
+      "rate_hz": 0.867,
+      "dt_median_ms": 1111.43,
+      "dt_p99_ms": 2337.01,
+      "dt_max_ms": 2386.92
+    },
+    {
+      "src": "3/1",
+      "msg": "MSG_8",
+      "count": 93,
+      "rate_hz": 0.867,
+      "dt_median_ms": 1111.46,
+      "dt_p99_ms": 2336.75,
+      "dt_max_ms": 2386.69
+    },
+    {
+      "src": "3/1",
+      "msg": "MISSION_CURRENT",
+      "count": 93,
+      "rate_hz": 0.867,
+      "dt_median_ms": 1123.46,
+      "dt_p99_ms": 2061.46,
+      "dt_max_ms": 2349.29
+    },
+    {
+      "src": "3/1",
+      "msg": "POSITION_TARGET_GLOBAL_INT",
+      "count": 86,
+      "rate_hz": 0.802,
+      "dt_median_ms": 1111.25,
+      "dt_p99_ms": 2362.51,
+      "dt_max_ms": 2365.51
+    },
+    {
+      "src": "3/1",
+      "msg": "BATTERY_STATUS",
+      "count": 47,
+      "rate_hz": 0.438,
+      "dt_median_ms": 2222.75,
+      "dt_p99_ms": 3537.56,
+      "dt_max_ms": 3537.56
+    },
+    {
+      "src": "3/1",
+      "msg": "CURRENT_MODE",
+      "count": 47,
+      "rate_hz": 0.438,
+      "dt_median_ms": 2222.72,
+      "dt_p99_ms": 3537.5,
+      "dt_max_ms": 3537.5
+    },
+    {
+      "src": "3/1",
+      "msg": "ESTIMATOR_STATUS",
+      "count": 47,
+      "rate_hz": 0.438,
+      "dt_median_ms": 2222.73,
+      "dt_p99_ms": 3537.39,
+      "dt_max_ms": 3537.39
+    },
+    {
+      "src": "3/1",
+      "msg": "MSG_514",
+      "count": 47,
+      "rate_hz": 0.438,
+      "dt_median_ms": 2222.74,
+      "dt_p99_ms": 3537.36,
+      "dt_max_ms": 3537.36
+    },
+    {
+      "src": "3/1",
+      "msg": "HOME_POSITION",
+      "count": 47,
+      "rate_hz": 0.438,
+      "dt_median_ms": 2222.7,
+      "dt_p99_ms": 3537.16,
+      "dt_max_ms": 3537.16
+    },
+    {
+      "src": "3/1",
+      "msg": "MSG_380",
+      "count": 46,
+      "rate_hz": 0.429,
+      "dt_median_ms": 2244.48,
+      "dt_p99_ms": 3573.92,
+      "dt_max_ms": 3573.92
+    },
+    {
+      "src": "3/1",
+      "msg": "MSG_411",
+      "count": 31,
+      "rate_hz": 0.289,
+      "dt_median_ms": 3339.33,
+      "dt_p99_ms": 4701.42,
+      "dt_max_ms": 4701.42
+    },
+    {
+      "src": "3/1",
+      "msg": "MSG_410",
+      "count": 10,
+      "rate_hz": 0.093,
+      "dt_median_ms": 1933.06,
+      "dt_p99_ms": 69794.01,
+      "dt_max_ms": 69794.01
+    },
+    {
+      "src": "3/1",
+      "msg": "PING",
+      "count": 10,
+      "rate_hz": 0.093,
+      "dt_median_ms": 11141.44,
+      "dt_p99_ms": 13098.75,
+      "dt_max_ms": 13098.75
+    },
+    {
+      "src": "3/1",
+      "msg": "VIBRATION",
+      "count": 10,
+      "rate_hz": 0.093,
+      "dt_median_ms": 11141.05,
+      "dt_p99_ms": 13097.59,
+      "dt_max_ms": 13097.59
+    },
+    {
+      "src": "3/1",
+      "msg": "COMMAND_ACK",
+      "count": 7,
+      "rate_hz": 0.065,
+      "dt_median_ms": 12980.54,
+      "dt_p99_ms": 18120.0,
+      "dt_max_ms": 18120.0
+    },
+    {
+      "src": "3/1",
+      "msg": "COMMAND_LONG",
+      "count": 6,
+      "rate_hz": 0.056,
+      "dt_median_ms": 559.36,
+      "dt_p99_ms": 573.35,
+      "dt_max_ms": 573.35
+    },
+    {
+      "src": "3/1",
+      "msg": "STATUSTEXT",
+      "count": 5,
+      "rate_hz": 0.047,
+      "dt_median_ms": 13415.44,
+      "dt_p99_ms": 69793.63,
+      "dt_max_ms": 69793.63
+    },
+    {
+      "src": "3/1",
+      "msg": "PARAM_VALUE",
+      "count": 5,
+      "rate_hz": 0.047,
+      "dt_median_ms": 0.07,
+      "dt_p99_ms": 0.14,
+      "dt_max_ms": 0.14
+    }
+  ]
+}

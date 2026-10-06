@@ -1,0 +1,18 @@
+{
+  "schema": "aegisflight.sitl_live_equivalence/1",
+  "environment": "SITL",
+  "attack_status": "NONE",
+  "live_decisions": 700,
+  "offline_decisions": 701,
+  "compared": 700,
+  "live_only_t": [],
+  "offline_only_t": [
+    140.0
+  ],
+  "threat_flag_mismatches": 0,
+  "type_mismatches_when_flag_differs": 0,
+  "score_mismatches_over_tol": 0,
+  "score_tol": 0.001,
+  "max_abs_score_diff": 0.0004999999999999449,
+  "caveat": "shared assembler+parser: not an independent decode check; all-alarm regime makes flag agreement weak"
+}

@@ -1,0 +1,69 @@
+{
+  "schema": "aegisflight.sitl_capture/1",
+  "purpose": "benign PX4 SITL reference capture, alt=35m square=70m",
+  "environment": "SITL",
+  "attack_status": "NONE",
+  "claim_class": "none (benign reference / calibration capture)",
+  "started_utc": "2026-10-06T07:29:29.566095+00:00",
+  "duration_s": 147.02,
+  "frames": 49703,
+  "tlog": "benign_007.tlog",
+  "link": {
+    "transport": "udp",
+    "host": "172.29.115.208",
+    "port": 18572,
+    "role": "GCS sysid=255 compid=190"
+  },
+  "vehicle": {
+    "sysid": 3,
+    "compid": 1
+  },
+  "px4_git_describe": "v1.18.0-rc1-27-gc239c63807",
+  "gazebo": "8.15.0",
+  "sim_model": "gz_x500 (headless)",
+  "client": {
+    "python": "3.13.15"
+  },
+  "flight_events": {
+    "home": {
+      "lat": 47.3977421,
+      "lon": 8.5455941,
+      "alt": 488.226,
+      "rel": 0.013
+    },
+    "t_start": "2026-10-06T07:29:30.241947+00:00",
+    "arm_result": 0,
+    "t_armed": "2026-10-06T07:29:35.268508+00:00",
+    "takeoff_result": 0,
+    "t_at_altitude": "2026-10-06T07:29:59.006603+00:00",
+    "legs_reached": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "land_result": 0,
+    "t_landed": "2026-10-06T07:31:53.575330+00:00",
+    "disarmed_after_land": true
+  },
+  "provenance": {
+    "collected_utc": "2026-10-06T07:39:51.234913+00:00",
+    "aegisflight_commit": "5c009484abc5a9bd2b667a4e826955b7539175c9",
+    "working_tree_dirty": true,
+    "dirty_paths_count": 4,
+    "python": "3.13.15",
+    "packages": {
+      "pymavlink": "2.4.50",
+      "numpy": "2.5.3",
+      "scikit-learn": "1.9.1",
+      "joblib": "1.6.0",
+      "scipy": "1.18.1"
+    },
+    "model_sha256": "3fe74cddf3689e169610ffd783b109b6539cc6c03629bd1e4bb8b1d3842939c4",
+    "configs_sha256": "f9f7de15a4127dab1260a32c9412a0a051d3b5b68530eced074ae87c2693cb23",
+    "command_line": "scripts/sitl/provenance.py --backfill data/sitl/raw/benign_001.json data/sitl/raw/benign_002.json data/sitl/raw/benign_003.json data/sitl/raw/benign_004.json data/sitl/raw/benign_005.json data/sitl/raw/benign_006.json data/sitl/raw/benign_007.json data/sitl/raw/benign_008.json data/sitl/raw/benign_009.json data/sitl/raw/benign_010.json data/sitl/raw/live_driver_001.json artifacts/sitl/live_run_001.summary.json",
+    "backfilled": true,
+    "note": "backfilled after the fact: commit/dirty/versions describe the repo at backfill time, not capture time",
+    "tlog_sha256": "63c67c6eec69090f02cf12cd67757165002f3682c55315e1337276ea79534974"
+  }
+}

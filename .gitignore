@@ -27,6 +27,8 @@ artifacts/reports/*
 # External real-flight data: raw downloads are NOT committed (size + licences);
 # manifests (URL, bytes, SHA-256) and generated results ARE committed.
 data/external/raw/
+# Raw PX4 SITL captures (tlogs) are local evidence; manifests/results ARE committed.
+data/sitl/raw/*.tlog
 artifacts/external/**/feature_samples.npz
 
 # Benchmark results + figures ARE committed as competition evidence
