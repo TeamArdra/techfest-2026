@@ -74,6 +74,11 @@ class FeatureFrame:
     gps_age_s: float = 0.0
     loss_ratio: float = 0.0
     signed_ratio: float = 0.0
+    # ADDITIVE (P4): signing-policy violations (bad/missing MAVLink-2 signature) accumulated
+    # since the last decision window, from the live source's ``TelemetryTick.sig_invalid``
+    # (see ``sources.mavlink_live``). Always 0 for the simulated source / any source without
+    # a signing key configured. NOT in ML_FEATURES -- rule-only, read by ProtocolDetector.
+    sig_invalid_count: int = 0
     sources: dict[tuple[int, int], int] = field(default_factory=dict)
     # --- navigation / cyber-physical ---
     pos_residual_m: float = 0.0
@@ -139,8 +144,16 @@ class FeatureExtractor:
 
         # command log
         self._commands: deque[CommandEvent] = deque(maxlen=200)
+        self._sig_invalid_window = 0  # P4: reset each decision, see note_sig_invalid()
 
     # -- ingestion ---------------------------------------------------------- #
+
+    def note_sig_invalid(self, n: int) -> None:
+        """Accumulate ``n`` signing-policy violations (see ``TelemetryTick.sig_invalid``)
+        into the current decision window; always called with 0 by a caller that never
+        configures a signing key, so this is a strict no-op for Stage-1 / any unsigned
+        live source."""
+        self._sig_invalid_window += n
 
     def update(self, msg: MessageEnvelope) -> None:
         t = msg.recv_time
@@ -302,6 +315,7 @@ class FeatureExtractor:
             gps_age_s=snap.gps_age,
             loss_ratio=loss_ratio,
             signed_ratio=signed_ratio,
+            sig_invalid_count=self._sig_invalid_window,
             sources=dict(self._sources),
             pos_residual_m=pos_residual,
             gps_vfr_speed_diff_ms=speed_diff,
@@ -347,3 +361,4 @@ class FeatureExtractor:
         """Reset per-window source counts (called by the pipeline each decision)."""
         self._sources = {}
         self._seq_gap = {}
+        self._sig_invalid_window = 0

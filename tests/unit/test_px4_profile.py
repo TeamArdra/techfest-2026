@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 import yaml
 
 from aegisflight.config import DEFAULT_DETECTOR, load_config
@@ -104,3 +105,42 @@ def test_expected_gcs_sysid_command_never_flagged_by_provenance_rule_even_when_s
     result = det.process(_frame(sources={(3, 1): 10}, n_sources=1, commands_recent=[forged]))
     assert not any("unexpected source" in e for e in result.evidence)
     assert result.attack_votes.get("COMMAND_INJECTION", 0.0) == 0.0
+
+
+# --------------------------------------------------------------------------- #
+# P4: sig_invalid_count -- a REAL signature-failure rule, distinct from signed_ratio
+# --------------------------------------------------------------------------- #
+
+
+def test_sig_invalid_count_ignored_when_require_signing_is_false():
+    """Default policy (every current profile, Stage-1 included): require_signing=False, so
+    even a nonzero sig_invalid_count (which should never happen without a live signing key,
+    but is not trusted to enforce that on its own) raises no evidence and no vote."""
+    det = _proto(require_signing=False)
+    r = det.process(_frame(sig_invalid_count=3))
+    assert not any("signature verification" in e for e in r.evidence)
+    assert r.attack_votes.get("COMMAND_INJECTION", 0.0) == 0.0
+
+
+def test_sig_invalid_count_flagged_when_require_signing_is_true():
+    det = _proto(require_signing=True)
+    r = det.process(_frame(sig_invalid_count=2, signed_ratio=1.0))  # fully "signed" by the bit alone
+    assert any("2 frame(s) failed MAVLink-2 signature verification" in e for e in r.evidence)
+    assert r.attack_votes.get("COMMAND_INJECTION", 0.0) == pytest.approx(0.95)
+    assert r.triggered
+
+
+def test_sig_invalid_count_zero_with_require_signing_true_is_silent_for_this_rule():
+    det = _proto(require_signing=True)
+    r = det.process(_frame(sig_invalid_count=0, signed_ratio=1.0, heartbeat_age_s=0.5, gps_age_s=0.0))
+    assert not any("signature verification" in e for e in r.evidence)
+
+
+def test_sig_invalid_count_independent_of_the_existing_signed_ratio_rule():
+    """Both rules can fire together (a link that is mostly signed but has one bad frame), or
+    the old rule alone (bit absent, no key available to call it invalid) -- they are not
+    mutually exclusive, and this pins that the new rule does not replace the old one."""
+    det = _proto(require_signing=True)
+    r = det.process(_frame(sig_invalid_count=1, signed_ratio=0.5))
+    assert any("unsigned messages present" in e for e in r.evidence)
+    assert any("1 frame(s) failed MAVLink-2 signature verification" in e for e in r.evidence)

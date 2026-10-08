@@ -326,18 +326,22 @@ class MavlinkFrameParser:
 
 class _TickAssembler:
     def __init__(self, sample_rate_hz: float, label_fn: Callable[[float], AttackType] | None,
-                 stats: LiveStats, origin_us: int | None = None) -> None:
+                 stats: LiveStats, origin_us: int | None = None, *,
+                 secret_key: bytes | None = None,
+                 unsigned_allowed_msgids: frozenset[int] = PX4_UNSIGNED_ALLOWED_MSGIDS) -> None:
         if sample_rate_hz <= 0:
             raise ValueError("sample_rate_hz must be > 0")
         self.dt = 1.0 / sample_rate_hz
         self.dt_us = max(1, round(1e6 / sample_rate_hz))
         self.label_fn = label_fn or (lambda _t: AttackType.BENIGN)
         self.stats = stats
-        self.parser = MavlinkFrameParser(stats)
+        self.parser = MavlinkFrameParser(stats, secret_key=secret_key,
+                                         unsigned_allowed_msgids=unsigned_allowed_msgids)
         self.origin_us = origin_us
         self.next_k = 0
         self._pending: dict[int, list[MessageEnvelope]] = {}
         self.max_k = -1
+        self._last_sig_invalid = 0  # for the per-tick delta (``stats.sig_invalid`` is cumulative)
 
     def ingest(self, recv_us: int, data: bytes) -> int | None:
         """Parse and bucket one datagram; return the tick index it landed in."""
@@ -365,7 +369,10 @@ class _TickAssembler:
         if now_rel_us is not None and now_rel_us >= (k + 1) * self.dt_us:
             self.stats.late_ticks += 1
         t = k * self.dt
-        return TelemetryTick(t=t, tick=k, messages=self._pending.pop(k, []), label=self.label_fn(t))
+        sig_invalid_delta = self.stats.sig_invalid - self._last_sig_invalid
+        self._last_sig_invalid = self.stats.sig_invalid
+        return TelemetryTick(t=t, tick=k, messages=self._pending.pop(k, []), label=self.label_fn(t),
+                             sig_invalid=sig_invalid_delta)
 
 
 def frame_ticks(
@@ -374,14 +381,18 @@ def frame_ticks(
     label_fn: Callable[[float], AttackType] | None = None,
     origin_s: float | None = None,
     stats: LiveStats | None = None,
+    secret_key: bytes | None = None,
+    unsigned_allowed_msgids: frozenset[int] = PX4_UNSIGNED_ALLOWED_MSGIDS,
 ) -> Iterator[TelemetryTick]:
     """Data-driven ticks from ``(recv_time_s, datagram_bytes)`` pairs (arrival order).
 
     ``origin_s`` None -> rebase to the first frame. Gaps in the timestamps produce
-    empty ticks; the final tick is the one holding the last frame.
+    empty ticks; the final tick is the one holding the last frame. ``secret_key`` (P4,
+    additive, default ``None`` = unchanged): see :class:`LiveMavlinkSource`.
     """
     asm = _TickAssembler(sample_rate_hz, label_fn, stats if stats is not None else LiveStats(),
-                         None if origin_s is None else round(origin_s * 1e6))
+                         None if origin_s is None else round(origin_s * 1e6),
+                         secret_key=secret_key, unsigned_allowed_msgids=unsigned_allowed_msgids)
     for recv_s, data in frames:
         k = asm.ingest(round(recv_s * 1e6), data)
         if k is not None:
@@ -455,6 +466,27 @@ class UdpMavlinkTransport:
     ``dropped_overflow`` / ``dropped_overflow_bytes``.
 
     Datagrams are stamped with ``clock_ns()`` the moment ``recvfrom`` returns.
+
+    **Observability limitation (found during Stage-2 live testing, documented rather than
+    worked around): this transport CANNOT see datagrams the kernel itself discarded before
+    our socket's ``recvfrom`` ever returned them** -- e.g. when the OS-level UDP receive
+    buffer fills because the ``_rx_loop`` thread is GIL-starved by other CPU-bound Python
+    threads in the same process (observed live: 3 GIL-hogging threads caused ~93% of
+    datagrams to vanish silently, with ``dropped_overflow`` staying at 0 the whole time,
+    since our *own* queue never even saw them -- see ``docs/STAGE2_PROGRESS.md``). Linux
+    exposes a per-socket ``SO_RXQ_OVFL`` counter for exactly this; Windows' socket API (this
+    process runs on Windows, talking to the WSL2-hosted PX4 over UDP) has no equivalent
+    accessible from a standard Python ``socket``, so a true kernel-drop count is not
+    implemented here -- inventing one would misrepresent what is actually measured.
+
+    What IS added instead, honestly scoped as a proxy, never a drop count:
+    ``queue_high_water`` (the largest this transport's own bounded queue has ever gotten,
+    right after an enqueue) and ``max_poll_gap_s`` (the longest gap ever seen between two
+    consecutive ``poll()`` calls draining it). Neither counts a single lost datagram. Both
+    are early-warning signals for the SAME condition that produced the silent-loss result
+    above: if the queue is chronically near-full or the consumer is going a long time
+    between drains, the OS-level receive buffer is the next thing to back up and silently
+    drop into, even though this code cannot see that moment directly.
     """
 
     def __init__(
@@ -505,6 +537,11 @@ class UdpMavlinkTransport:
         self.dropped_overflow = 0
         self.dropped_overflow_bytes = 0
         self.dropped_foreign = 0
+        # Receive-side health, NOT a count of OS-dropped datagrams (see class docstring
+        # "Observability limitation" section for exactly what this can and cannot show).
+        self.queue_high_water = 0
+        self.max_poll_gap_s = 0.0
+        self._last_poll_end_ns: int | None = None
         self.heartbeats_sent = 0
         self.recv_errors = 0
         self.last_error: str | None = None
@@ -577,6 +614,11 @@ class UdpMavlinkTransport:
         return self._target or self._peer
 
     def poll(self) -> list[tuple[int, bytes]]:
+        now_ns = self._clock_ns()
+        if self._last_poll_end_ns is not None:
+            gap_s = (now_ns - self._last_poll_end_ns) / 1e9
+            if gap_s > self.max_poll_gap_s:
+                self.max_poll_gap_s = gap_s
         out: list[tuple[int, bytes]] = []
         while True:
             try:
@@ -586,6 +628,7 @@ class UdpMavlinkTransport:
         if out:
             with self._bytes_lock:
                 self._queued_bytes -= sum(len(d) for _, d in out)
+        self._last_poll_end_ns = self._clock_ns()
         return out
 
     def _enqueue(self, stamp: int, data: bytes) -> None:
@@ -594,6 +637,9 @@ class UdpMavlinkTransport:
                 try:
                     self._q.put_nowait((stamp, data))
                     self._queued_bytes += len(data)
+                    qsize = self._q.qsize()
+                    if qsize > self.queue_high_water:
+                        self.queue_high_water = qsize
                     return
                 except queue.Full:
                     pass
@@ -731,6 +777,14 @@ class LiveMavlinkSource:
     ``clock_ns`` must be the same clock the transport stamps with (default
     ``time.monotonic_ns`` for both). ``sleep`` / ``clock_ns`` are injectable so
     tests run without real time.
+
+    ``secret_key`` (P4, additive, default ``None`` = unchanged behaviour): turns on REAL
+    MAVLink-2 signature verification on every frame this source parses (see
+    ``MavlinkFrameParser``). Each emitted ``TelemetryTick.sig_invalid`` is the number of
+    signing-policy violations (bad/missing signature) since the previous tick was popped --
+    an approximation bucketed by emission order, not by exact arrival tick, since the
+    underlying stat is a running total; adequate for a window-level "something failed
+    verification" signal, not for attributing a specific violation to a specific tick.
     """
 
     def __init__(
@@ -745,12 +799,15 @@ class LiveMavlinkSource:
         clock_ns: Callable[[], int] = time.monotonic_ns,
         sleep: Callable[[float], None] = time.sleep,
         max_sleep_s: float = 0.05,
+        secret_key: bytes | None = None,
+        unsigned_allowed_msgids: frozenset[int] = PX4_UNSIGNED_ALLOWED_MSGIDS,
     ) -> None:
         if origin not in ("first_frame", "start"):
             raise ValueError("origin must be 'first_frame' or 'start'")
         self.transport = transport
         self._stats = LiveStats()
-        self._asm = _TickAssembler(sample_rate_hz, label_fn, self._stats)
+        self._asm = _TickAssembler(sample_rate_hz, label_fn, self._stats,
+                                   secret_key=secret_key, unsigned_allowed_msgids=unsigned_allowed_msgids)
         self._origin_mode = origin
         self._settle_us = round(settle_s * 1e6)
         self._max_ticks = max_ticks
@@ -764,6 +821,10 @@ class LiveMavlinkSource:
         d = self._stats.as_dict()
         d["dropped_overflow"] = int(getattr(self.transport, "dropped_overflow", 0))
         d["dropped_overflow_bytes"] = int(getattr(self.transport, "dropped_overflow_bytes", 0))
+        # Receive-thread health proxies, NOT a kernel-side drop count -- see
+        # UdpMavlinkTransport's "Observability limitation" docstring section.
+        d["queue_high_water"] = int(getattr(self.transport, "queue_high_water", 0))
+        d["max_poll_gap_s"] = float(getattr(self.transport, "max_poll_gap_s", 0.0))  # type: ignore[assignment]
         return d
 
     def stop(self) -> None:

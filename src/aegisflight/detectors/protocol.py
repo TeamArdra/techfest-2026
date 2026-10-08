@@ -152,6 +152,15 @@ class ProtocolDetector(Detector):
         if self.require_signing and frame.signed_ratio < 1.0:
             bump(AttackType.MAVLINK_ANOMALY, 0.5)
             evidence.append(f"unsigned messages present (signed ratio {frame.signed_ratio:.2f})")
+        # P4, additive: a REAL cryptographic signature failure (bad/missing HMAC, or an
+        # unsigned frame for a message the signing policy does not allow unsigned -- see
+        # ``sources.mavlink_live.MavlinkFrameParser``), as opposed to the rule above (which
+        # only ever checks the claimed-signed bit, never a key). Only ever non-zero when the
+        # live source was given a signing key AND require_signing is this profile's policy;
+        # 0 for Stage-1, every current SITL profile, and any source without a key.
+        if self.require_signing and frame.sig_invalid_count > 0:
+            bump(AttackType.COMMAND_INJECTION, 0.95)
+            evidence.append(f"{frame.sig_invalid_count} frame(s) failed MAVLink-2 signature verification")
 
         return DetectorResult(
             detector=self.name,

@@ -9,6 +9,11 @@
 # already claimed trial_index 0 as _001 without renumbering anything. Nothing already on disk is
 # overwritten (the drivers refuse to run if their output exists). A trial that fails to boot/connect is
 # reported and the batch continues.
+#
+# Also clears any persisted MAVLink-2 signing key (found live during the P4 pilot: the key
+# survives a PX4 restart within the same isolated run dir, which made a later trial's "was THIS
+# trial's SETUP_SIGNING the operative bootstrap" ambiguous). Harmless for every non-signing
+# driver (the file simply never exists for them).
 set -u
 DRIVER="$1"; PREFIX="$2"; SEED="$3"; FIRST="$4"; LAST="$5"; NUMBASE="$6"; shift 6
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -22,6 +27,7 @@ for ((i=FIRST; i<=LAST; i++)); do
   echo "=== trial_index=$i -> $out"
   MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- $WSLRUN stop >/dev/null 2>&1
   sleep 3
+  MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash -c 'rm -f ~/aegis_sitl/i2/mavlink/mavlink-signing-key.bin' >/dev/null 2>&1
   MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- $WSLRUN start >/dev/null 2>&1
   ready=0
   for _ in $(seq 1 60); do

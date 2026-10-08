@@ -1,0 +1,225 @@
+{"t": 0.0, "threat": true, "type": "COMMAND_INJECTION", "score": 0.838, "evidence": ["unsigned messages present (signed ratio 0.00)", "968 frame(s) failed MAVLink-2 signature verification"]}
+{"t": 0.2, "threat": false, "type": "MAVLINK_ANOMALY", "score": 0.441, "evidence": ["unsigned messages present (signed ratio 0.00)"]}
+{"t": 0.4, "threat": false, "type": "MAVLINK_ANOMALY", "score": 0.441, "evidence": ["unsigned messages present (signed ratio 0.00)"]}
+{"t": 0.6, "threat": false, "type": "MAVLINK_ANOMALY", "score": 0.441, "evidence": ["unsigned messages present (signed ratio 0.00)"]}
+{"t": 0.8, "threat": false, "type": "MAVLINK_ANOMALY", "score": 0.441, "evidence": ["unsigned messages present (signed ratio 0.00)"]}
+{"t": 1.0, "threat": false, "type": "MAVLINK_ANOMALY", "score": 0.441, "evidence": ["unsigned messages present (signed ratio 0.00)"]}
+{"t": 1.2, "threat": false, "type": "MAVLINK_ANOMALY", "score": 0.441, "evidence": ["unsigned messages present (signed ratio 0.00)"]}
+{"t": 1.4, "threat": true, "type": "DOS", "score": 0.882, "evidence": ["GPS dropout 999.0s > 2.0s", "unsigned messages present (signed ratio 0.00)"]}
+{"t": 1.6, "threat": true, "type": "DOS", "score": 0.882, "evidence": ["GPS dropout 999.0s > 2.0s", "unsigned messages present (signed ratio 0.00)"]}
+{"t": 1.8, "threat": true, "type": "DOS", "score": 0.882, "evidence": ["sequence gap 100 > 30", "rogue telemetry source(s): sys253/comp192", "GPS dropout 999.0s > 2.0s", "unsigned messages present (signed ratio 0.00)"]}
+{"t": 2.0, "threat": true, "type": "DOS", "score": 0.882, "evidence": ["GPS dropout 999.0s > 2.0s", "unsigned messages present (signed ratio 0.00)"]}
+{"t": 2.2, "threat": true, "type": "DOS", "score": 0.882, "evidence": ["GPS dropout 999.0s > 2.0s", "unsigned messages present (signed ratio 0.00)"]}
+{"t": 2.4, "threat": true, "type": "DOS", "score": 0.882, "evidence": ["GPS dropout 999.0s > 2.0s", "unsigned messages present (signed ratio 0.00)"]}
+{"t": 2.6, "threat": true, "type": "DOS", "score": 0.882, "evidence": ["GPS dropout 999.0s > 2.0s", "unsigned messages present (signed ratio 0.00)"]}
+{"t": 2.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.794, "evidence": ["sequence gap 43 > 30", "rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 0.84)"]}
+{"t": 3.0, "threat": false, "type": "MAVLINK_ANOMALY", "score": 0.441, "evidence": ["unsigned messages present (signed ratio 0.90)"]}
+{"t": 3.2, "threat": false, "type": "MAVLINK_ANOMALY", "score": 0.441, "evidence": ["unsigned messages present (signed ratio 0.93)"]}
+{"t": 3.4, "threat": false, "type": "MAVLINK_ANOMALY", "score": 0.441, "evidence": ["unsigned messages present (signed ratio 0.95)"]}
+{"t": 3.6, "threat": false, "type": "MAVLINK_ANOMALY", "score": 0.441, "evidence": ["unsigned messages present (signed ratio 0.96)"]}
+{"t": 3.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 0.96)"]}
+{"t": 4.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 0.97)"]}
+{"t": 4.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 0.97)"]}
+{"t": 4.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 0.97)"]}
+{"t": 4.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 0.98)"]}
+{"t": 4.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 0.98)"]}
+{"t": 5.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 0.98)"]}
+{"t": 5.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 0.98)"]}
+{"t": 5.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 0.98)"]}
+{"t": 5.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 0.98)"]}
+{"t": 5.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 0.98)"]}
+{"t": 6.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.98)"]}
+{"t": 6.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 6.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 6.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 6.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 0.99)"]}
+{"t": 7.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 7.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 7.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 7.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 7.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 0.99)"]}
+{"t": 8.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 8.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 8.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 8.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 8.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 0.99)"]}
+{"t": 9.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 9.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 9.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 9.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 9.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 0.99)"]}
+{"t": 10.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 10.2, "threat": true, "type": "COMMAND_INJECTION", "score": 0.841, "evidence": ["unsigned messages present (signed ratio 0.99)", "1 frame(s) failed MAVLink-2 signature verification"]}
+{"t": 10.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 10.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 10.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 0.99)"]}
+{"t": 11.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 11.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 11.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 11.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 11.8, "threat": true, "type": "COMMAND_INJECTION", "score": 0.841, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 0.99)", "1 frame(s) failed MAVLink-2 signature verification"]}
+{"t": 12.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 12.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 12.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 12.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 12.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 0.99)"]}
+{"t": 13.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 13.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 13.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 13.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 13.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 0.99)"]}
+{"t": 14.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 14.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 14.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 14.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 14.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 0.99)"]}
+{"t": 15.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 15.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 15.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 15.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 15.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 0.99)"]}
+{"t": 16.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 16.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 16.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 16.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 16.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 0.99)"]}
+{"t": 17.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 17.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 17.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 17.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 17.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 0.99)"]}
+{"t": 18.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 18.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 18.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 18.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 18.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 0.99)"]}
+{"t": 19.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 19.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 19.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 19.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 19.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 0.99)"]}
+{"t": 20.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 20.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 20.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 20.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 20.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 0.99)"]}
+{"t": 21.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 0.99)"]}
+{"t": 21.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 21.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 21.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 21.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 22.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 22.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 22.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 22.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 22.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 23.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 23.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 23.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 23.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 23.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 24.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 24.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 24.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 24.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 24.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 25.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 25.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 25.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 25.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 25.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 26.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 26.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 26.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 26.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 26.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 27.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 27.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 27.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 27.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 27.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 28.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 28.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 28.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 28.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 28.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 29.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 29.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 29.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 29.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 29.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 30.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 30.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 30.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 30.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 30.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 31.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 31.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 31.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 31.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 31.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 32.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 32.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 32.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 32.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 32.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 33.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 33.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 33.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 33.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 33.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 34.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 34.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 34.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 34.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 34.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 35.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 35.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 35.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 35.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 35.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 36.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 36.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 36.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 36.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 36.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 37.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 37.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 37.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 37.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 37.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 38.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 38.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 38.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 38.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 38.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 39.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 39.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 39.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 39.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 39.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 40.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 40.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 40.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 40.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 40.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 41.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 41.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 41.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 41.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.453, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 41.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 42.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 42.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 42.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 42.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 42.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 43.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 43.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 43.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 43.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 43.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 44.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "unsigned messages present (signed ratio 1.00)"]}
+{"t": 44.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 44.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 44.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}
+{"t": 44.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.452, "evidence": ["unsigned messages present (signed ratio 1.00)"]}

@@ -1,0 +1,150 @@
+{
+  "trial_id": "p4_sign_n10_trial_008",
+  "seed": 7001,
+  "trial_index": 7,
+  "provenance": {
+    "px4_git_describe": "v1.18.0-rc1-27-gc239c63807",
+    "aegisflight_git_commit": "feaba05fce06cec93f4ed7c001602d0c0de58cd8",
+    "python_version": "3.13.15",
+    "pymavlink_version": "2.4.50"
+  },
+  "attack_type": "COMMAND_INJECTION",
+  "attack_mode": "expected_gcs_impersonation_track_identity_post_signing",
+  "message_type": "COMMAND_LONG",
+  "target_system": 3,
+  "target_component": 1,
+  "injection_point": "uplink",
+  "claim_class": "command-path effect (PX4 acceptance) + link-level detection (IDS, signing-aware), scored separately -- see module docstring",
+  "environment": "SITL",
+  "attack_action": "injected",
+  "parameters": {
+    "onset_s": 8.0,
+    "burst_count": 2,
+    "inter_injection_gap_s": 1.5,
+    "seq_policy": "track_identity",
+    "signing_secret_key_sha256": "2c84534e9d3ccd1751ba85f4f0030d5bb42a9b10a30f699414832164255248e5",
+    "detector_profile": "configs/px4_sitl",
+    "model_choice": "px4",
+    "require_signing_forced": true
+  },
+  "attack_start_utc": "2026-10-08T08:37:05.089954+00:00",
+  "attack_end_utc": "2026-10-08T08:37:46.632890+00:00",
+  "frames_seen": 16951,
+  "frames_modified": 0,
+  "frames_dropped": 0,
+  "frames_injected": 2,
+  "expected_effect": {
+    "hypothesis_fixed_before_running": "with signing active and require_signing forced on the IDS profile: PX4 should not accept the unsigned forged command (0 acks); the IDS's verifying parser should still observe it (sig_invalid increases by frames_injected) and the new sig_invalid_count rule should flag it; the legitimate signed resend should be accepted by PX4 and produce no sig_invalid signal."
+  },
+  "actual_effect": {
+    "frames_injected": 2,
+    "acked": false,
+    "ack_count": 0,
+    "first_ack_result": null,
+    "first_ack_result_name": null,
+    "time_to_first_ack_s": null
+  },
+  "frames_skipped_signed": 1,
+  "holdout_seeds": [],
+  "schema_id": "aegisflight.proxy.groundtruth",
+  "schema_version": "1.0.0",
+  "detector_decision": null,
+  "time_to_detection_s": null,
+  "full_provenance": {
+    "collected_utc": "2026-10-08T08:37:46.493449+00:00",
+    "aegisflight_commit": "feaba05fce06cec93f4ed7c001602d0c0de58cd8",
+    "working_tree_dirty": true,
+    "dirty_paths_count": 8,
+    "python": "3.13.15",
+    "packages": {
+      "pymavlink": "2.4.50",
+      "numpy": "2.5.3",
+      "scikit-learn": "1.9.1",
+      "joblib": "1.6.0",
+      "scipy": "1.18.1"
+    },
+    "model_sha256": "3fe74cddf3689e169610ffd783b109b6539cc6c03629bd1e4bb8b1d3842939c4",
+    "configs_sha256": "f9f7de15a4127dab1260a32c9412a0a051d3b5b68530eced074ae87c2693cb23",
+    "command_line": "scripts/sitl/run_p4_signing_trial.py --seed 7001 --trial-index 7 --out artifacts/sitl/p4_sign_n10_trial_008 --seconds 45",
+    "python_version": "3.13.15"
+  },
+  "ids_summary": {
+    "decisions": 225,
+    "threat_decisions": 216,
+    "source_stats": {
+      "datagrams_received": 16891,
+      "frames_received": 15871,
+      "bad_frames": 1020,
+      "sig_valid": 15625,
+      "sig_invalid": 1020,
+      "unverified_frames": 200,
+      "ticks_emitted": 450,
+      "late_ticks": 37,
+      "late_frames": 0,
+      "dropped_overflow": 0,
+      "dropped_overflow_bytes": 0,
+      "queue_high_water": 1412,
+      "max_poll_gap_s": 0.0581094
+    },
+    "relay_stats": {
+      "datagrams_down": 16820,
+      "datagrams_up": 131,
+      "frames_down": 16820,
+      "frames_up": 131,
+      "forwarded": 16953,
+      "forwarded_down": 16820,
+      "forwarded_up": 133,
+      "mirrored_up": 131,
+      "dropped_by_hook": 0,
+      "hook_errors": 0,
+      "bad_segments": 0,
+      "send_failures": 0,
+      "down_no_client": 6,
+      "clients": 3,
+      "clients_seen": 3,
+      "rejected_clients": 0,
+      "overflow": 0,
+      "pump_errors": 0
+    },
+    "event_log": [
+      {
+        "t": 43094.186,
+        "event": "setup_signing_sent",
+        "sent": true,
+        "seq": 0
+      },
+      {
+        "t": 43095.187,
+        "event": "gcs_signing_enabled"
+      },
+      {
+        "t": 43095.188,
+        "event": "legit_signed_command_sent",
+        "sent": true,
+        "seq": 2
+      },
+      {
+        "t": 43095.301,
+        "event": "legit_command_ack_observed",
+        "result": 0,
+        "signed": true
+      },
+      {
+        "t": 43136.535,
+        "event": "attack_effect",
+        "frames_injected": 2,
+        "acked": false,
+        "ack_count": 0,
+        "first_ack_result": null,
+        "first_ack_result_name": null,
+        "time_to_first_ack_s": null
+      }
+    ],
+    "legit_signed_command_ack": {
+      "result": 0,
+      "signed": true
+    },
+    "ids_sig_invalid_before": 0,
+    "ids_sig_invalid_after": 1020
+  }
+}

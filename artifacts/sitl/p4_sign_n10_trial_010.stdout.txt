@@ -1,0 +1,42 @@
+{"t": 43236.375, "event": "setup_signing_sent", "sent": true, "seq": 0}
+{"t": 43237.375, "event": "gcs_signing_enabled"}
+{"t": 43237.376, "event": "legit_signed_command_sent", "sent": true, "seq": 2}
+{"t": 43237.498, "event": "legit_command_ack_observed", "result": 0, "signed": true}
+{"t": 43278.884, "event": "attack_effect", "frames_injected": 2, "acked": false, "ack_count": 0, "first_ack_result": null, "first_ack_result_name": null, "time_to_first_ack_s": null}
+{
+  "relay_stats": {
+    "datagrams_down": 16881,
+    "datagrams_up": 131,
+    "frames_down": 16881,
+    "frames_up": 131,
+    "forwarded": 17014,
+    "forwarded_down": 16881,
+    "forwarded_up": 133,
+    "mirrored_up": 131,
+    "dropped_by_hook": 0,
+    "hook_errors": 0,
+    "bad_segments": 0,
+    "send_failures": 0,
+    "down_no_client": 17,
+    "clients": 3,
+    "clients_seen": 3,
+    "rejected_clients": 0,
+    "overflow": 0,
+    "pump_errors": 0
+  },
+  "actual_effect": {
+    "frames_injected": 2,
+    "acked": false,
+    "ack_count": 0,
+    "first_ack_result": null,
+    "first_ack_result_name": null,
+    "time_to_first_ack_s": null
+  },
+  "legit_signed_command_ack": {
+    "result": 0,
+    "signed": true
+  },
+  "ids_decisions": 225,
+  "ids_threat_decisions": 215,
+  "ids_sig_invalid_delta": 941
+}

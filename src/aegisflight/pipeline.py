@@ -84,6 +84,7 @@ class IDSPipeline:
         """Ingest one tick; return a ThreatAssessment at decision cadence, else None."""
         for m in tick.messages:
             self.extractor.update(m)
+        self.extractor.note_sig_invalid(tick.sig_invalid)  # P4: 0 for every non-signing source
         if tick.tick % self.decision_every != 0:
             return None
 

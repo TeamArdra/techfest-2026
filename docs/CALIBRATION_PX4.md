@@ -384,7 +384,54 @@ identical = **True**; command `aegis benchmark --out <scratch> --no-figures`; ch
 - The evidence is regenerable only with the local raw tlogs (git-ignored; SHA-256 in `derivation.json` and the manifests).
 - The unfixed extractor defects (section 7) keep a small residual false-alarm rate until the proposals are approved.
 
-## 12. Reproduce (calibration/held-out data must exist locally)
+## 13. Review against live P2/P4 attack-trial evidence (Stage-2, 2026-10; no change made)
+Section 10 above flagged, *before any attack data existed*, which loosened thresholds carry a cost and
+against which attack a tightened value would need to be justified. P2 and P4 (`docs/STAGE2_PROGRESS.md`,
+`docs/VALIDATION_EVIDENCE.md`) now provide live SITL attack-trial data: GPS drift, rogue command injection,
+downlink drop, downlink delay, uplink replay, naive and informed expected-GCS impersonation, and MAVLink-2
+signing (n=10 each unless noted). This section checks that data against section 10's own list and
+concludes **no calibration change is justified** — reasoned per item, not asserted.
+
+- **None of the live P2/P4 attacks exercise the specific attack surfaces section 10 flagged.** `expected_sysids`
+  (risk: a forgery claiming the *vehicle's own* sysid 3) was never tested — every P2 identity attack used a
+  rogue sysid (66) or an expected-GCS sysid (255), neither of which touches this threshold's risk.
+  `msg_rate_spike_factor` (~1.4x nominal; risk: a flood *below* that spike) was never tested — DELAY produced
+  a spike at 1.9x-5.1x nominal (above the threshold, consistent with it, not evidence either way) and no P2
+  attack floods below it. `battery_rise_v` and `yaw_course_deg` (risk: a battery/attitude manipulation) have
+  **no corresponding live PX4 attack at all** in P2 — Stage-1's battery/attitude attacks were never ported to
+  live SITL. Tightening any of these now, with no attack data that actually probes them, would be exactly
+  the "tuning against results we do not have" the task rules against — so none are touched.
+- **The one mechanism the new live data DOES exercise heavily, `max_seq_gap` (unchanged: 30, both Stage-1 and
+  the PX4 profile), is a validated detector, not a residual false-alarm source to tighten.** It is the
+  primary mechanism behind REPLAY-v2 (10/10), naive impersonation (10/10), and contributes to the signing
+  rule's own staging — three independent, live-confirmed detections. The already-known frozen-extractor
+  "253-frame reorder" false-alarm gap (section 7) did **not** reappear as a *new* problem in any P2/P4 batch;
+  where it was seen (e.g. `test_mavlink_live_concurrency.py`, `p2d`/`p2l` pilots), it is the same
+  pre-documented defect, not a new finding. Changing this threshold now would risk the exact attacks it is
+  currently catching, for no offsetting evidence of being too loose. **Left exactly as-is.**
+- **Live pre-onset false-alarm rates across every P2/P4 n=10 batch remain consistent with, not worse than,
+  the existing calibration's own measured rate** (0.04-0.07% in section 6's calibration/held-out tables):
+  GPS-drift 0/1404, post-fix injection 0 (clean), drop 0/1972, delay 1/1854, replay-v2 0/160, impersonation
+  naive 1/2133 and informed 1/2139 (both single, isolated decisions, not investigated further at n=10), and
+  P4 signing's pre-onset count is dominated by the one-time bootstrap transient (`P4_signing_summary.md`
+  Limitations), not an ongoing rate. None of this argues the calibration is too loose OR too tight; it
+  **reconfirms** the existing false-alarm characterization on a different (adversarial-session) sample.
+- **`require_signing` must NOT be promoted into the committed `configs/px4_sitl/detector.yaml` profile.**
+  This is a new, concrete, data-backed reason, not inertia: every committed calibration/held-out tlog
+  (`benign_001..010`) and every existing recorded flight this profile is evaluated against is **unsigned by
+  construction** (recorded before signing existed in this project). Setting `require_signing: true` as the
+  profile default would make the pre-existing `signed_ratio < 1.0` rule fire on effectively 100% of
+  decisions replayed from that data — a false-alarm regression, not an improvement, for every current and
+  future use of this profile against unsigned telemetry. Signing enforcement stays exactly what P4 built it
+  as: an explicit, per-deployment, opt-in policy (`cfg.detector["protocol"]["require_signing"] = True`, as
+  the P4 trial driver sets it), never a default.
+
+**Conclusion:** no threshold in `configs/px4_sitl/detector.yaml` is changed by this review. The held-out
+numbers in section 6, the overrides in section 4, and the cost table in section 10 all stand unmodified.
+This section exists so the question "was the live attack data checked against the calibration" has a
+documented, reasoned answer, per the task that requested it, rather than silence.
+
+## 14. Reproduce (calibration/held-out data must exist locally)
 ```bash
 .venv/Scripts/python.exe scripts/sitl/calib_derive.py          # configs/px4_sitl/detector.yaml + derivation.json
 .venv/Scripts/python.exe scripts/train_px4_baseline.py         # models/isoforest_px4.joblib + sidecar

@@ -958,3 +958,83 @@ def test_enable_signing_rejects_a_bad_key_length():
 def test_constructor_rejects_a_bad_sign_secret_key_length():
     with pytest.raises(ValueError):
         UdpMavlinkTransport(bind=("127.0.0.1", 0), sign_secret_key=b"too short")
+
+
+# --------------------------------------------------------------------------- #
+# P4: TelemetryTick.sig_invalid plumbing through frame_ticks()/LiveMavlinkSource
+# --------------------------------------------------------------------------- #
+
+
+def test_frame_ticks_sig_invalid_zero_without_a_key():
+    raw = _signed_raw(lambda m: m.global_position_int_encode(
+        1000, 473977418, 85455940, 488000, 12000, 10, -20, 30, 9000), key=_SECRET)
+    ticks = list(frame_ticks([(0.0, raw)], sample_rate_hz=10.0))
+    assert all(t.sig_invalid == 0 for t in ticks)  # no key: bit-only, unchanged behaviour
+
+
+def test_frame_ticks_sig_invalid_counts_a_bad_signature_in_its_tick():
+    good = _signed_raw(lambda m: m.heartbeat_encode(mav2.MAV_TYPE_GCS, mav2.MAV_AUTOPILOT_INVALID, 0, 0, 4),
+                       key=_SECRET, seq=0, timestamp=1000)
+    bad = _signed_raw(lambda m: m.global_position_int_encode(
+        1000, 473977418, 85455940, 488000, 12000, 10, -20, 30, 9000),
+        key=bytes(range(1, 33)), seq=1, timestamp=1001)  # wrong key -> invalid
+    ticks = list(frame_ticks([(0.0, good), (0.5, bad)], sample_rate_hz=10.0, secret_key=_SECRET))
+    assert sum(t.sig_invalid for t in ticks) == 1
+    assert sum(len(t.messages) for t in ticks) == 1  # the bad frame never becomes an envelope
+
+
+def test_frame_ticks_sig_invalid_zero_when_everything_verifies():
+    raw = _signed_raw(lambda m: m.heartbeat_encode(mav2.MAV_TYPE_GCS, mav2.MAV_AUTOPILOT_INVALID, 0, 0, 4),
+                      key=_SECRET)
+    ticks = list(frame_ticks([(0.0, raw)], sample_rate_hz=10.0, secret_key=_SECRET))
+    assert sum(t.sig_invalid for t in ticks) == 0
+    assert sum(len(t.messages) for t in ticks) == 1
+
+
+# --------------------------------------------------------------------------- #
+# Transport health proxies (NOT a kernel-drop count -- Phase 2 observability)
+# --------------------------------------------------------------------------- #
+
+
+def test_queue_high_water_tracks_the_largest_backlog_seen():
+    with UdpMavlinkTransport(bind=("127.0.0.1", 0), queue_size=16) as tr:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        for i in range(5):
+            s.sendto(hb(i), tr.local_address)
+        s.close()
+        assert _wait(lambda: tr.datagrams_received >= 5)
+        assert tr.queue_high_water == 5  # nothing drained yet -> backlog grew to 5
+        tr.poll()
+        s2 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s2.sendto(hb(5), tr.local_address)
+        s2.close()
+        assert _wait(lambda: tr.datagrams_received >= 6)
+        assert tr.queue_high_water == 5  # draining then adding 1 does not raise the high-water mark
+
+
+def test_queue_high_water_zero_when_nothing_ever_arrives():
+    with UdpMavlinkTransport(bind=("127.0.0.1", 0)) as tr:
+        assert tr.queue_high_water == 0
+
+
+def test_max_poll_gap_s_grows_only_between_poll_calls_not_before_the_first():
+    clock = FakeClock(0.0)
+    with UdpMavlinkTransport(bind=("127.0.0.1", 0), clock_ns=clock) as tr:
+        tr.poll()  # first call: no prior poll to measure a gap against
+        assert tr.max_poll_gap_s == 0.0
+        clock.ns += round(0.25 * 1e9)
+        tr.poll()
+        assert tr.max_poll_gap_s == pytest.approx(0.25, abs=1e-6)
+        clock.ns += round(0.05 * 1e9)  # a smaller gap afterwards must not shrink the high-water mark
+        tr.poll()
+        assert tr.max_poll_gap_s == pytest.approx(0.25, abs=1e-6)
+
+
+def test_stats_surface_on_live_mavlink_source():
+    clock = FakeClock(0.0)
+    tr = ScriptedTransport(clock, [])
+    tr.queue_high_water = 7
+    tr.max_poll_gap_s = 0.42
+    src = LiveMavlinkSource(tr, sample_rate_hz=10.0, clock_ns=clock, sleep=clock.sleep, max_ticks=0)
+    d = src.stats
+    assert d["queue_high_water"] == 7 and d["max_poll_gap_s"] == pytest.approx(0.42)

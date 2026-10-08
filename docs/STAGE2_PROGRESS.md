@@ -823,3 +823,69 @@ device. **No redesign is required**, confirming the architecture note in `.claud
 ("the existing source abstraction should remain reusable"). Not started: no hardware has been purchased or
 assessed as needed yet — nothing in the current checkpoint requires it to make further progress; the next
 concrete, hardware-free step would be exactly that serial-transport implementation, test-first, SITL-free.
+
+## 2026-10-09 - P4 signing n=10, a new sig_invalid detector rule, transport health observability (env: SITL + unit)
+Continuing autonomously from the P4 pilot. Three additive pieces, all gated (328 tests, ruff clean,
+Stage-1 regression bit-identical to baseline confirmed before the GNSS-attack draft below was started):
+
+**1. New `require_signing`/`sig_invalid_count` detector rule.** The pilot's `require_signing` rule only
+ever checked the MAVLink2 incompat *bit* (`signed_ratio`), never a real signature. Added: `MavlinkFrameParser`
+can now take a `secret_key` and really verify (pymavlink's own HMAC-SHA256 `decode()` path); the per-tick
+violation count flows additively through `TelemetryTick.sig_invalid` (new field, default 0) ->
+`FeatureExtractor.note_sig_invalid()` -> `FeatureFrame.sig_invalid_count` (new, not in `ML_FEATURES`) ->
+a new `ProtocolDetector` rule (`require_signing and sig_invalid_count > 0` -> `COMMAND_INJECTION` evidence
+"N frame(s) failed MAVLink-2 signature verification"), separate from the old bit-only rule. Every new field
+defaults to 0/None; Stage-1 and every current profile are byte-for-byte unaffected (confirmed by regression).
+
+**2. n=10 batch, upgraded driver with an IDS tap.** `run_p4_signing_trial.py` now runs the informed
+impersonation attack against a real `IDSPipeline` (require_signing forced on, verifying parser using the
+same per-trial key as the legitimate GCS) instead of just watching PX4's own ACKs. Found and fixed before
+trusting the batch: a **one-time signing-bootstrap transient** (~1s of spurious `sig_invalid` right after
+`enable_signing()`, then exactly 0 for the rest of a clean trial — confirmed across 6 independent SITL
+diagnostics, root-caused to PX4's/the verifier's per-stream timestamp state settling, not an ongoing noise
+floor) and a **persisted-signing-key hazard** (the key survives a PX4 restart in the same run dir, so
+`run_trial_batch.sh` now clears it before every boot). Result, all 10/10: legitimate signed command
+accepted; unsigned forged command rejected (0 acks); IDS's verifying parser observed the forged bytes;
+the NEW signing rule flagged it in the attack window; pre-onset false alarms on the new rule are exactly
+10/400 (one per trial — the bootstrap transient, not noise), matching the characterized mechanism exactly.
+`artifacts/sitl/P4_signing_summary.md` (generated), `artifacts/sitl/p4_sign_n10_trial_*`.
+
+**3. Transport health observability (Phase 2 ask).** Investigated whether kernel-side silent UDP drop can
+be measured directly: **no** — Linux exposes `SO_RXQ_OVFL` for this, Windows' socket API (this process's
+host OS) does not, and a prior finding already showed `dropped_overflow` (our own queue) stays 0 even when
+~93% of datagrams vanished at the OS level. Documented this limitation in `UdpMavlinkTransport`'s docstring
+rather than inventing a fake counter. Added instead, honestly scoped as proxies (not drop counts):
+`queue_high_water` (largest our own bounded queue has gotten) and `max_poll_gap_s` (longest gap between
+`poll()` calls) — both real, both early-warning signals for the same backpressure condition that produces
+silent kernel-side loss, surfaced via `LiveMavlinkSource.stats`.
+
+**4. CALIBRATION_PX4.md reviewed against the live P2/P4 attack data (Phase 3 ask) — no change made.** None
+of the "cost side" thresholds flagged in section 10 are exercised by any live P2/P4 attack (no live
+battery/attitude/sub-threshold-flood attack exists); `max_seq_gap` is proven valuable (REPLAY-v2, naive
+impersonation) and left alone; `require_signing` must NOT become the profile default (every committed
+calibration/held-out tlog is unsigned, so it would cause a 100% false-alarm regression against them).
+Documented in a new CALIBRATION_PX4.md section 13, not asserted.
+
+**Gate:** 328 passed, `ruff check src tests scripts backend` clean. Stage-1 regression confirmed bit-identical
+(6535/4/16826/65).
+
+**In progress, NOT committed, NOT tested live:** a fifth live attack, `GnssDegradationAttack`
+(`proxy/attacks_live.py`) -- modifies `GPS_RAW_INT.fix_type`/`satellites_visible` in transit (content
+attack, vehicle stays stationary, no flight needed) to test the dedicated GNSS-fix-loss rule
+(`min_gnss_fix_type`/`min_gnss_satellites`/`gnss_loss_ticks`), never exercised live by any existing P2
+attack (DROP tests message-absence, not content degradation). Code is drafted (class, params, draw
+function, `compute_gnss_degradation_effect`, `__init__.py` wiring) but has **no unit tests yet, no trial
+driver, no live run** -- picked as the one high-value remaining P2 gap after reviewing and explicitly
+rejecting two alternatives (attitude/yaw-course manipulation needs real flight, not just a disarmed ground
+vehicle, since `yaw_course_diff_deg` only computes above 2 m/s groundspeed; a dedicated flood attack would
+be largely redundant with DELAY's already-validated rate-spike detection). Session ended on a usage-limit
+boundary before this could be finished -- next step is unit tests, a trial driver, one pilot, then n=10.
+This draft is deliberately NOT committed with the rest of this entry (kept as uncommitted working-tree
+changes) so the committed history does not claim validation that has not happened.
+
+**Current Stage-2 checkpoint:** P0/P1/P3 done. P2 live SITL fully populated (GPS-drift, injection, drop,
+delay, replay-v2, impersonation naive+informed, all n=10). P4: scoped, piloted, AND now validated at n=10
+with a real signing-aware detector rule. Phase 2 (transport observability) and Phase 3 (calibration review)
+done. Phase 4 (GNSS-degradation attack) drafted but unfinished/uncommitted. Not started: Phase 5 (live-path
+integration-weakness review), Phase 6 (final consolidated validation pass), Phase 7 (serial transport),
+Phase 8 (presentation-readiness pass).

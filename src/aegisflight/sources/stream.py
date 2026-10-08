@@ -41,6 +41,13 @@ class TelemetryTick:
     integrity_truth: IntegrityStatus = IntegrityStatus.VALID
     # multi-label ground truth (every active attack class; empty when benign)
     labels: frozenset[AttackType] = frozenset()
+    # ADDITIVE (P4): count of frames this tick that violated the live source's signing
+    # policy (bad/missing MAVLink-2 signature; see ``sources.mavlink_live.MavlinkFrameParser``
+    # ``secret_key``). Always 0 for this simulated source and for any live source not
+    # configured with a signing key -- not detector-visible ground truth, a live-source
+    # measurement (the equivalent of a dropped/bad frame count), always 0 by construction
+    # here, never read by anything in this module.
+    sig_invalid: int = 0
 
 
 class SimulatedTelemetrySource:
