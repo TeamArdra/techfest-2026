@@ -426,3 +426,220 @@ key exchange (`mavlink_sign_control.cpp`), a fixed per-build allowlist of messag
 (`HEARTBEAT`, `RADIO_STATUS`, `ADSB_VEHICLE`, `COLLISION`), key persisted under the SITL instance's own storage
 root - no PX4 source/build changes implied, only a live `SETUP_SIGNING` message and matching signing on the
 proxy/IDS side. Not started.
+
+## 2026-10-07 - P2 command-injection nondeterminism: root cause found, it is NOT the transport  (env: SITL artifacts + SIM-free loopback reproduction)
+Bounded investigation (no SITL started, no live trials run, no `src/` change). Question asked: "can the real threaded
+`UdpMavlinkTransport` reliably deliver a rare command frame inside a high-rate stream?"  Answer: **yes**, and the
+concurrency hypothesis recorded in the entries above is **not supported**. The 5/10 detection split has a different,
+deterministic mechanism in the **relay's uplink-mirror topology**.
+
+**Proven (reproduced SITL-free with the real components; deterministic test committed):**
+- `MavlinkRelay(mirror_uplink_to_clients=True)` mirrors an uplink frame - and everything the hook returns with it, including
+  the attack's injected `COMMAND_LONG` - to every client **except the frame's sender** (`proxy/transport.py` `_handle_up`,
+  `others = [a for a in self._clients if a != addr]`). `CommandInjectionAttack` piggybacks on **whichever** uplink frame comes
+  next after its gap. The trial topology has two heartbeating uplink clients: the inert carrier (252/193) **and the IDS tap
+  itself (254/191, `UdpMavlinkTransport(gcs_heartbeat=True)`)**. When the IDS's own heartbeat is the carrier, PX4 receives the
+  injection (command-path effect unaffected) but the IDS is excluded from the mirror and never sees it. The trial script's
+  comment (`run_p2_injection_trial.py` ~L120-126) assumed adding the carrier client removed this; it only made it ~50/50.
+  Which client carries an injection depends on the 1 Hz heartbeat phase between the two loops, set by process start-up
+  timing - hence run-to-run variation on identical `(seed, trial_index)` draws.
+- Committed tests: `tests/unit/test_mavlink_live_concurrency.py` - (1) real threaded transport + `LiveMavlinkSource`, ~600 fps
+  + 12 rare tagged commands, CPU-burning consumer: 12/12 delivered once, in order, no overflow/bad/late frames; (2) positive
+  control: carrier = other client -> IDS receives the injection; (3) **strict xfail**: carrier = IDS -> IDS does not receive it
+  (fails at exactly that assertion; PX4 does receive it); (4) real relay + real attack + two heartbeating clients over real
+  sockets/threads: every injection not carried by the IDS reaches it exactly once, in order.
+- Scratch experiment (SITL-free, real relay/attack/transports/`IDSPipeline` with the PX4 profile + PX4 model, fake PX4 at ~390
+  fps, recording wrapper logging each injection's carrier sysid; **script not committed, numbers are not a generated artifact**,
+  4 runs, hb 5 Hz, gap 0.3 s): injections carried by the IDS's heartbeat 155, received by IDS **0**; carried by the other
+  client 139, received **139**; IDS command-source evidence appeared only in runs/ticks where frames were received. Per-run
+  carrier split varied (26/44, 68/4, 24/58, 37/33) with heartbeat phase.
+- Transport load limits (scratch, same caveat): consumer CPU alone (up to 85 ms per 100 ms tick) lost nothing. Adding 3
+  GIL-hogging pure-Python threads in the IDS process starved the receive thread and ~93% of datagrams were dropped
+  **silently** (`dropped_overflow` stays 0 - kernel-side drop). Not the live regime (all 10 live trials: `late_ticks: 0`; a
+  hand reconciliation of IDS `datagrams_received` against relay `forwarded_down - down_no_client` + mirrored frames, done for
+  trials 003/004/009/010 only, agreed to within ~5-8 frames of ~36k - too coarse to exclude a single lost frame), but it is
+  an uncounted failure mode worth a counter.
+
+**Consistent with, but NOT directly observed in, the 10 live trials** (the carrier of each live injection was not logged):
+in every trial with a tap, each `sysid 66` frame the IDS saw coincides (<0.5 ms) with a carrier-252 heartbeat
+(`artifacts/sitl/p2i_trial_00{4..8}.ids_ingest.jsonl`); trials 009/010 saw 0 of 4 / 3 injections
+(`.frames.jsonl` vs `.ids_ingest.jsonl`); relay stats show `mirrored_up` firing in all of them and no bulk datagram loss.
+The earlier "0/3 without tap vs 5/7 with tap" split is therefore most likely heartbeat-phase luck, not an effect of the tap
+(not independently shown). A post-hoc attempt to attribute individual unseen injections in trials 005/006 to a carrier by
+clock-offset anchoring was **ambiguous and is discarded** as evidence.
+
+**Hypothesis, not proven:** that the missed live injections were all IDS-carried. It is the only mechanism found that
+explains them and is shown to exist; confirming it on live data needs the carrier logged in a rerun.
+
+**Consequence for claims:** the live "5/10 detected" is a harness-topology artefact, not a statement about the detector or
+transport. It must not be reported as a detection rate, nor as a detector miss. `P2_injection_summary.md`,
+`make_p2i_summary.py` (L98) and `VALIDATION_EVIDENCE.md` still state the disproven concurrency hypothesis - to be corrected by
+the validation owner (generated artifact; not edited here).
+
+**Proposed smallest fix (NOT applied; relay semantics change, needs approval):** in `_handle_up`'s mirror branch, mirror a hook-added
+frame (`raw != fr.raw`) to all clients and keep sender-exclusion only for the original frame. Checked in a scratch
+monkeypatch only: IDS receives the injection in both carrier cases, a sender never gets an echo of its own frame, original
+frames still mirror to the others. (Note `fr` is a `_Frame`; compare against `fr.raw`.) Alternative with no relay change:
+have the IDS tap register once and stop sending heartbeats. After either, remove the strict-xfail marker, then rerun the
+injection trials (and log the carrier) before any detection claim.
+
+Gate: `pytest` 272 passed + 1 xfailed (the xfail is the pinned gap above); `ruff check src tests scripts backend` clean;
+PX4 tree not touched; nothing committed.
+
+## 2026-10-07 - P2 command-injection: relay mirror fixed, live re-validation 10/10  (env: SITL; claim: link-level detection + command-path effect)
+Approved follow-up to the root-cause entry above. **Fix (`src/aegisflight/proxy/transport.py`, `_handle_up`, opt-in
+`mirror_uplink_to_clients` branch only):** a frame the hook created or modified (`raw != fr.raw`) is now mirrored to
+**every** client, the carrier's sender included; an unmodified original is still mirrored to everyone **except** its
+sender (no self-echo). Default-off behaviour is untouched. Tests: the strict xfail was removed and is now a passing
+regression (`test_ids_sees_injected_frame_even_when_its_own_heartbeat_is_the_carrier`); added no-self-echo (both client
+orderings) and hook-modified-frame tests; the live-chain test now asserts every injection reaches the IDS whichever
+client carries it. One existing test (`test_proxy_transport.py::test_mirror_uplink_to_clients_when_enabled_excludes_sender`)
+encoded the old semantics for the hook-added frame and was updated to the new contract (the sender still gets no echo of
+its own original frame). `run_p2_injection_trial.py` now records the carrier sysid of every injection and the rogue seq per
+ingest-tap line (additive manifest keys `injection_carriers`, `relay_mirror_semantics`); detector thresholds, model, profile
+and attack parameter draws are unchanged.
+
+**Re-validation (`artifacts/sitl/p2i_fix_trial_001..010`, generated summary `artifacts/sitl/P2_injection_summary.md`):** same
+methodology as the pre-fix batch - seed 2001, `trial_index` 0-9, **fresh PX4 SITL boot per trial**, `configs/px4_sitl` + PX4-trained
+model (`model_sha256` 3fe74cdd...), `--seconds 100`, benign driver 253/192, carrier 252/193, PX4
+`v1.18.0-rc1-27-gc239c63807`. Results (all from the generated summary):
+- **Command-path effect (SITL): PX4 acked the rogue force-disarm 10/10** (`MAV_RESULT_ACCEPTED`).
+- **Link-level detection (SITL): command-injection evidence ("command(s) from unexpected source sys66/comp200") in 10/10 trials**,
+  0 command evidence before onset in any trial, latency from onset 0.21-0.92 s.
+- **Harness delivery: 37/37 injected frames reached the IDS pipeline input** (rogue seq 0..n-1 exactly once per trial,
+  independently recounted from raw logs). Carriers: 25 on the IDS tap's own heartbeat (254) - exactly the case that was
+  invisible before the fix - and 12 on the carrier client (252). Eight of ten trials contained at least one IDS-carried
+  injection; all were delivered and detected.
+This is the live confirmation of the root cause: the same seed family (`trial_index` 0-6 are identical draws to the pre-fix
+batch; 7-9 are new draws) that gave 5/10 now gives 10/10 once the mirror delivers the frame. It is **not** a transport or detector change. Pre-fix batch retained as superseded evidence (it reached the ingest
+tap with only 11/25 injected frames in the 7 trials that had one).
+
+**Ceiling / limitations (kept next to the claim):** link-level on a mirrored bump-in-the-wire tap (a harness choice); the
+attack uses a *rogue* sysid (66) outside the profile's expected identities, so this shows the protocol rule's source-identity
+check works, not detection of an injection impersonating an expected GCS (255/254) or a replayed legitimate command
+(`command_injection:gcs_replay`, P4); n=10 is the design floor, reported as counts; one airframe/world/host; unsigned
+link; the carrier/driver rogue-source decisions are a harness artifact, not a false-alarm rate. Provenance: commit
+`e0b28d7` with 3 dirty paths under `src`/`scripts` (the uncommitted relay fix + the two script edits) - not a clean-commit
+reproduction until committed. Trial 010 had 26 late ticks (host load in the IDS consumer); its 4/4 injections still arrived
+and were detected. PX4 tree verified clean (0 tracked modifications) after the batch; SITL stopped.
+
+**Stale statements corrected:** `scripts/sitl/make_p2i_summary.py` (now computes delivery per injection and separates the
+pre-/post-fix batches), `artifacts/sitl/P2_injection_summary.md` (regenerated), `docs/VALIDATION_EVIDENCE.md` (post-fix claim
+row + superseded pre-fix row + roadmap item 7 + not-claimed list). Earlier entries in this log are left as written (append-only).
+
+**Gate:** `pytest` 276 passed, 0 xfailed; `ruff check src tests scripts backend` clean; Stage-1 regression
+(`aegis benchmark --out <scratch> --no-figures`) TP/FP/TN/FN **6535 / 4 / 16826 / 65**, identical to the committed baseline
+(`artifacts/benchmarks/summary.md`; committed artifacts untouched). Nothing committed or pushed.
+
+**Current Stage-2 checkpoint (superseded by the two entries below):** P0 done; P1 live ingestion done; P3 PX4 calibration done; P2: GPS-drift 10/10, command injection
+10/10 (this entry), drop/delay/replay at pilot n=1 only. Open: n=10 batches for drop and delay; replay pilot needs redesign
+(expected-GCS capture identity, a command PX4 accepts, concurrent driver); injection impersonating an expected GCS sysid;
+counter for silent kernel-side datagram loss in `UdpMavlinkTransport`; then P4 signing (not started). Commits for P1/P3/P2a and
+drop/delay/replay exist; this relay fix, tests, script/doc/artifact updates and the `p2i_fix_trial_*` evidence are uncommitted.
+
+## 2026-10-08 - Drop/delay n=10 live SITL; DelayAttack backlog-flush bug fixed (env: SITL)
+Continuing autonomously from the checkpoint above (relay-mirror fix for command injection already committed
+`4a43ad9`). Ran full n=10 live SITL batches for the two remaining undersampled P2 attacks, fresh PX4 boot per
+trial, seed 3001 (drop) / 4001 (delay), `--seconds 100`.
+
+**DROP** (suppress `GLOBAL_POSITION_INT`/`GPS_RAW_INT` downlink): **10/10 detected** (`DOS`, "GPS dropout"),
+**0 false alarms** in 1972 pooled pre-onset decisions, median latency 2.76s (min 2.22, max 2.89). Clean result,
+matches the n=1 pilot's hypothesis exactly. `artifacts/sitl/P2_drop_summary.md` (generated by new
+`scripts/sitl/make_p2dd_summary.py`), `artifacts/sitl/p2d_n10_trial_*`.
+
+**DELAY** (hold every unsigned downlink frame a fixed per-trial delay, release in order): the first live
+attempt at n=10 immediately exposed a real bug, not caught by the n=1 pilot or the 46 unit tests: when the
+attack's onset window closes, the old code flushed **every** still-held frame in one hook-call return. At
+PX4's ~340-380 msg/s the backlog at window-close is hundreds of frames; the relay's hook-output cap is 64
+frames per call (`proxy/transport.py` `_MAX_HOOK_FRAMES`), so the relay rejected the oversized return and fell
+back to forwarding only the original live frame — **every held frame in the backlog was silently dropped**,
+never forwarded at all. (The n=1 pilot's `hook_errors: 1` and 240-frame `frames_down`/`forwarded_down` gap,
+flagged then as "not independently confirmed", **was this bug** — now confirmed and fixed, not just
+suspected.) **Fix** (`attacks_live_dos_replay.py::DelayAttack`): the end-of-window flush is removed; held
+frames keep their natural per-frame release time, drained at most 63 per hook call (`_MAX_RELEASE_PER_CALL`),
+with any live frame arriving while a backlog remains queued behind it to preserve order. Guarantee (tested):
+every held frame is forwarded exactly once, byte-identical, in order, never dropped — now true under PX4-rate
+backlogs, not only the light synthetic load the original 46 tests used. New tests added
+(`test_proxy_attacks_live_dos_replay.py`); full re-check: 280 passed, `ruff` clean.
+
+Re-ran delay at n=10 with the fix: **9/10 detected** — via a `DOS` "message-rate spike" (1.9x-5.1x nominal)
+as the drained backlog arrives in a burst, 7.7-12.5s after onset — **not** the originally-hypothesised
+per-frame-jitter mechanism (`docs/ATTACK_PROXY.md` Sec2's jitter-floor caveat was about the wrong signal; the
+real signal is a rate spike from bursty release, which the fix's per-call cap makes gradual but still
+detectable). The one miss (`p2l_n10_trial_009`) drew the smallest delay in the batch (0.355s) — too small a
+backlog to produce a detectable burst, a legitimate negative result, not investigated further at n=10. 1
+false alarm in 1854 pooled pre-onset decisions. `artifacts/sitl/P2_delay_summary.md`,
+`artifacts/sitl/p2l_n10_trial_*`. Both summaries' scoring rules (GPS-dropout evidence for drop; any threat
+decision in a bounded post-onset window for delay) were fixed before reading either n=10 batch's results.
+
+**Gate:** 280 passed, `ruff check src tests scripts backend` clean; nothing run against the Stage-1 benchmark
+yet this entry (deferred to the P2-consolidation entry below, which touches no detector code further).
+Committed as `099b896`.
+
+## 2026-10-08 - Replay-v2 (expected-GCS identity): redesigned, run at n=10, a genuine positive result via an unanticipated mechanism (env: SITL)
+Picked up the explicitly-flagged redesign task: the original replay pilot captured from a non-GCS identity
+(sysid 252) using a command PX4 rejected both times — neither tests the documented
+`command_injection:gcs_replay` gap. Redesigned per the task brief: capture a legitimate, unsigned
+`COMMAND_LONG` (the same proven-accepted force-disarm) from sysid 255/compid 190 — an **expected GCS
+identity** (`expected_gcs_sysids: [255, 254]`) — then replay the byte-identical captured frame 15-30s later.
+Driver already existed in skeleton form (`run_p2_replay_v2_trial.py`) from the prior session; two harness
+bugs were found and fixed before trusting any result from it, both by a single n=1 diagnostic run against
+live SITL before committing to a full batch (per the task's own instruction to fix the harness, not abandon
+the experiment, when a diagnostic exposes one):
+
+1. **IDS-tap-registration-order bug**: the original script sent the one legitimate capture command *before*
+   creating the IDS's own tap connection, so the IDS could never see the original command (only the later
+   replay) — an artifact of script ordering having nothing to do with detection. Fixed: the IDS tap now
+   registers with the relay first.
+2. **Independent per-client sequence counters**: the hand-rolled capture frame used a fixed `seq=0` via a
+   throwaway encoder, unrelated to the capture client's own heartbeat sequence counter — an unrealistic
+   topology (a real GCS has exactly one running sequence counter for everything it sends). Fixed: added
+   `UdpMavlinkTransport.send_gcs_message()` (new, shares the transport's existing heartbeat seq counter and
+   lock, tested in `test_mavlink_live.py`), and the capture now heartbeats for 3s first so its command carries
+   a realistic mid-stream sequence number.
+
+**The n=1 diagnostic after both fixes immediately showed something not designed for or anticipated**: a
+`MAVLINK_ANOMALY` ("sequence gap 236 > 30") fired within 0.1s of the replay. Traced to its exact mechanism
+before trusting it (not detector-tuning — nothing in `detectors/` or `configs/` was touched): the replayed
+frame carries sysid 255's **old** MAVLink `seq` (byte-identical replay, by design), but the real GCS identity
+has kept heartbeating in the meantime, so its *own* running counter has moved on. `FeatureExtractor`'s
+per-source gap is `(seq - prev) % 256`; replaying an older seq while the real counter has advanced by `delta`
+always computes to `256 - delta` (backward wraps to "almost all the way around" in mod-256 arithmetic) — at
+this attack's 1Hz capture-client heartbeat and 15-30s replay-delay range, `delta` is ~15-30, giving a gap of
+~225-240, always above `max_seq_gap: 30`. This is **not** the identity/provenance rule the attack's own
+docstring says can never fire for an expected-GCS sysid (confirmed: it indeed never does, 0/10
+`COMMAND_INJECTION` evidence below) — it is a different, pre-existing, unmodified Stage-1 rule
+(sequence-continuity) picking this up by an orthogonal mechanism. Worked out analytically (not just observed)
+*before* running the n=10 batch, so the scoring rule in the new `scripts/sitl/make_p2r_v2_summary.py` was
+fixed ahead of reading that batch's results, per the task's rule against post-hoc tuning.
+
+**n=10 result** (seed 5101, fresh SITL boot per trial; one boot timeout at `trial_index=1`, a known flaky-boot
+environmental issue — retried once, succeeded): **10/10 harness delivery** (both capture and replay reached
+the IDS pipeline), **10/10 command-path effect** (PX4 `MAV_RESULT_ACCEPTED` on both the original and the
+replay), **10/10 link-level detection via the sequence-gap mechanism**, **0/10** identity-rule evidence
+(confirms the documented gap holds for *that* rule exactly as written), **0** false alarms in 160 pooled
+pre-replay decisions. Clean, deterministic, analytically explained result — not a lucky draw: the math above
+holds for the entire drawn delay range, and all 10 independent draws (17.5-29.9s) confirm it.
+`artifacts/sitl/P2_replay_v2_summary.md` (generated by `make_p2r_v2_summary.py`), `artifacts/sitl/p2r_v2_trial_*`.
+
+**What this is and is not evidence for (stated at the honesty level the task requires):** this is real,
+live, link-level detection of a real replay attack via a genuine (if serendipitous) existing mechanism — not
+a fabricated or cherry-picked result. It is **not** a fix for the `command_injection:gcs_replay` gap in
+general: the mechanism depends specifically on (a) the attack being a byte-identical replay (so it carries a
+stale sequence number at all — a *fresh forgery* using the expected GCS identity would not), (b) the real GCS
+identity continuing to heartbeat between capture and replay (so there is a "current" counter to fall behind),
+and (c) the delay staying well under ~225s at 1Hz heartbeat given the current threshold. None of these were
+tuned to produce the result — all three are properties of the already-fixed attack design and already-existing
+unmodified detector config. The next, harder, and more representative question for the authentication gap —
+a *fresh* forged command from the expected GCS identity, not a replay — is designed but not yet run (see
+Stage-2 roadmap item 7 below).
+
+New script: `scripts/sitl/run_trial_batch.sh` (reusable fresh-SITL-boot-per-trial runner for any P2 driver,
+used for this batch and reusable for the next). Gate: 281 passed (one new test for
+`send_gcs_message`), `ruff check src tests scripts backend` clean.
+
+**Current Stage-2 checkpoint:** P0/P1/P3 done. P2 live SITL: GPS-drift 10/10, command injection 10/10
+(post relay-mirror fix), drop 10/10, delay 9/10, replay-v2 (expected-GCS identity) 10/10 via the
+sequence-continuity mechanism (not identity). Open: a fresh-forgery expected-GCS-identity command (no replay,
+no stale sequence) — the harder, more representative authentication-gap test; silent kernel-side datagram-loss
+counter in `UdpMavlinkTransport`; then P4 MAVLink-2 signing (scoped, not started).

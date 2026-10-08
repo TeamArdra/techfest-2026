@@ -32,17 +32,24 @@ throughout. Full detail: `docs/PX4_SITL_INTEGRATION.md`, `docs/CALIBRATION_PX4.m
 | A documented, additive PX4-SITL calibration profile (held-out flights, never iterated on) reduces that to 1 false alarm in 2805 held-out decisions, with one quantified, un-fixed cause remaining (extractor sequence-reorder artifact) | `docs/CALIBRATION_PX4.md`, `artifacts/sitl/calibration/evaluation_heldout.json` |
 | A live MAVLink-aware attack proxy (separate from the Stage-1 simulator attack system) modifying real downlink `GLOBAL_POSITION_INT` frames in transit is detected (`GPS_SPOOFING`) in 10/10 independent trials, 0 false alarms in 1404 pooled pre-attack decisions, with ground truth authored by the proxy itself (never from detector output) | `artifacts/sitl/P2_summary.md` |
 | An unauthenticated, rogue-identity `COMMAND_LONG` (force-disarm) injected on the uplink is **accepted and acted on by PX4** (`MAV_RESULT_ACCEPTED`, ~7-18ms) in **10/10** live trials — **command-path effect (SITL)**, independent of whether the IDS flagged it | `artifacts/sitl/P2_injection_summary.md` |
-| The IDS's detection of that same live command injection is **intermittent**: `COMMAND_INJECTION` evidence fired in 5/10 trials, including a split 3-miss/1-hit result across 4 live runs of the *identical* attack draw — not a proven detector/parser/extractor bug (those were independently verified correct in isolation first), consistent with (not proven to be) timing/concurrency sensitivity in the live threaded UDP transport | `artifacts/sitl/P2_injection_summary.md`, `docs/STAGE2_PROGRESS.md` 2026-10-07 entry |
-| Pilot (n=1) live trials of two more attacks: downlink GPS-channel **drop** is detected (`DOS`, "GPS dropout") ~2.8s after onset, 0 pre-onset false alarms; downlink **delay**-and-release (no frame loss, byte-identical, order-preserving) produces almost no detector signal (1/500 decisions), as the attack's own design hypothesised | `artifacts/sitl/p2d_trial_001.manifest.json`, `artifacts/sitl/p2l_trial_001.manifest.json` |
-| A third pilot (uplink **replay** of a captured command) is **inconclusive by design and reported as such**: the chosen command was rejected by PX4 identically both as original and replay (no accept/reject asymmetry shown), and the capture used a non-GCS identity, so it does not yet test the documented `command_injection:gcs_replay` gap — needs redesign before any claim | `artifacts/sitl/p2r_trial_001.manifest.json`, `docs/STAGE2_PROGRESS.md` 2026-10-07 entry |
+| **Link-level detection (SITL), post-fix harness:** the IDS (PX4 profile + PX4-trained model) produced `COMMAND_INJECTION`-type evidence ("command(s) from unexpected source sys66/comp200") in **10/10** fresh-SITL trials; **37/37** injected frames reached the IDS pipeline input (carriers: 25 on the IDS tap's own heartbeat, 12 on the inert carrier client), ground truth = the proxy's own frame log + per-injection carrier log. Ceiling: a *rogue* sysid (66) outside the profile's expected identities is flagged by the protocol detector's source-identity rule; an injection impersonating an expected GCS sysid (255/254), or a replayed legitimate command (`command_injection:gcs_replay`), is **not** tested by this and is not claimed. The IDS saw a mirrored copy on a bump-in-the-wire tap (a harness choice). Uncommitted working tree at run time (recorded per manifest) | `artifacts/sitl/P2_injection_summary.md` (POST-FIX section), `artifacts/sitl/p2i_fix_trial_*` |
+| **Superseded negative/partial result (pre-fix harness):** the earlier batch's 5/10 detection was a **harness defect**, not a detector, parser, extractor or transport result: the relay did not mirror a hook-added frame to the sender of the uplink frame it rode on, and the IDS tap sends its own heartbeat, so injections carried by it never reached the IDS (only 11/25 injected frames reached the ingest tap in the 7 trials that had one). The earlier "timing/concurrency sensitivity in the threaded UDP transport" hypothesis is **disproven** (transport delivered every mirrored frame; reproduced SITL-free in `tests/unit/test_mavlink_live_concurrency.py`) | `artifacts/sitl/P2_injection_summary.md` (PRE-FIX section), `docs/STAGE2_PROGRESS.md` 2026-10-07 root-cause entries |
+| Downlink **drop** (suppress `GLOBAL_POSITION_INT`/`GPS_RAW_INT`): **10/10** live SITL trials detected (`DOS`, "GPS dropout"), 0 false alarms in 1972 pooled pre-onset decisions, median latency 2.76s | `artifacts/sitl/P2_drop_summary.md`, `artifacts/sitl/p2d_n10_trial_*` |
+| Downlink **delay**-and-release (hold every unsigned frame a fixed delay, release in order): **9/10** detected — via a `DOS` message-rate spike as the backlog drains in a burst, **not** the originally hypothesised per-frame jitter mechanism (the one miss drew the smallest delay, 0.355s, too small a backlog to burst); 1 false alarm in 1854 pooled pre-onset decisions | `artifacts/sitl/P2_delay_summary.md`, `artifacts/sitl/p2l_n10_trial_*` |
+| Uplink **replay** (byte-identical re-send of a legitimate, unsigned `COMMAND_LONG` captured from an **expected GCS identity**, sysid 255, 15-30s later): **10/10** harness delivery (both capture and replay reached the IDS), **10/10** command-path effect (PX4 `MAV_RESULT_ACCEPTED` both times), **10/10** link-level detection — but via an orthogonal **sequence-continuity** mechanism (`MAVLINK_ANOMALY`, "sequence gap"; the replayed frame's old MAVLink `seq` looks like a huge backward jump against the real GCS's own advancing counter), not the identity/provenance rule, which — confirmed by **0** `COMMAND_INJECTION`-type evidence across all 10 trials — cannot and does not fire for this sysid (the documented `command_injection:gcs_replay` gap, pinned SITL-free in `tests/unit/test_px4_profile.py`, holds exactly as documented). 0 false alarms in 160 pooled pre-replay decisions | `artifacts/sitl/P2_replay_v2_summary.md`, `artifacts/sitl/p2r_v2_trial_*` |
+| **Superseded pilots (n=1, pre-redesign):** drop/delay pilots are superseded by the n=10 batches above; the original replay pilot was inconclusive by design (non-GCS capture identity, a command PX4 rejected both times) and is superseded by the redesigned v2 batch above | `artifacts/sitl/p2d_trial_001.manifest.json`, `artifacts/sitl/p2l_trial_001.manifest.json`, `artifacts/sitl/p2r_trial_001.manifest.json` |
 
-**Not claimed:** PX4's own estimator/trajectory is affected (the proxy's uplink stays unmodified by construction);
-anything about real RF, hardware, or MAVLink signing (the SITL link is unsigned); a statistically powered detection
-rate (n=10 is the design floor, reported as counts); that the IDS would reliably detect this live command injection
-(5/10, see above — reported as an intermittent result, not a rate); a clean-commit result for the GPS-drift trials —
-the working tree was **dirty** (8 uncommitted paths) during all ten of those trials, and dirty again (8 paths) during
-the command-injection batch; each manifest's `full_provenance.working_tree_dirty`/`dirty_paths_count` records this
-per trial. The GPS-drift/calibration/live-ingestion code itself is now committed (`cbda253`, `7e7631b`, `3fb8cb6`).
+**Not claimed:** PX4's own estimator/trajectory is affected (the proxy's uplink/downlink content stays byte-identical
+by construction for drop/delay/replay); anything about real RF, hardware, or MAVLink signing (the SITL link is
+unsigned); a statistically powered detection rate (n=10 is the design floor, reported as counts); that the
+replay's sequence-gap detection generalises past ~225s of replay delay at 1Hz heartbeat, or to a replay performed
+after the real GCS identity has gone silent (see `P2_replay_v2_summary.md` Limitations); detection of a command
+injection that impersonates an expected GCS sysid **without** replaying a captured frame (a fresh forgery, not
+yet tested live — see Stage-2 roadmap item 7); a clean-commit result for the GPS-drift trials —
+the working tree was **dirty** (8 uncommitted paths) during all ten of those trials, dirty again (8 paths) during
+the pre-fix command-injection batch, dirty (3-4 paths) during the post-fix injection and drop/delay/replay-v2
+batches; each manifest's `full_provenance.working_tree_dirty`/`dirty_paths_count` records this per trial. All
+code for the above is now committed.
 
 ## 2. Simulation-only evidence
 
@@ -58,8 +65,15 @@ per trial. The GPS-drift/calibration/live-ingestion code itself is now committed
 
 ## 3. Known gaps (reported, not hidden)
 
-* `command_injection:gcs_replay` — a replayed command from the legitimate GCS identity is
-  **not detected** (no MAVLink-2 signing). It stays in the v2 benchmark as a known-gap row.
+* `command_injection:gcs_replay` — the protocol detector's **identity/provenance** rule
+  cannot and does not distinguish a replayed command from a fresh one carrying the
+  legitimate GCS identity (no MAVLink-2 signing); confirmed live, 0/10 (Section 1b). Live
+  testing also found that a **different**, pre-existing rule (per-source sequence
+  continuity) happens to catch this *specific* replay 10/10 — see Section 1b for exactly
+  why, and its stated boundary (continuous GCS heartbeating, delay well under ~225s).
+  This is not a fix for the underlying gap: a forged command that is not a byte-identical
+  replay (and so carries no stale sequence number) is not shown to be caught by either rule
+  — not yet tested live (Future work item 7). It stays in the v2 benchmark as a known-gap row.
 * `gps_spoofing:sudden_offset` — a constant, self-consistent offset is caught only at the
   jump (see v2 per-mode recall).
 * Link-impairment stress shows the sequence/rate rules and ML network features are
@@ -81,14 +95,17 @@ per trial. The GPS-drift/calibration/live-ingestion code itself is now committed
 4. MAVLink-2 message signing (fixes command replay), signed firmware manifest (Ed25519).
 5. A separate fault class (ALFA shows physical faults and attacks overlap in feature space).
 6. A dedicated GPS_JAMMING class in the enum / dashboard.
-7. A concurrency-focused test of `UdpMavlinkTransport` (no SITL needed) to pin down the command-injection
-   detection intermittency (5/10, see Section 1b) to a specific cause, rather than the current "consistent
-   with timing sensitivity, not proven" statement; re-tightening the PX4-SITL physics/rate thresholds now
-   that real attack-trial data exists (`docs/CALIBRATION_PX4.md` proposal 4); MAVLink-2 signing on the SITL
-   link (P4, scoped but not started — PX4 supports runtime `SETUP_SIGNING` key exchange and a fixed
-   per-build unsigned-message allowlist, read-only from `mavlink_sign_control.cpp`, no PX4 build changes
-   needed); drop/delay/replay attacks are implemented and unit-tested (`attacks_live_dos_replay.py`) with
-   pilot (n=1) live-SITL trials in progress at the time of writing — see `docs/STAGE2_PROGRESS.md`.
+7. (Done: the command-injection detection intermittency was traced to a relay-mirror topology defect, fixed and
+   re-validated 10/10 post-fix; drop/delay n=10 and the redesigned expected-GCS replay (v2) n=10 are also done
+   — see Section 1b.) Next: a **fresh forgery** of an expected-GCS-identity command (not a byte-identical
+   replay, so no stale sequence number to be caught by the mechanism found in the replay-v2 batch) — does it
+   reach PX4, is it accepted, does the IDS see it, does any current rule flag it, and if not, is this the
+   authentication gap P4 signing should close (live experiment designed, not yet run); add a counter for
+   silent kernel-side datagram loss when the receive thread is GIL-starved (`UdpMavlinkTransport` cannot see
+   it today); re-tightening the PX4-SITL physics/rate thresholds now that real attack-trial data exists
+   (`docs/CALIBRATION_PX4.md` proposal 4); MAVLink-2 signing on the SITL link (P4, scoped but not started —
+   PX4 supports runtime `SETUP_SIGNING` key exchange and a fixed per-build unsigned-message allowlist,
+   read-only from `mavlink_sign_control.cpp`, no PX4 build changes needed).
 
 ## 5. Overclaim audit (documentation language)
 

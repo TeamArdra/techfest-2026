@@ -1,0 +1,44 @@
+{
+  "frames_seen": 26333,
+  "frames_replayed": 1,
+  "actual_effect": {
+    "captured": true,
+    "capture_recv_ns": 34484328375900,
+    "replayed": true,
+    "replay_recv_ns": 34506577313200,
+    "actual_delay_s": 22.2489373,
+    "seq": 3,
+    "original_ack": {
+      "result": 0,
+      "result_name": "MAV_RESULT_ACCEPTED",
+      "recv_ns": 34484339192300
+    },
+    "replay_ack": {
+      "result": 0,
+      "result_name": "MAV_RESULT_ACCEPTED",
+      "recv_ns": 34506592988700
+    }
+  },
+  "ids_decisions": 350,
+  "ids_threat_decisions": 1,
+  "relay_stats": {
+    "datagrams_down": 26192,
+    "datagrams_up": 141,
+    "frames_down": 26192,
+    "frames_up": 141,
+    "forwarded": 26334,
+    "forwarded_down": 26192,
+    "forwarded_up": 142,
+    "mirrored_up": 141,
+    "dropped_by_hook": 0,
+    "hook_errors": 0,
+    "bad_segments": 0,
+    "send_failures": 0,
+    "down_no_client": 7,
+    "clients": 2,
+    "clients_seen": 2,
+    "rejected_clients": 0,
+    "overflow": 0,
+    "pump_errors": 0
+  }
+}

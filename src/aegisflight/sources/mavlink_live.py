@@ -553,18 +553,28 @@ class UdpMavlinkTransport:
             self.last_error = repr(exc)
             return False
 
-    def send_heartbeat(self) -> bool:
+    def send_gcs_message(self, encode: Callable[[Any], Any]) -> tuple[bool, int]:
+        """Pack and send one GCS-originated message, stamped with this transport's own running
+        MAVLink sequence counter (the one its heartbeats use), so a scripted command is
+        indistinguishable on the wire from a real GCS's: ``encode`` receives a
+        ``pymavlink`` ``MAVLink`` object and returns the encoded message (e.g.
+        ``lambda m: m.command_long_encode(...)``). Returns ``(sent, seq_used)``."""
         from pymavlink.dialects.v20 import common as mav
 
         with self._lock:
             m = mav.MAVLink(None, srcSystem=self._gcs[0], srcComponent=self._gcs[1])
-            m.seq = self._hb_seq
-            self._hb_seq = (self._hb_seq + 1) % 256
-            msg = m.heartbeat_encode(mav.MAV_TYPE_GCS, mav.MAV_AUTOPILOT_INVALID, 0, 0,
-                                     mav.MAV_STATE_ACTIVE)
-            ok = self.send(bytes(msg.pack(m)))
-            self.heartbeats_sent += ok
-            return ok
+            seq = self._hb_seq
+            m.seq = seq
+            self._hb_seq = (seq + 1) % 256
+            return self.send(bytes(encode(m).pack(m))), seq
+
+    def send_heartbeat(self) -> bool:
+        from pymavlink.dialects.v20 import common as mav
+
+        ok, _ = self.send_gcs_message(lambda m: m.heartbeat_encode(
+            mav.MAV_TYPE_GCS, mav.MAV_AUTOPILOT_INVALID, 0, 0, mav.MAV_STATE_ACTIVE))
+        self.heartbeats_sent += ok
+        return ok
 
     def _hb_loop(self) -> None:
         while not self._stop.is_set():

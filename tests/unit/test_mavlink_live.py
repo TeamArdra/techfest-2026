@@ -521,6 +521,27 @@ def test_connect_mode_sends_gcs_heartbeat_and_receives_replies(udp_ok):
         peer.close()
 
 
+def test_send_gcs_message_shares_the_heartbeat_sequence_counter(udp_ok):
+    peer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    peer.bind(("127.0.0.1", 0))
+    peer.settimeout(2.0)
+    try:
+        with UdpMavlinkTransport(connect=("127.0.0.1", peer.getsockname()[1]),
+                                 gcs_heartbeat=False, gcs_sysid=255, gcs_compid=190) as tr:
+            tr.send_heartbeat()
+            tr.send_heartbeat()
+            ok, seq = tr.send_gcs_message(lambda m: m.command_long_encode(
+                1, 1, mav2.MAV_CMD_COMPONENT_ARM_DISARM, 0, 0, 21196, 0, 0, 0, 0, 0))
+            assert ok and seq == 2
+            tr.send_heartbeat()
+            frames = [MavlinkFrameParser().parse(peer.recvfrom(2048)[0], 0.0)[0] for _ in range(4)]
+            assert [f.seq for f in frames] == [0, 1, 2, 3]
+            assert [f.msgname for f in frames] == ["HEARTBEAT", "HEARTBEAT", "COMMAND_LONG", "HEARTBEAT"]
+            assert all((f.sysid, f.compid) == (255, 190) for f in frames)
+    finally:
+        peer.close()
+
+
 def test_bounded_queue_counts_overflow(udp_ok):
     with UdpMavlinkTransport(bind=("127.0.0.1", 0), queue_size=2) as tr:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

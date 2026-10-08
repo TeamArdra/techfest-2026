@@ -1,0 +1,238 @@
+{
+  "trial_id": "p2r_v2_trial_004",
+  "seed": 5101,
+  "trial_index": 3,
+  "provenance": {
+    "px4_git_describe": "v1.18.0-rc1-27-gc239c63807",
+    "aegisflight_git_commit": "099b896ca682a4a2ce3ae88762a00600d22a6f18",
+    "python_version": "3.13.15",
+    "pymavlink_version": "2.4.50"
+  },
+  "attack_type": "COMMAND_INJECTION",
+  "attack_mode": "gcs_replay_live_v2_expected_identity",
+  "message_type": "COMMAND_LONG",
+  "target_system": 3,
+  "target_component": 1,
+  "injection_point": "uplink",
+  "claim_class": "command-path effect (SITL) only if acked; NO detection claim possible by rule construction",
+  "environment": "SITL",
+  "attack_action": "replayed",
+  "parameters": {
+    "replay_delay_s": 22.410903943011068,
+    "capture_sysid": 255,
+    "capture_compid": 190,
+    "capture_seq": 3,
+    "capture_command": 400,
+    "detector_profile": "configs/px4_sitl",
+    "model_choice": "px4"
+  },
+  "attack_start_utc": "2026-10-08T06:08:48.651102+00:00",
+  "attack_end_utc": "2026-10-08T06:09:53.412468+00:00",
+  "frames_seen": 26346,
+  "frames_modified": 0,
+  "frames_dropped": 0,
+  "frames_injected": 1,
+  "expected_effect": {
+    "expected_detector_signal": "none possible: sysid 255 is in expected_gcs_sysids, so detectors/protocol.py's command-provenance rule short-circuits before even looking at the command -- this is the P4 before/after baseline for an EXPECTED identity, distinct from the rogue-identity (sysid 66) injection result",
+    "expected_result_if_accepted": "MAV_RESULT_ACCEPTED (0) on both the original and the replay ack (disarming an already-disarmed vehicle is expected to be a no-op accept)"
+  },
+  "actual_effect": {
+    "captured": true,
+    "capture_recv_ns": 34196256927700,
+    "replayed": true,
+    "replay_recv_ns": 34219425034800,
+    "actual_delay_s": 23.1681071,
+    "seq": 3,
+    "original_ack": {
+      "result": 0,
+      "result_name": "MAV_RESULT_ACCEPTED",
+      "recv_ns": 34196268172900
+    },
+    "replay_ack": {
+      "result": 0,
+      "result_name": "MAV_RESULT_ACCEPTED",
+      "recv_ns": 34219438384500
+    }
+  },
+  "frames_skipped_signed": 0,
+  "holdout_seeds": [],
+  "schema_id": "aegisflight.proxy.groundtruth",
+  "schema_version": "1.0.0",
+  "detector_decision": null,
+  "time_to_detection_s": null,
+  "full_provenance": {
+    "collected_utc": "2026-10-08T06:09:53.251802+00:00",
+    "aegisflight_commit": "099b896ca682a4a2ce3ae88762a00600d22a6f18",
+    "working_tree_dirty": true,
+    "dirty_paths_count": 3,
+    "python": "3.13.15",
+    "packages": {
+      "pymavlink": "2.4.50",
+      "numpy": "2.5.3",
+      "scikit-learn": "1.9.1",
+      "joblib": "1.6.0",
+      "scipy": "1.18.1"
+    },
+    "model_sha256": "3fe74cddf3689e169610ffd783b109b6539cc6c03629bd1e4bb8b1d3842939c4",
+    "configs_sha256": "f9f7de15a4127dab1260a32c9412a0a051d3b5b68530eced074ae87c2693cb23",
+    "command_line": "scripts/sitl/run_p2_replay_v2_trial.py --seed 5101 --trial-index 3 --out artifacts/sitl/p2r_v2_trial_004 --seconds 70",
+    "python_version": "3.13.15"
+  },
+  "ids_summary": {
+    "decisions": 350,
+    "threat_decisions": 1,
+    "source_stats": {
+      "datagrams_received": 26266,
+      "frames_received": 26266,
+      "bad_frames": 0,
+      "unverified_frames": 303,
+      "ticks_emitted": 700,
+      "late_ticks": 57,
+      "late_frames": 0,
+      "dropped_overflow": 0,
+      "dropped_overflow_bytes": 0
+    },
+    "relay_stats": {
+      "datagrams_down": 26205,
+      "datagrams_up": 141,
+      "frames_down": 26205,
+      "frames_up": 141,
+      "forwarded": 26347,
+      "forwarded_down": 26205,
+      "forwarded_up": 142,
+      "mirrored_up": 141,
+      "dropped_by_hook": 0,
+      "hook_errors": 0,
+      "bad_segments": 0,
+      "send_failures": 0,
+      "down_no_client": 8,
+      "clients": 2,
+      "clients_seen": 2,
+      "rejected_clients": 0,
+      "overflow": 0,
+      "pump_errors": 0
+    },
+    "hook_calls_tail": [
+      [
+        "down",
+        3,
+        1,
+        1
+      ],
+      [
+        "down",
+        3,
+        1,
+        1
+      ],
+      [
+        "down",
+        3,
+        1,
+        1
+      ],
+      [
+        "down",
+        3,
+        1,
+        1
+      ],
+      [
+        "down",
+        3,
+        1,
+        1
+      ],
+      [
+        "down",
+        3,
+        1,
+        1
+      ],
+      [
+        "down",
+        3,
+        1,
+        1
+      ],
+      [
+        "down",
+        3,
+        1,
+        1
+      ],
+      [
+        "down",
+        3,
+        1,
+        1
+      ],
+      [
+        "down",
+        3,
+        1,
+        1
+      ],
+      [
+        "down",
+        3,
+        1,
+        1
+      ],
+      [
+        "down",
+        3,
+        1,
+        1
+      ],
+      [
+        "down",
+        3,
+        1,
+        1
+      ],
+      [
+        "down",
+        3,
+        1,
+        1
+      ],
+      [
+        "down",
+        3,
+        1,
+        1
+      ],
+      [
+        "down",
+        3,
+        1,
+        1
+      ],
+      [
+        "down",
+        3,
+        1,
+        1
+      ],
+      [
+        "down",
+        3,
+        1,
+        1
+      ],
+      [
+        "down",
+        3,
+        1,
+        1
+      ],
+      [
+        "down",
+        3,
+        1,
+        1
+      ]
+    ]
+  }
+}
