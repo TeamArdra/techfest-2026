@@ -810,3 +810,16 @@ Next: an n=10 batch of this same pilot for a defensible rate; the IDS's own live
 wired to verify signatures itself (this pilot showed PX4's own rejection, not an IDS detection path) --
 natural next step is a `require_signing`-aware detector rule using the new `sig_invalid` counter; then
 Stage-2 step 5 (hardware/companion-computer integration assessment).
+
+**Hardware-readiness assessment (bounded; no implementation, per the task's own caution against starting
+this prematurely):** the existing `sources/mavlink_live.py` `FrameTransport` Protocol
+(`poll() -> list[(recv_ns, datagram)]`, `close()`) is the only interface `LiveMavlinkSource` ->
+`IDSPipeline` depends on; `UdpMavlinkTransport` is one implementation of it. A serial transport for a real
+flight controller / companion-computer link (the next item in the Stage-2 roadmap, `PX4 SITL -> physical
+flight controller -> MAVLink -> companion computer -> AegisFlight`) would only need to implement the same
+two methods and could be unit-tested without hardware in hand (a pty-backed or loopback-serial double, the
+same no-SITL-needed pattern already used throughout this session's unit tests) before ever touching a real
+device. **No redesign is required**, confirming the architecture note in `.claude/CLAUDE.md`
+("the existing source abstraction should remain reusable"). Not started: no hardware has been purchased or
+assessed as needed yet — nothing in the current checkpoint requires it to make further progress; the next
+concrete, hardware-free step would be exactly that serial-transport implementation, test-first, SITL-free.
