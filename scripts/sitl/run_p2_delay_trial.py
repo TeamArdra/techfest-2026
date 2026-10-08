@@ -123,8 +123,10 @@ def main(argv: list[str] | None = None) -> int:
         attack_start_utc=started, attack_end_utc=datetime.now(UTC).isoformat(),
         frames_seen=attack.frames_seen, frames_modified=attack.frames_modified,
         frames_dropped=attack.frames_dropped, frames_injected=attack.frames_injected,
-        expected_effect={"feature": "interarrival_mean_ms", "detector": "protocol (jitter/rate)",
-                        "predicted_detection": "may well be a negative result -- see module docstring"},
+        expected_effect={"feature": "interarrival_mean_ms / rate", "detector": "protocol (jitter/rate)",
+                        "predicted_detection": "n=10 live result (artifacts/sitl/p2l_n10_trial_*): 9/10 "
+                        "detected via a message-rate spike during backlog drain, not the originally "
+                        "hypothesised jitter mechanism -- see attacks_live_dos_replay.py module docstring"},
         actual_effect=actual, frames_skipped_signed=attack.frames_skipped_signed,
     )
     write_manifest(out, manifest, prov["full_provenance"],

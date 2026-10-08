@@ -384,6 +384,102 @@ def test_delay_window_end_flushes_remaining_held_frames():
     assert out == [held1, held2, after]
 
 
+def _burst_frames(n: int, t0_ns: int, step_ns: int):
+    """n distinct frames (distinct lat) at a high rate, as ``(raw, recv_ns)`` pairs."""
+    return [(gpi_raw(seq=i % 256, lat=i), t0_ns + i * step_ns) for i in range(1, n + 1)]
+
+
+def test_delay_never_returns_more_frames_than_the_relay_allows_per_call():
+    """Regression (pilot p2l_trial_001: relay ``hook_errors: 1`` + 'sequence gap 240'): the window-end flush
+    used to return EVERY held frame in one call (hundreds at PX4 rates) and the relay rejects hook output
+    longer than 64 frames, failing open to the single original and LOSING the flushed frames."""
+    a = _fresh_delay()  # window [5, 15) s, delay 1.0 s
+    _prime_delay(a)
+    # 3 ms spacing -> ~330 frames held per second of delay; window closes at 15 s
+    frames = _burst_frames(900, 14_000_000_000, 3_000_000)  # 14.0 s .. 16.7 s
+    longest = 0
+    for raw, t in frames:
+        out = a(ctx_for(raw, "down", recv_ns=t))
+        longest = max(longest, len(out))
+    assert longest <= 64, longest
+
+
+def test_delay_exactly_once_in_order_at_px4_rates_through_window_end():
+    """No loss, no duplication, original order, across the window end at high rate, with the output
+    capped per call. Everything fed is eventually forwarded (feed enough trailing frames to drain)."""
+    a = _fresh_delay()
+    _prime_delay(a)
+    frames = _burst_frames(1500, 13_500_000_000, 3_000_000)  # 13.5 s .. 18.0 s
+    out_all: list[bytes] = []
+    for raw, t in frames:
+        out_all.extend(a(ctx_for(raw, "down", recv_ns=t)))
+    sent = [raw for raw, _ in frames]
+    assert out_all == sent[: len(out_all)]  # exactly once, byte-identical, original order (a prefix)
+    assert len(sent) - len(out_all) <= 340  # only a still-draining tail (<= ~1 s of frames) may remain
+
+
+def test_delay_through_real_relay_has_no_hook_errors_and_loses_nothing():
+    """End to end through the real ``MavlinkRelay`` (which enforces the 64-frame cap): zero hook errors,
+    every downlink frame delivered to the client exactly once and in order once the backlog drains."""
+    from aegisflight.proxy.transport import MavlinkRelay
+
+    class Up:
+        dropped_overflow = 0
+
+        def __init__(self):
+            self.inbox = []
+
+        def start(self): ...
+        def poll(self):
+            out, self.inbox = self.inbox, []
+            return out
+
+        def send(self, data):
+            return True
+
+        def send_heartbeat(self):
+            return True
+
+        def close(self): ...
+
+    class Down:
+        dropped_overflow = 0
+
+        def __init__(self):
+            self.inbox = []
+            self.sent = []
+
+        def start(self): ...
+        def poll(self):
+            out, self.inbox = self.inbox, []
+            return out
+
+        def sendto(self, data, addr):
+            self.sent.append(data)
+            return True
+
+        def close(self): ...
+
+    client = ("127.0.0.1", 50001)
+    a = _fresh_delay()
+    up, down = Up(), Down()
+    clock = [0]
+    r = MavlinkRelay(up, down, down_hook=a, clock_ns=lambda: clock[0], sleep=lambda s: None)
+    down.inbox.append((1, client, hb_raw(seq=0, sysid=255, compid=190)))  # registers the client
+    r.pump_once()
+    up.inbox.append((0, hb_raw(seq=0)))  # primes the hook's time base (elapsed 0)
+    r.pump_once()
+    frames = _burst_frames(1500, 13_500_000_000, 3_000_000)
+    for raw, t in frames:
+        up.inbox.append((t, raw))
+        r.pump_once()
+    delivered = [d for d in down.sent if d in {raw for raw, _ in frames}]
+    sent = [raw for raw, _ in frames]
+    assert r.stats["hook_errors"] == 0
+    assert delivered == sent[: len(delivered)]
+    assert len(sent) - len(delivered) <= 340
+
+
 def test_delay_signed_frame_never_held_and_counted():
     a = _fresh_delay()
     _prime_delay(a)

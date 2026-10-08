@@ -18,12 +18,19 @@ warmup) are re-declared here rather than imported, so this module has no depende
    -- not asserted here, left for ``aegis-validation``.
 2. :class:`DelayAttack` -- holds every downlink frame for a fixed per-trial delay during a
    window, releasing held frames (byte-identical, in original FIFO order) once their
-   individual release time has passed or the window ends (whichever comes first, per
-   frame). **Injection point**: downlink telemetry. **Claim class**: link-level detection
-   only, and only as a *hypothesis* -- ``docs/ATTACK_PROXY.md`` §2 already flags
-   delay/jitter as sitting close to the benign WSL/Gazebo jitter noise floor (P1: jitter
-   p95 ~= 4.9 ms, max 36 ms), so a negative (not detected) result is an expected, reportable
-   outcome, not a failure of this attack.
+   individual release time has passed (per frame; capped at ``_MAX_RELEASE_PER_CALL`` per
+   hook call so the relay's 64-frame-per-call limit is never hit). **Injection point**:
+   downlink telemetry. **Claim class**: link-level detection only. The original hypothesis
+   (``docs/ATTACK_PROXY.md`` Sec2: per-frame jitter sits close to the benign WSL/Gazebo
+   noise floor, p95 ~= 4.9ms, max 36ms, so no detection was expected) is **not** the
+   mechanism actually observed live: n=10 SITL trials (seed 4001, ``artifacts/sitl/
+   p2l_n10_trial_*``) show **9/10 detected** via a `DOS` "message-rate spike" at
+   `1.9x-5.1x` nominal, 7.7-12.5s after onset -- not from jitter, but from the backlog
+   draining as a burst once each held frame's release time (and any live frame queued
+   behind a still-draining backlog) comes due in quick succession. The one undetected
+   trial drew the smallest delay (0.355s), consistent with a smaller backlog producing no
+   detectable burst. See ``docs/STAGE2_PROGRESS.md`` 2026-10-07 (drop/delay n=10 entry) for
+   the full result; not retuned to chase or avoid this outcome.
 3. :class:`ReplayAttack` -- captures one legitimate, unsigned uplink ``COMMAND_LONG`` from
    a specific client identity and command id, then re-sends the byte-identical captured
    frame (same sysid/compid/seq -- nothing is re-packed) a drawn delay later, piggybacked
@@ -253,6 +260,11 @@ def draw_delay_params(
                         duration_s=duration_s, delay_s=delay_s)
 
 
+#: The relay (``proxy/transport.py`` ``_MAX_HOOK_FRAMES``) rejects a hook return of more than 64 frames.
+#: A hook call returns released held frames plus possibly the live frame, so release at most 63.
+_MAX_RELEASE_PER_CALL = 63
+
+
 class DelayAttack:
     """``FrameHook`` holding every unsigned downlink frame for a fixed per-trial delay
     ``delay_s`` while inside ``[onset_s, onset_s + duration_s)`` (measured from the first
@@ -268,11 +280,15 @@ class DelayAttack:
     * if the *current* frame falls inside the window and is unsigned, it is appended to
       the hold queue (not forwarded this call) and logged ``"delayed"`` with its original
       and release times;
-    * the instant the window is observed to have just ended (this call's frame is the
-      first *outside* the window after a call where it was still active), every
-      remaining held frame is flushed immediately, in order, ahead of the current
-      (live) frame -- so a held frame is never stranded waiting for its natural release
-      time if the window itself has already closed;
+    * when the window closes there is NO flush: held frames keep their natural release
+      time (so every held frame is delayed by exactly ``delay_s``), and live frames
+      arriving while a backlog remains are queued behind it to keep order. The attack's
+      effect therefore tails off over ~``delay_s`` after the window. (An earlier version
+      flushed every held frame in one call; at PX4 rates that is hundreds of frames, the
+      relay rejects hook output above 64 frames per call, fails open to the original
+      frame only, and the flushed frames were LOST -- observed live as ``hook_errors: 1``
+      and a spurious 'sequence gap' in pilot ``p2l_trial_001``.) At most
+      ``_MAX_RELEASE_PER_CALL`` frames are released per call; the rest stay queued;
     * a signed frame is never held (cannot verify/doesn't need to break a signature this
       attack never decodes, but the fail-closed convention used throughout this proxy is
       kept for consistency) -- it passes through immediately, counted in
@@ -283,10 +299,10 @@ class DelayAttack:
 
     Guarantee (asserted in tests): every frame ever held is forwarded **exactly once**,
     byte-identical, and in the same relative order it was held in. No frame is ever
-    forwarded twice or dropped. Known limitation: if the window ends on the very last
-    downlink frame of a capture, any still-held frames are stranded until a further call
-    arrives -- there being no next frame, they are never flushed. This is an inherent
-    consequence of the hook's frame-driven (non-timer) design and is not fixed here.
+    forwarded twice or dropped. Known limitation: release is frame-driven (the hook has no
+    timer), so if the downlink stops entirely while frames are still held they stay held
+    until a further frame arrives; a continuously streaming PX4 drains the tail within
+    ~``delay_s`` of the window's end.
     """
 
     def __init__(
@@ -303,7 +319,6 @@ class DelayAttack:
         self._now_utc = now_utc
         self._first_down_recv_ns: int | None = None
         self._held: deque[tuple[int, bytes, int, int, int]] = deque()  # (release_ns, raw, msgid, sysid, compid)...
-        self._window_active_prev = False
 
         self.frames_seen = 0
         self.frames_modified = 0
@@ -320,21 +335,22 @@ class DelayAttack:
         if self._first_down_recv_ns is None:
             self._first_down_recv_ns = ctx.recv_ns
 
-        out: list[bytes] = list(self._release_due(ctx.recv_ns))
+        out: list[bytes] = self._release_due(ctx.recv_ns)
 
         elapsed_s = (ctx.recv_ns - self._first_down_recv_ns) / 1e9
         onset, duration = self.params.onset_s, self.params.duration_s
         in_window = elapsed_s >= max(self._warmup_s, onset) and elapsed_s < onset + duration
-
-        if self._window_active_prev and not in_window:
-            out.extend(self._flush_all())
-        self._window_active_prev = in_window
 
         if in_window and not ctx.signed:
             release_ns = ctx.recv_ns + round(self.params.delay_s * 1e9)
             self._held.append((release_ns, ctx.raw, ctx.msgid, ctx.sysid, ctx.compid, ctx.seq, ctx.recv_ns))
             self.frames_delayed += 1
             self._log(ctx, release_ns=release_ns)
+        elif self._held and not ctx.signed:
+            # Past the window with a backlog still draining: keep order by queueing the live frame
+            # behind it (due immediately, so it leaves as soon as it reaches the head). It is NOT
+            # logged as "delayed" -- ground truth counts only the frames the window held.
+            self._held.append((ctx.recv_ns, ctx.raw, ctx.msgid, ctx.sysid, ctx.compid, ctx.seq, ctx.recv_ns))
         else:
             if in_window and ctx.signed:
                 self.frames_skipped_signed += 1
@@ -343,15 +359,14 @@ class DelayAttack:
         return out
 
     def _release_due(self, now_ns: int) -> list[bytes]:
+        """Pop due frames oldest-first, at most ``_MAX_RELEASE_PER_CALL``. The relay rejects a hook
+        return of more than 64 frames (and then forwards only the original frame), so a backlog --
+        e.g. the ~hundreds of frames held at PX4 rates when the window closes -- must drain over
+        several calls instead of in one burst. Anything not released stays queued, in order."""
         released: list[bytes] = []
-        while self._held and self._held[0][0] <= now_ns:
+        while self._held and self._held[0][0] <= now_ns and len(released) < _MAX_RELEASE_PER_CALL:
             _, raw, *_ = self._held.popleft()
             released.append(raw)
-        return released
-
-    def _flush_all(self) -> list[bytes]:
-        released = [raw for _, raw, *_ in self._held]
-        self._held.clear()
         return released
 
     def _log(self, ctx: FrameContext, *, release_ns: int) -> None:
