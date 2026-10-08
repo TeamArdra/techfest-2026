@@ -1,0 +1,600 @@
+{"t": 0.0, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 0.2, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 0.4, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 0.6, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 0.8, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 1.0, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 1.2, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 1.4, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 1.6, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 1.8, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 2.0, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 2.2, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 2.4, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 2.6, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 2.8, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 3.0, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 3.2, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 3.4, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 3.6, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 3.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 4.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 4.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 4.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 4.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 4.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 5.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 5.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 5.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 5.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 5.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 6.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 6.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 6.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 6.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 6.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 7.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 7.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 7.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 7.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 7.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 8.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 8.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 8.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 8.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 8.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 9.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 9.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 9.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 9.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 9.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 10.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 10.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 10.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 10.6, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 10.8, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 11.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 11.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 11.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 11.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 11.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 12.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 12.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 12.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 12.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 12.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 13.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 13.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 13.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 13.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 13.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 14.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 14.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 14.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 14.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 14.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 15.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 15.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 15.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 15.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 15.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 16.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 16.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 16.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 16.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 16.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 17.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 17.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 17.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 17.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 17.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 18.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 18.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 18.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 18.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 18.8, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 19.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 19.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 19.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 19.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 19.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 20.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 20.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 20.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 20.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 20.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 21.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 21.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 21.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 21.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 21.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 22.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 22.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 22.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 22.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 22.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 23.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 23.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 23.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 23.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 23.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 24.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 24.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 24.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 24.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 24.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 25.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 25.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 25.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 25.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 25.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 26.0, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 26.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 26.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 26.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 26.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 27.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 27.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 27.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 27.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 27.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 28.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 28.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 28.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 28.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 28.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 29.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 29.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 29.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 29.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 29.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 30.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 30.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 30.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 30.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 30.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 31.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 31.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 31.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 31.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 31.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 32.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 32.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 32.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 32.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 32.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 33.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 33.2, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 33.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 33.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 33.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 34.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 34.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 34.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 34.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 34.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 35.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 35.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 35.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 35.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 35.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 36.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 36.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 36.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 36.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 36.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 37.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 37.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 37.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 37.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 37.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 38.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 38.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 38.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 38.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 38.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 39.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 39.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 39.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 39.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 39.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 40.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 5 decisions"]}
+{"t": 40.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 6 decisions"]}
+{"t": 40.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 7 decisions"]}
+{"t": 40.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 8 decisions"]}
+{"t": 40.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 9 decisions"]}
+{"t": 41.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 10 decisions"]}
+{"t": 41.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 11 decisions"]}
+{"t": 41.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 12 decisions"]}
+{"t": 41.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 13 decisions"]}
+{"t": 41.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 14 decisions"]}
+{"t": 42.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 15 decisions"]}
+{"t": 42.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 16 decisions"]}
+{"t": 42.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 17 decisions"]}
+{"t": 42.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 18 decisions"]}
+{"t": 42.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 19 decisions"]}
+{"t": 43.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 20 decisions"]}
+{"t": 43.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 21 decisions"]}
+{"t": 43.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 22 decisions"]}
+{"t": 43.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 23 decisions"]}
+{"t": 43.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 24 decisions"]}
+{"t": 44.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 25 decisions"]}
+{"t": 44.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 26 decisions"]}
+{"t": 44.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 27 decisions"]}
+{"t": 44.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 28 decisions"]}
+{"t": 44.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 29 decisions"]}
+{"t": 45.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 30 decisions"]}
+{"t": 45.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 31 decisions"]}
+{"t": 45.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 32 decisions"]}
+{"t": 45.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 33 decisions"]}
+{"t": 45.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 34 decisions"]}
+{"t": 46.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 35 decisions"]}
+{"t": 46.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 36 decisions"]}
+{"t": 46.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 37 decisions"]}
+{"t": 46.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 38 decisions"]}
+{"t": 46.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 39 decisions"]}
+{"t": 47.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 40 decisions"]}
+{"t": 47.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 41 decisions"]}
+{"t": 47.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 42 decisions"]}
+{"t": 47.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 43 decisions"]}
+{"t": 47.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 44 decisions"]}
+{"t": 48.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 45 decisions"]}
+{"t": 48.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 46 decisions"]}
+{"t": 48.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 47 decisions"]}
+{"t": 48.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 48 decisions"]}
+{"t": 48.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 49 decisions"]}
+{"t": 49.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 50 decisions"]}
+{"t": 49.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 51 decisions"]}
+{"t": 49.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 52 decisions"]}
+{"t": 49.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 53 decisions"]}
+{"t": 49.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 54 decisions"]}
+{"t": 50.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 55 decisions"]}
+{"t": 50.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 56 decisions"]}
+{"t": 50.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 57 decisions"]}
+{"t": 50.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 58 decisions"]}
+{"t": 50.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 59 decisions"]}
+{"t": 51.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 60 decisions"]}
+{"t": 51.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 61 decisions"]}
+{"t": 51.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 62 decisions"]}
+{"t": 51.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 63 decisions"]}
+{"t": 51.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 64 decisions"]}
+{"t": 52.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 65 decisions"]}
+{"t": 52.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 66 decisions"]}
+{"t": 52.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 67 decisions"]}
+{"t": 52.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 68 decisions"]}
+{"t": 52.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 69 decisions"]}
+{"t": 53.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 70 decisions"]}
+{"t": 53.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 71 decisions"]}
+{"t": 53.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 72 decisions"]}
+{"t": 53.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 73 decisions"]}
+{"t": 53.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 74 decisions"]}
+{"t": 54.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 75 decisions"]}
+{"t": 54.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 76 decisions"]}
+{"t": 54.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 77 decisions"]}
+{"t": 54.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 78 decisions"]}
+{"t": 54.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 79 decisions"]}
+{"t": 55.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 80 decisions"]}
+{"t": 55.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 81 decisions"]}
+{"t": 55.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 82 decisions"]}
+{"t": 55.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 83 decisions"]}
+{"t": 55.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 84 decisions"]}
+{"t": 56.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 85 decisions"]}
+{"t": 56.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 86 decisions"]}
+{"t": 56.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 87 decisions"]}
+{"t": 56.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 88 decisions"]}
+{"t": 56.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 89 decisions"]}
+{"t": 57.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 90 decisions"]}
+{"t": 57.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 91 decisions"]}
+{"t": 57.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 92 decisions"]}
+{"t": 57.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 93 decisions"]}
+{"t": 57.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 94 decisions"]}
+{"t": 58.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 95 decisions"]}
+{"t": 58.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 96 decisions"]}
+{"t": 58.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 97 decisions"]}
+{"t": 58.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 98 decisions"]}
+{"t": 58.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 99 decisions"]}
+{"t": 59.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 100 decisions"]}
+{"t": 59.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 101 decisions"]}
+{"t": 59.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 102 decisions"]}
+{"t": 59.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 103 decisions"]}
+{"t": 59.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 104 decisions"]}
+{"t": 60.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 105 decisions"]}
+{"t": 60.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 106 decisions"]}
+{"t": 60.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 107 decisions"]}
+{"t": 60.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 108 decisions"]}
+{"t": 60.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 109 decisions"]}
+{"t": 61.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 110 decisions"]}
+{"t": 61.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 111 decisions"]}
+{"t": 61.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 112 decisions"]}
+{"t": 61.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 113 decisions"]}
+{"t": 61.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 114 decisions"]}
+{"t": 62.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 115 decisions"]}
+{"t": 62.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 116 decisions"]}
+{"t": 62.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 117 decisions"]}
+{"t": 62.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 118 decisions"]}
+{"t": 62.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 119 decisions"]}
+{"t": 63.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 120 decisions"]}
+{"t": 63.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 121 decisions"]}
+{"t": 63.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 122 decisions"]}
+{"t": 63.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 123 decisions"]}
+{"t": 63.8, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 124 decisions"]}
+{"t": 64.0, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 125 decisions"]}
+{"t": 64.2, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 126 decisions"]}
+{"t": 64.4, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 127 decisions"]}
+{"t": 64.6, "threat": true, "type": "DOS", "score": 0.625, "evidence": ["GNSS fix lost: fix_type=0, satellites=2 for 128 decisions"]}
+{"t": 64.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 65.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 65.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 65.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 65.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 65.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 66.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 66.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 66.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 66.6, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 66.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 67.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 67.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 67.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 67.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 67.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 68.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 68.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 68.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 68.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 68.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 69.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 69.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 69.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 69.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 69.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 70.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 70.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 70.4, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 70.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 70.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 71.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 71.2, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 71.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 71.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 71.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 72.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 72.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 72.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 72.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 72.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 73.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 73.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 73.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 73.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 73.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 74.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 74.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 74.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 74.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 74.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 75.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 75.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 75.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 75.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 75.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 76.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 76.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 76.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 76.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 76.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 77.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 77.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 77.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 77.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 77.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 78.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 78.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 78.4, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 78.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 78.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 79.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 79.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 79.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 79.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 79.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 80.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 80.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 80.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 80.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 80.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 81.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 81.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 81.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 81.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 81.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 82.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 82.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 82.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 82.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 82.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 83.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 83.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 83.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 83.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 83.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 84.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 84.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 84.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 84.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 84.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 85.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 85.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 85.4, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 85.6, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 85.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 86.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 86.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 86.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 86.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 86.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 87.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 87.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 87.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 87.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 87.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 88.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 88.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 88.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 88.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 88.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 89.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 89.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 89.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 89.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 89.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 90.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 90.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 90.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 90.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 90.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 91.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 91.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 91.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 91.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 91.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 92.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 92.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 92.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 92.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 92.8, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 93.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 93.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 93.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 93.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 93.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 94.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 94.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 94.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 94.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 94.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 95.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 95.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 95.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 95.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 95.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 96.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 96.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 96.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 96.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 96.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 97.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 97.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 97.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 97.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 97.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 98.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 98.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 98.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 98.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 98.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 99.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 99.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 99.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 99.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 99.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 100.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 100.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 100.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 100.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 100.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 101.0, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 101.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 101.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 101.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 101.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 102.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 102.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 102.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 102.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 102.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 103.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 103.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 103.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 103.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 103.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 104.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 104.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 104.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 104.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 104.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 105.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 105.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 105.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 105.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 105.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 106.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 106.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 106.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 106.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 106.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 107.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 107.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 107.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 107.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 107.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 108.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 108.2, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 108.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 108.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 108.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 109.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 109.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 109.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 109.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 109.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 110.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 110.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 110.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 110.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 110.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 111.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 111.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 111.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 111.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 111.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 112.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 112.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 112.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 112.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 112.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 113.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 113.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 113.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 113.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 113.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 114.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 114.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 114.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 114.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 114.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 115.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 115.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 115.4, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 115.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 115.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 116.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 116.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 116.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 116.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 116.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 117.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 117.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 117.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 117.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 117.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 118.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 118.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 118.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 118.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 118.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 119.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 119.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 119.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 119.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 119.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}

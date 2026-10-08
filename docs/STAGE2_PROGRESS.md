@@ -889,3 +889,56 @@ with a real signing-aware detector rule. Phase 2 (transport observability) and P
 done. Phase 4 (GNSS-degradation attack) drafted but unfinished/uncommitted. Not started: Phase 5 (live-path
 integration-weakness review), Phase 6 (final consolidated validation pass), Phase 7 (serial transport),
 Phase 8 (presentation-readiness pass).
+
+## 2026-10-08 - Fifth live attack: GNSS fix-quality degradation, validated n=10 (env: SITL; claim class: link-level detection)
+Finished the bounded task left open by the previous entry (the drafted, uncommitted `GnssDegradationAttack`). No detector
+code, threshold, config, profile or model was touched; the existing protocol GNSS-fix-loss rule
+(`min_gnss_fix_type=3`, `min_gnss_satellites=5`, `gnss_loss_ticks=5`, none overridden by `configs/px4_sitl`) is the unit under test.
+
+**Implementation (additive):** `GnssDegradationAttack`/`GnssDegradationParams`/`draw_gnss_degradation_params`
+(`proxy/attacks_live.py`) rewrite only `GPS_RAW_INT.fix_type`/`satellites_visible` of the PX4 downlink inside a drawn window
+(CRC recomputed; position/velocity/eph/epv and every other message, incl. `GLOBAL_POSITION_INT`, byte-identical; signed and
+MAVLink-1 frames never modified; fail-closed until the PX4 identity is learned). `compute_gnss_degradation_effect`
+(`proxy/groundtruth.py`) derives the written deltas from the proxy's own frame log, never from detector output. New
+driver `scripts/sitl/run_p2_gnss_trial.py` (sibling of the drop driver, same relay/IDS-tap topology, vehicle disarmed on the
+ground) and generated summary `scripts/sitl/make_p2n_summary.py`, whose scoring rules and integrity gates were written
+before any live GNSS trial. Disclosed draw ranges: onset 20-60 s, duration 15-40 s, fix_type 0-1, satellites 0-4 - deliberately
+far below the rule's thresholds, so this is a **positive control** for the rule on live PX4 data, not a sensitivity test.
+
+**Tests:** 23 new unit tests (`tests/unit/test_proxy_gnss_degradation.py`): pass-through (direction, identity, msgid, window
+edges, warmup, signed, MAVLink-1, corrupt/truncated), only the two fields change with valid CRC and unchanged header, draw
+ranges are strictly sub-threshold and deterministic, frame-log -> effect round trip, and a SITL-free coupling test (attack
+output -> real `MavlinkFrameParser` -> real `FeatureExtractor` -> unchanged `ProtocolDetector` fires "GNSS fix lost"; healthy
+frames do not). Gate: **339 passed**, `ruff check src tests scripts backend` clean.
+**Unexplained discrepancy, reported not fixed:** the committed baseline (HEAD `5ff674b`, new file ignored) collects **316**
+passing tests, not the 328 quoted in the 2026-10-09 entry above; 316 + 23 = 339. No test was removed in the working tree; the
+earlier 328 figure could not be reproduced and its origin is unknown.
+
+**Live results (PX4 `v1.18.0-rc1-27-gc239c63807`, profile `configs/px4_sitl` + PX4-trained model, fresh SITL boot per trial,
+`--seconds 120`, seed 7001):**
+- Pilot (n=1, `artifacts/sitl/p2n_pilot_trial_001.*`, seed 7001 / trial_index 0): clean - 164 frames modified, detected 1.34 s
+  after onset, 0/255 pre-onset false alarms, 0 threats after the window, evidence values equal the drawn values. Only then was
+  n=10 run. Pilot kept as a separate artifact (the n=10 batch re-ran the same trial_index 0 draw as `p2n_n10_trial_001`).
+- n=10 (`artifacts/sitl/P2_gnss_summary.md`, generated; `artifacts/sitl/p2n_n10_trial_*`): all 10 trials passed the integrity
+  gates (0 relay hook errors, manifest == frame-log modified counts, one distinct delta per field, 0 signed-skipped);
+  **link-level detection 10/10** (DOS-typed "GNSS fix lost"); **10/10** detector evidence reports exactly the drawn
+  (fix_type, satellites); **0/1940** pre-onset false alarms (and 0 GNSS-rule pre-onset evidence); latency from onset
+  **median 1.23 s, min 1.07 s, max 1.74 s**; 0 threat decisions after the scoring window. No trial boot failed.
+
+**Reading it honestly:** the detector sees what the proxy put on its tap, and the dedicated rule fires within ~5 decisions of
+onset every time - the expected outcome for deliberately gross degradation. It says nothing about PX4's estimator, a real
+receiver, real jamming/RF, or subtler degradation (fix_type 3 with 5-7 satellites, slow decline - untested). One airframe/
+world/host, unsigned link, n=10 is the design floor (counts, no CI). The manifests record `working_tree_dirty` (5 paths:
+the uncommitted attack/driver/test/summary code) at run time - not a clean-commit reproduction until committed. Stage-1
+benchmark regression was NOT re-run for this entry: the change is additive attack-simulation code under `proxy/` plus scripts
+and tests, touching none of `detectors/`, `features/`, `fusion/`, `pipeline.py` (the gate scopes the 9-minute re-run to those).
+PX4 tree verified clean (0 tracked modifications) and no px4/gz processes left running.
+
+**Current Stage-2 checkpoint:** P0/P1/P3 done; P2 live SITL now has **six** n=10 attack families (GPS drift, command injection,
+drop, delay, replay-v2 / impersonation, **GNSS degradation**); P4 signing validated n=10. Phases 5-8 not started.
+
+**Review status of the entry above:** an `aegis-reviewer` pass on these claims was launched but was stopped before it returned
+any verdict, so the GNSS claims are **not adversarially reviewed**. What was done instead: an independent recount of the
+n=10 artifacts (detections 10, pre-onset false alarms 0/1940, latency median 1.23 s / min 1.07 s / max 1.74 s, manifest and
+frame-log modified counts equal in every trial) with a separate script, matching `P2_gnss_summary.md`. A reviewer pass remains
+outstanding.

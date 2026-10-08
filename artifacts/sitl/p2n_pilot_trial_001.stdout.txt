@@ -1,0 +1,37 @@
+{
+  "frames_seen": 44148,
+  "frames_modified": 164,
+  "actual_effect": {
+    "frames_modified": 164,
+    "fix_type_deltas_written": [
+      -2
+    ],
+    "satellites_visible_deltas_written": [
+      -8
+    ],
+    "first_modified_recv_ns": 59287340051400,
+    "last_modified_recv_ns": 59320472289900
+  },
+  "ids_decisions": 600,
+  "ids_threat_decisions": 162,
+  "relay_stats": {
+    "datagrams_down": 44148,
+    "datagrams_up": 119,
+    "frames_down": 44148,
+    "frames_up": 119,
+    "forwarded": 44267,
+    "forwarded_down": 44148,
+    "forwarded_up": 119,
+    "mirrored_up": 0,
+    "dropped_by_hook": 0,
+    "hook_errors": 0,
+    "bad_segments": 0,
+    "send_failures": 0,
+    "down_no_client": 3,
+    "clients": 1,
+    "clients_seen": 1,
+    "rejected_clients": 0,
+    "overflow": 0,
+    "pump_errors": 0
+  }
+}

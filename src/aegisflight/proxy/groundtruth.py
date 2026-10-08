@@ -278,6 +278,31 @@ def compute_actual_effect(frame_log_path: Path, ref_lat_deg: float) -> dict[str,
     }
 
 
+def compute_gnss_degradation_effect(frame_log_path: Path) -> dict[str, Any]:
+    """Measure what the live GNSS-degradation attack actually put on the wire -- derived
+    **only** from ``field_deltas`` of ``action == "modified"`` entries in the frame log,
+    never from detector output (same convention as :func:`compute_actual_effect`).
+
+    Returns a dict with ``frames_modified``, the distinct ``fix_type``/``satellites_visible``
+    DELTAS the attack actually wrote (from the frame log, not the drawn parameter -- an
+    independent cross-check against the manifest's own recorded params rather than trusting
+    them blindly), and ``first_modified_recv_ns`` / ``last_modified_recv_ns`` (or ``None`` if
+    never modified).
+    """
+    entries = [e for e in read_frame_log(frame_log_path) if e.action == "modified"]
+    if not entries:
+        return {"frames_modified": 0, "fix_type_deltas_written": [], "satellites_visible_deltas_written": [],
+                "first_modified_recv_ns": None, "last_modified_recv_ns": None}
+    return {
+        "frames_modified": len(entries),
+        "fix_type_deltas_written": sorted({e.field_deltas.get("fix_type", 0) for e in entries}),
+        "satellites_visible_deltas_written": sorted(
+            {e.field_deltas.get("satellites_visible", 0) for e in entries}),
+        "first_modified_recv_ns": entries[0].recv_ns,
+        "last_modified_recv_ns": entries[-1].recv_ns,
+    }
+
+
 def compute_command_injection_effect(frame_log_path: Path) -> dict[str, Any]:
     """Measure what the live command-injection attack actually put on the wire, and whether
     PX4 acknowledged it -- derived **only** from the frame log's ``"injected"`` and
