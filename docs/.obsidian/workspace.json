@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "THREAT_MODEL.md",
+                "file": "PX4_SITL_INTEGRATION.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "THREAT_MODEL"
+              "title": "PX4_SITL_INTEGRATION"
             }
           }
         ]
@@ -41,9 +41,7 @@
               "type": "file-explorer",
               "state": {
                 "sortOrder": "alphabetical",
-                "autoReveal": false,
-                "showSearch": false,
-                "searchQuery": ""
+                "autoReveal": false
               },
               "icon": "lucide-folder-closed",
               "title": "Files"
@@ -187,12 +185,16 @@
   },
   "active": "89831f38cadecc26",
   "lastOpenFiles": [
-    "TESTING.md",
+    "STAGE2_PROGRESS.md",
+    "STAGE2_RUNBOOK.md",
+    "HANDOFF.md",
+    "FRONTEND.md",
+    "API.md",
     "THREAT_MODEL.md",
+    "TESTING.md",
     "TROUBLESHOOTING.md",
     "ADDING_A_NEW_ATTACK.md",
     "ADDING_A_NEW_DETECTOR.md",
-    "API.md",
     "BENCHMARKING.md",
     "CODEBASE_MAP.md",
     "COMPONENTS.md",
@@ -203,15 +205,11 @@
     "detection_methodology.md",
     "DEVELOPMENT.md",
     "EVENT_LOGGING.md",
-    "FRONTEND.md",
     "QUICKSTART.md",
     "installation.md",
     "technical_proposal.md",
     "REPORT_ALIGNMENT.md",
     "REFERENCES.md",
-    "RECOVERY_PRIORITY.md",
-    "RECOVERY_FAILURES.md",
-    "RECOVERY_AUDIT.md",
-    "README.md"
+    "RECOVERY_PRIORITY.md"
   ]
 }
