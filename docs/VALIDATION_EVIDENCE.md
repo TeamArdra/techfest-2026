@@ -39,15 +39,19 @@ throughout. Full detail: `docs/PX4_SITL_INTEGRATION.md`, `docs/CALIBRATION_PX4.m
 | Uplink **replay** (byte-identical re-send of a legitimate, unsigned `COMMAND_LONG` captured from an **expected GCS identity**, sysid 255, 15-30s later): **10/10** harness delivery (both capture and replay reached the IDS), **10/10** command-path effect (PX4 `MAV_RESULT_ACCEPTED` both times), **10/10** link-level detection — but via an orthogonal **sequence-continuity** mechanism (`MAVLINK_ANOMALY`, "sequence gap"; the replayed frame's old MAVLink `seq` looks like a huge backward jump against the real GCS's own advancing counter), not the identity/provenance rule, which — confirmed by **0** `COMMAND_INJECTION`-type evidence across all 10 trials — cannot and does not fire for this sysid (the documented `command_injection:gcs_replay` gap, pinned SITL-free in `tests/unit/test_px4_profile.py`, holds exactly as documented). 0 false alarms in 160 pooled pre-replay decisions | `artifacts/sitl/P2_replay_v2_summary.md`, `artifacts/sitl/p2r_v2_trial_*` |
 | **Superseded pilots (n=1, pre-redesign):** drop/delay pilots are superseded by the n=10 batches above; the original replay pilot was inconclusive by design (non-GCS capture identity, a command PX4 rejected both times) and is superseded by the redesigned v2 batch above | `artifacts/sitl/p2d_trial_001.manifest.json`, `artifacts/sitl/p2l_trial_001.manifest.json`, `artifacts/sitl/p2r_trial_001.manifest.json` |
 | Expected-GCS **impersonation** (a fresh forged `COMMAND_LONG`, not a replay, stamped with sysid 255/compid 190): two attacker strengths contrasted, **10/10 command-path effect and 10/10 harness delivery in both**. **Naive** attacker (own sequence counter from 0): **10/10 detected** — same sequence-continuity mechanism as the replay row above. **Informed** attacker (passively reads the real 255/190 heartbeat's running sequence off the clear-text link and continues it, modelling an attacker who can already read the link — the MITM position this proxy assumes): **0/10 detected** — no rule fires, on any of the 33 forged frames across 10 trials. This is the confirmed authentication gap: an attacker who can read the link defeats the only mechanism (sequence continuity) that caught every other command-injection variant tried so far | `artifacts/sitl/P2_gcs_impersonation_summary.md`, `artifacts/sitl/p2g_{inf,naive}_trial_*` |
+| **P4 MAVLink-2 signing (pilot, n=1): the informed-impersonation gap closes.** A real, PX4-compatible `SETUP_SIGNING` bootstrap (HMAC-SHA256, matching PX4's own and `pymavlink`'s algorithm, verified by a new AegisFlight-side verification capability added this entry — see Known gaps) between the legitimate GCS and PX4: the legitimate GCS's own **signed** resend of the proven-accepted force-disarm is still **ACCEPTED**; the identical informed-impersonation attack that got **10/10 ACCEPTED** unsigned (row above) delivered 2 unsigned forged frames to PX4 once signing was active and got **0/2 acknowledged** — no response at all, consistent with PX4's own mavlink library dropping an unsigned, non-allowlisted message before it is even dispatched. One pilot trial, not the n=10 design floor; a second attempt was discarded as ambiguous (PX4 inherited a persisted signing key from an earlier attempt in the same run directory) and kept only as a disclosed diagnostic | `artifacts/sitl/p4_sign_trial_001.manifest.json`, `artifacts/sitl/p4_sign_diag_persisted_key_001.manifest.json` (superseded diagnostic) |
 
 **Not claimed:** PX4's own estimator/trajectory is affected (the proxy's uplink/downlink content stays byte-identical
-by construction for drop/delay/replay, and the vehicle is disarmed on the ground for drop/delay/replay/impersonation
-alike); anything about real RF, hardware, or MAVLink signing (the SITL link is unsigned — the impersonation row
-above is this gap's measured "before" baseline, not its fix); a statistically powered detection rate (n=10 per
-variant is the design floor, reported as counts); that the replay's or the naive impersonator's sequence-gap
-detection generalises past ~225s of delay at 1Hz heartbeat, or to an attack performed after the real GCS identity
-has gone silent; that an attacker without read access to the link could replicate the informed impersonation
-variant's seq-continuation (it is explicitly a MITM-position result); a clean-commit result for the GPS-drift trials —
+by construction for drop/delay/replay, and the vehicle is disarmed on the ground for drop/delay/replay/impersonation/
+signing alike); a statistically powered detection rate (n=10 per variant is the design floor; the P4 signing pilot
+is n=1 only); that the replay's or the naive impersonator's sequence-gap detection generalises past ~225s of delay
+at 1Hz heartbeat, or to an attack performed after the real GCS identity has gone silent; that an attacker without
+read access to the link could replicate the informed impersonation variant's seq-continuation (it is explicitly a
+MITM-position result); that MAVLink-2 signing defends against an attacker present *before* the legitimate GCS's
+bootstrap `SETUP_SIGNING` (PX4's own "trust-on-first-contact" property, not fixed here); that the IDS's own live
+pipeline verifies signatures in the P4 pilot (it does not — the pilot measures PX4's own acceptance, a
+command-path effect, not an IDS detection outcome); any production signing-key management, rotation, or storage
+design; a clean-commit result for the GPS-drift trials —
 the working tree was **dirty** (8 uncommitted paths) during all ten of those trials, dirty again (8 paths) during
 the pre-fix command-injection batch, dirty (3-4 paths) during the post-fix injection and drop/delay/replay-v2
 batches; each manifest's `full_provenance.working_tree_dirty`/`dirty_paths_count` records this per trial. All
@@ -75,9 +79,23 @@ code for the above is now committed.
   byte-identical replay (10/10) and a *naive* fresh forgery that uses its own sequence
   counter (10/10) — but an **informed** forger that passively reads the real identity's
   running sequence off the clear-text link and continues it defeats this too: **0/10
-  detected**, confirmed live across 10 trials / 33 forged, PX4-accepted frames. This is the
-  real, now-measured authentication gap P4 (MAVLink-2 signing) is meant to close — not a
-  hypothetical. It stays in the v2 benchmark as a known-gap row.
+  detected**, confirmed live across 10 trials / 33 forged, PX4-accepted frames. **Closed
+  for this specific attack by P4 (pilot, n=1, Section 1b):** once MAVLink-2 signing is
+  bootstrapped, PX4 itself stops accepting the (necessarily unsigned) forged command —
+  10/10 ACCEPTED becomes 0/10 ACCEPTED — independent of any IDS detection rule. Not
+  claimed: a statistically powered rate for the signing pilot, or defence against an
+  attacker present before the legitimate GCS's own bootstrap handshake (PX4's own
+  disclosed "trust-on-first-contact" property). It stays in the v2 benchmark as a
+  known-gap row (the simulated benchmark has no signing model).
+* **This codebase's own `signed` flag was presence-of-bit only, not cryptographically
+  verified**, until this session's P4 scoping found it by reading the parser: the MAVLink-2
+  signature's trailing bytes were parsed over and skipped, never checked against a secret.
+  `require_signing: true` (unused by any current profile) would therefore have only ever
+  checked "does every frame claim to be signed," not "is any signature valid" — fixed
+  additively (`MavlinkFrameParser(secret_key=...)`, opt-in, `None` by default = unchanged
+  behaviour, confirmed by an identical Stage-1 regression). `MessageEnvelope.signed` (a
+  frozen field) keeps its original, existing meaning; the real verification lives in new,
+  separate `LiveStats` counters instead.
 * `gps_spoofing:sudden_offset` — a constant, self-consistent offset is caught only at the
   jump (see v2 per-mode recall).
 * Link-impairment stress shows the sequence/rate rules and ML network features are
@@ -100,14 +118,15 @@ code for the above is now committed.
 5. A separate fault class (ALFA shows physical faults and attacks overlap in feature space).
 6. A dedicated GPS_JAMMING class in the enum / dashboard.
 7. (Done: the command-injection detection intermittency was traced to a relay-mirror topology defect, fixed and
-   re-validated 10/10 post-fix; drop/delay n=10, the redesigned expected-GCS replay (v2) n=10, and the
-   expected-GCS fresh-forgery impersonation contrast (naive 10/10 detected, informed 0/10) are all done — see
-   Section 1b.) Next: add a counter for silent kernel-side datagram loss when the receive thread is
-   GIL-starved (`UdpMavlinkTransport` cannot see it today); re-tightening the PX4-SITL physics/rate thresholds
-   now that real attack-trial data exists (`docs/CALIBRATION_PX4.md` proposal 4); MAVLink-2 signing on the
-   SITL link (P4, scoped but not started — PX4 supports runtime `SETUP_SIGNING` key exchange and a fixed
-   per-build unsigned-message allowlist, read-only from `mavlink_sign_control.cpp`, no PX4 build changes
-   needed — the informed-impersonation 0/10 result above is its measured "before" baseline).
+   re-validated 10/10 post-fix; drop/delay n=10, the redesigned expected-GCS replay (v2) n=10, the
+   expected-GCS fresh-forgery impersonation contrast (naive 10/10 detected, informed 0/10), and a P4
+   MAVLink-2 signing pilot (n=1) closing the informed-impersonation gap are all done — see Section 1b.) Next:
+   an n=10 batch of the signing pilot for a defensible rate; a `require_signing`-aware detector rule using
+   the new `LiveStats.sig_invalid` counter, so the IDS's own live pipeline (not just PX4 itself) can flag an
+   unsigned/invalid command once signing is the deployed policy; add a counter for silent kernel-side
+   datagram loss when the receive thread is GIL-starved (`UdpMavlinkTransport` cannot see it today);
+   re-tightening the PX4-SITL physics/rate thresholds now that real attack-trial data exists
+   (`docs/CALIBRATION_PX4.md` proposal 4).
 
 ## 5. Overclaim audit (documentation language)
 

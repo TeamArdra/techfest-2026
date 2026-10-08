@@ -1,0 +1,128 @@
+{
+  "trial_id": "p4_sign_trial_001",
+  "seed": 7001,
+  "trial_index": 0,
+  "provenance": {
+    "px4_git_describe": "v1.18.0-rc1-27-gc239c63807",
+    "aegisflight_git_commit": "57310afeddd86bf4aff864377507f5915a0539f0",
+    "python_version": "3.13.15",
+    "pymavlink_version": "2.4.50"
+  },
+  "attack_type": "COMMAND_INJECTION",
+  "attack_mode": "expected_gcs_impersonation_track_identity_post_signing",
+  "message_type": "COMMAND_LONG",
+  "target_system": 3,
+  "target_component": 1,
+  "injection_point": "uplink",
+  "claim_class": "command-path effect (SITL): does PX4 still accept the unsigned forged command once signing is active (P4 after), contrasted with the P2 impersonation batch's 10/10 ACCEPTED (before)",
+  "environment": "SITL",
+  "attack_action": "injected",
+  "parameters": {
+    "onset_s": 8.0,
+    "burst_count": 2,
+    "inter_injection_gap_s": 1.5,
+    "seq_policy": "track_identity",
+    "signing_secret_key_sha256": "ae216c2ef5247a3782c135efa279a3e4cdc61094270f5d2be58c6204b7a612c9"
+  },
+  "attack_start_utc": "2026-10-08T07:49:40.729315+00:00",
+  "attack_end_utc": "2026-10-08T07:49:40.729329+00:00",
+  "frames_seen": 17715,
+  "frames_modified": 0,
+  "frames_dropped": 0,
+  "frames_injected": 2,
+  "expected_effect": {
+    "hypothesis_fixed_before_running": "with signing active, PX4 should no longer dispatch/accept the unsigned forged COMMAND_LONG (not on PX4's own unsigned-message allowlist) -- expect no MAV_RESULT_ACCEPTED for the forged command, while the legitimate SIGNED resend is still accepted. This is a PILOT (n=1): the hypothesis is recorded, not yet validated at the n=10 design floor."
+  },
+  "actual_effect": {
+    "frames_injected": 2,
+    "acked": false,
+    "ack_count": 0,
+    "first_ack_result": null,
+    "first_ack_result_name": null,
+    "time_to_first_ack_s": null
+  },
+  "frames_skipped_signed": 2,
+  "holdout_seeds": [],
+  "schema_id": "aegisflight.proxy.groundtruth",
+  "schema_version": "1.0.0",
+  "detector_decision": null,
+  "time_to_detection_s": null,
+  "full_provenance": {
+    "collected_utc": "2026-10-08T07:49:40.558372+00:00",
+    "aegisflight_commit": "57310afeddd86bf4aff864377507f5915a0539f0",
+    "working_tree_dirty": true,
+    "dirty_paths_count": 2,
+    "python": "3.13.15",
+    "packages": {
+      "pymavlink": "2.4.50",
+      "numpy": "2.5.3",
+      "scikit-learn": "1.9.1",
+      "joblib": "1.6.0",
+      "scipy": "1.18.1"
+    },
+    "model_sha256": "3fe74cddf3689e169610ffd783b109b6539cc6c03629bd1e4bb8b1d3842939c4",
+    "configs_sha256": "f9f7de15a4127dab1260a32c9412a0a051d3b5b68530eced074ae87c2693cb23",
+    "command_line": "scripts/sitl/run_p4_signing_trial.py --seed 7001 --trial-index 0 --out artifacts/sitl/p4_sign_trial_001 --seconds 45",
+    "python_version": "3.13.15"
+  },
+  "ids_summary": {
+    "relay_stats": {
+      "datagrams_down": 17621,
+      "datagrams_up": 94,
+      "frames_down": 17621,
+      "frames_up": 94,
+      "forwarded": 17717,
+      "forwarded_down": 17621,
+      "forwarded_up": 96,
+      "mirrored_up": 95,
+      "dropped_by_hook": 0,
+      "hook_errors": 0,
+      "bad_segments": 0,
+      "send_failures": 0,
+      "down_no_client": 6,
+      "clients": 2,
+      "clients_seen": 2,
+      "rejected_clients": 0,
+      "overflow": 0,
+      "pump_errors": 0
+    },
+    "event_log": [
+      {
+        "t": 40204.031,
+        "event": "setup_signing_sent",
+        "sent": true,
+        "seq": 0
+      },
+      {
+        "t": 40205.031,
+        "event": "gcs_signing_enabled"
+      },
+      {
+        "t": 40205.032,
+        "event": "legit_signed_command_sent",
+        "sent": true,
+        "seq": 2
+      },
+      {
+        "t": 40205.56,
+        "event": "legit_command_ack_observed",
+        "result": 0,
+        "signed": true
+      },
+      {
+        "t": 40250.595,
+        "event": "attack_effect",
+        "frames_injected": 2,
+        "acked": false,
+        "ack_count": 0,
+        "first_ack_result": null,
+        "first_ack_result_name": null,
+        "time_to_first_ack_s": null
+      }
+    ],
+    "legit_signed_command_ack": {
+      "result": 0,
+      "signed": true
+    }
+  }
+}

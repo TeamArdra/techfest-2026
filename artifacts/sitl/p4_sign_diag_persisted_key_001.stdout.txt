@@ -1,0 +1,39 @@
+{"t": 40045.427, "event": "setup_signing_sent", "sent": true, "seq": 0}
+{"t": 40046.427, "event": "gcs_signing_enabled"}
+{"t": 40046.429, "event": "legit_signed_command_sent", "sent": true, "seq": 2}
+{"t": 40046.958, "event": "legit_command_ack_observed", "result": 0, "signed": true}
+{"t": 40092.146, "event": "attack_effect", "frames_injected": 2, "acked": false, "ack_count": 0, "first_ack_result": null, "first_ack_result_name": null, "time_to_first_ack_s": null}
+{
+  "relay_stats": {
+    "datagrams_down": 17616,
+    "datagrams_up": 94,
+    "frames_down": 17616,
+    "frames_up": 94,
+    "forwarded": 17712,
+    "forwarded_down": 17616,
+    "forwarded_up": 96,
+    "mirrored_up": 95,
+    "dropped_by_hook": 0,
+    "hook_errors": 0,
+    "bad_segments": 0,
+    "send_failures": 0,
+    "down_no_client": 1,
+    "clients": 2,
+    "clients_seen": 2,
+    "rejected_clients": 0,
+    "overflow": 0,
+    "pump_errors": 0
+  },
+  "actual_effect": {
+    "frames_injected": 2,
+    "acked": false,
+    "ack_count": 0,
+    "first_ack_result": null,
+    "first_ack_result_name": null,
+    "time_to_first_ack_s": null
+  },
+  "legit_signed_command_ack": {
+    "result": 0,
+    "signed": true
+  }
+}

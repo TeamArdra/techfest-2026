@@ -32,6 +32,7 @@ from aegisflight.sources.mavlink_live import (
     _x25,
     decode_px4_mode,
     frame_ticks,
+    send_setup_signing,
 )
 
 REPO = Path(__file__).resolve().parents[2]
@@ -800,3 +801,160 @@ def test_fuzz_acceptance_drops_sharply_for_unknown_ids():
     assert st.frames_received <= _FUZZ_ACCEPTED_MEASURED
     assert st.frames_received * 20 < _FUZZ_ACCEPTED_BEFORE
     assert st.unverified_frames <= st.frames_received
+
+
+# --------------------------------------------------------------------------- #
+# MavlinkFrameParser: optional cryptographic signature verification (P4 scoping)
+# --------------------------------------------------------------------------- #
+
+_SECRET = bytes(range(32))  # arbitrary 32-byte MAVLink-2 signing key, deterministic for tests
+_GPI_MSGID = 33  # GLOBAL_POSITION_INT
+
+
+def _signed_raw(encode_fn, key: bytes = _SECRET, *, seq: int = 0, sysid: int = 255, compid: int = 190,
+               timestamp: int = 1000, link_id: int = 0) -> bytes:
+    m = mav2.MAVLink(None, srcSystem=sysid, srcComponent=compid)
+    m.seq = seq
+    m.signing.secret_key = key
+    m.signing.sign_outgoing = True
+    m.signing.link_id = link_id
+    m.signing.timestamp = timestamp
+    return bytes(encode_fn(m).pack(m))
+
+
+def test_parser_without_key_leaves_signed_bit_only_behaviour_unchanged():
+    raw = _signed_raw(lambda m: m.heartbeat_encode(mav2.MAV_TYPE_GCS, mav2.MAV_AUTOPILOT_INVALID, 0, 0, 4))
+    stats = LiveStats()
+    (msg,) = MavlinkFrameParser(stats).parse(raw, 0.0)
+    assert msg.signed is True
+    assert stats.sig_valid == 0 and stats.sig_invalid == 0  # no key configured -> not checked
+
+
+def test_parser_with_key_accepts_a_correctly_signed_frame():
+    raw = _signed_raw(lambda m: m.global_position_int_encode(
+        1000, 473977418, 85455940, 488000, 12000, 10, -20, 30, 9000))
+    stats = LiveStats()
+    (msg,) = MavlinkFrameParser(stats, secret_key=_SECRET).parse(raw, 0.0)
+    assert msg.signed is True and msg.msgname == "GLOBAL_POSITION_INT"
+    assert stats.sig_valid == 1 and stats.sig_invalid == 0 and stats.bad_frames == 0
+
+
+def test_parser_with_key_rejects_wrong_key():
+    raw = _signed_raw(lambda m: m.global_position_int_encode(
+        1000, 473977418, 85455940, 488000, 12000, 10, -20, 30, 9000), key=_SECRET)
+    stats = LiveStats()
+    wrong_key = bytes(range(1, 33))
+    out = MavlinkFrameParser(stats, secret_key=wrong_key).parse(raw, 0.0)
+    assert out == []  # dropped, not emitted
+    assert stats.sig_invalid == 1 and stats.sig_valid == 0 and stats.bad_frames == 1
+
+
+def test_parser_with_key_rejects_an_unsigned_frame_for_a_message_not_on_the_allowlist():
+    raw = gpi()  # unsigned GLOBAL_POSITION_INT, not in PX4_UNSIGNED_ALLOWED_MSGIDS
+    stats = LiveStats()
+    out = MavlinkFrameParser(stats, secret_key=_SECRET).parse(raw, 0.0)
+    assert out == []
+    # rejected by the signing policy (not allowlisted unsigned) -- counted the same as a bad signature
+    assert stats.bad_frames == 1 and stats.sig_valid == 0 and stats.sig_invalid == 1
+
+
+def test_parser_with_key_still_accepts_an_unsigned_heartbeat_matching_px4s_own_allowlist():
+    raw = hb()  # unsigned HEARTBEAT
+    stats = LiveStats()
+    (msg,) = MavlinkFrameParser(stats, secret_key=_SECRET).parse(raw, 0.0)
+    assert msg.msgname == "HEARTBEAT" and msg.signed is False
+    assert stats.bad_frames == 0 and stats.sig_valid == 0  # allowlisted: never checked, never counted
+
+
+def test_parser_with_key_rejects_a_replayed_old_timestamp():
+    key = _SECRET
+    raw1 = _signed_raw(lambda m: m.global_position_int_encode(
+        1000, 473977418, 85455940, 488000, 12000, 10, -20, 30, 9000), key=key, seq=0, timestamp=5000)
+    raw2 = _signed_raw(lambda m: m.global_position_int_encode(
+        1001, 473977418, 85455940, 488000, 12000, 10, -20, 30, 9000), key=key, seq=1, timestamp=4000)
+    stats = LiveStats()
+    parser = MavlinkFrameParser(stats, secret_key=key)
+    assert len(parser.parse(raw1, 0.0)) == 1
+    out2 = parser.parse(raw2, 0.0)  # same stream, OLDER timestamp -> pymavlink's own anti-replay check
+    assert out2 == []
+    assert stats.sig_invalid == 1 and stats.sig_valid == 1
+
+
+def test_parser_rejects_a_bad_secret_key_length():
+    with pytest.raises(ValueError):
+        MavlinkFrameParser(secret_key=b"too short")
+
+
+# --------------------------------------------------------------------------- #
+# UdpMavlinkTransport: outgoing signing + SETUP_SIGNING bootstrap (P4 scoping)
+# --------------------------------------------------------------------------- #
+
+
+def test_send_gcs_message_unsigned_by_default_even_with_send_gcs_message():
+    peer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    peer.bind(("127.0.0.1", 0))
+    peer.settimeout(2.0)
+    try:
+        with UdpMavlinkTransport(connect=("127.0.0.1", peer.getsockname()[1]), gcs_heartbeat=False) as tr:
+            tr.send_gcs_message(lambda m: m.heartbeat_encode(mav2.MAV_TYPE_GCS, mav2.MAV_AUTOPILOT_INVALID, 0, 0, 4))
+            raw, _ = peer.recvfrom(2048)
+            assert not (raw[2] & 0x01)  # incompat signed bit clear: unchanged default behaviour
+    finally:
+        peer.close()
+
+
+def test_enable_signing_makes_subsequent_sends_verifiable_and_advances_timestamp():
+    peer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    peer.bind(("127.0.0.1", 0))
+    peer.settimeout(2.0)
+    try:
+        with UdpMavlinkTransport(connect=("127.0.0.1", peer.getsockname()[1]), gcs_heartbeat=False,
+                                 gcs_sysid=255, gcs_compid=190) as tr:
+            tr.send_gcs_message(lambda m: m.heartbeat_encode(  # unsigned, before enable_signing
+                mav2.MAV_TYPE_GCS, mav2.MAV_AUTOPILOT_INVALID, 0, 0, 4))
+            raw0, _ = peer.recvfrom(2048)
+            assert not (raw0[2] & 0x01)
+
+            tr.enable_signing(_SECRET, initial_timestamp=1000)
+            tr.send_gcs_message(lambda m: m.heartbeat_encode(mav2.MAV_TYPE_GCS, mav2.MAV_AUTOPILOT_INVALID, 0, 0, 4))
+            tr.send_gcs_message(lambda m: m.heartbeat_encode(mav2.MAV_TYPE_GCS, mav2.MAV_AUTOPILOT_INVALID, 0, 0, 4))
+            raw1, _ = peer.recvfrom(2048)
+            raw2, _ = peer.recvfrom(2048)
+            assert raw1[2] & 0x01 and raw2[2] & 0x01
+
+            stats = LiveStats()
+            parser = MavlinkFrameParser(stats, secret_key=_SECRET)
+            assert len(parser.parse(raw1, 0.0)) == 1
+            assert len(parser.parse(raw2, 0.0)) == 1  # strictly advancing timestamp -> both verify
+            assert stats.sig_valid == 2 and stats.sig_invalid == 0
+    finally:
+        peer.close()
+
+
+def test_send_setup_signing_goes_out_unsigned_and_carries_the_key():
+    peer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    peer.bind(("127.0.0.1", 0))
+    peer.settimeout(2.0)
+    try:
+        with UdpMavlinkTransport(connect=("127.0.0.1", peer.getsockname()[1]), gcs_heartbeat=False) as tr:
+            sent, seq = send_setup_signing(tr, target_sysid=1, target_compid=1, secret_key=_SECRET,
+                                           initial_timestamp=4242)
+            assert sent and seq == 0
+            raw, _ = peer.recvfrom(2048)
+            assert not (raw[2] & 0x01)  # unsigned: no key exists on either side yet
+            msg = mav2.MAVLink(None).decode(bytearray(raw))
+            assert msg.get_type() == "SETUP_SIGNING"
+            assert bytes(msg.secret_key) == _SECRET and msg.initial_timestamp == 4242
+    finally:
+        peer.close()
+
+
+def test_enable_signing_rejects_a_bad_key_length():
+    with UdpMavlinkTransport(bind=("127.0.0.1", 0)) as tr:
+        with pytest.raises(ValueError):
+            tr.enable_signing(b"too short")
+
+
+def test_constructor_rejects_a_bad_sign_secret_key_length():
+    with pytest.raises(ValueError):
+        UdpMavlinkTransport(bind=("127.0.0.1", 0), sign_secret_key=b"too short")

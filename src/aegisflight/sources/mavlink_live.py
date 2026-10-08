@@ -127,6 +127,15 @@ class LiveStats:
     # truncated / garbage / header-insane / CRC-failed (known ids and ids covered by
     # ``extra_crc`` only) / per-datagram frame cap exceeded (skipped)
     bad_frames: int = 0
+    # cryptographic signature outcome -- ONLY incremented when the parser is constructed
+    # with ``secret_key`` (see ``MavlinkFrameParser``); both stay 0 otherwise, including for
+    # every frame that merely carries the MAVLink2 "signed" incompat bit with no key
+    # configured (that bit alone is NOT verified and is tracked separately as
+    # ``MessageEnvelope.signed`` -- a frozen field kept at its existing, bit-only meaning).
+    sig_valid: int = 0  # claimed-signed frame whose HMAC checked out against the key
+    sig_invalid: int = 0  # a signing-policy violation: wrong/missing HMAC, a stale/replayed
+    # timestamp, or an unsigned frame not on the unsigned-allowed list (each counted as a bad
+    # frame too -- fail closed, same convention as a CRC failure)
     # frames of ids unknown to the dialect accepted on header sanity ALONE: their CRC was
     # NOT verified (no crc_extra), so they are untrusted link statistics (see module doc)
     unverified_frames: int = 0
@@ -164,14 +173,40 @@ def _load_dialect() -> Any:
     return dialect
 
 
+#: Message ids PX4's own ``MavlinkSignControl::accept_unsigned`` lets through unsigned even once
+#: signing is active (``mavlink_sign_control.cpp``, read-only scoping) -- mirrored here so a
+#: verifying parser's notion of "should be signed" matches what PX4 itself actually enforces.
+PX4_UNSIGNED_ALLOWED_MSGIDS: frozenset[int] = frozenset({0, 109, 246, 247})  # HEARTBEAT, RADIO_STATUS,
+# ADSB_VEHICLE, COLLISION
+
+
 class MavlinkFrameParser:
-    """Raw bytes -> ``MessageEnvelope`` list, header-first (see module docstring)."""
+    """Raw bytes -> ``MessageEnvelope`` list, header-first (see module docstring).
+
+    ``secret_key``: optional, default ``None`` -- with no key, behaviour is byte-for-byte
+    identical to before this parameter existed (``MessageEnvelope.signed`` keeps its existing,
+    bit-only meaning; ``LiveStats.sig_valid``/``sig_invalid`` stay 0). Supplying a 32-byte
+    MAVLink-2 signing secret turns on REAL cryptographic verification (HMAC-SHA256 over the
+    frame, truncated to 6 bytes, exactly the algorithm `pymavlink`'s own
+    ``MAVLink.check_signature`` implements and PX4 uses) of every claimed-signed frame via
+    `pymavlink`'s own `decode()` signing path, rather than trusting the incompat bit alone. A
+    frame id in ``unsigned_allowed_msgids`` (default :data:`PX4_UNSIGNED_ALLOWED_MSGIDS`) is
+    accepted even if unsigned, matching PX4's own allowlist, so this changes nothing about
+    which frames are *parseable* -- only whether a signature claim is actually checked. A
+    claimed signature that fails verification is counted (``sig_invalid``) and the frame is
+    dropped (``bad_frames``), the same fail-closed treatment as a CRC failure; this parser
+    never raises either way.
+    """
 
     def __init__(self, stats: LiveStats | None = None, *,
                  extra_crc: dict[int, int] | None = None,
-                 max_frames_per_datagram: int = 64) -> None:
+                 max_frames_per_datagram: int = 64,
+                 secret_key: bytes | None = None,
+                 unsigned_allowed_msgids: frozenset[int] = PX4_UNSIGNED_ALLOWED_MSGIDS) -> None:
         if max_frames_per_datagram < 1:
             raise ValueError("max_frames_per_datagram must be >= 1")
+        if secret_key is not None and len(secret_key) != 32:
+            raise ValueError("secret_key must be exactly 32 bytes (MAVLink 2 signing key length)")
         self.stats = stats if stats is not None else LiveStats()
         self.max_frames_per_datagram = max_frames_per_datagram
         dialect = _load_dialect()
@@ -181,6 +216,13 @@ class MavlinkFrameParser:
                            if k not in self._map}
         self._mav = dialect.MAVLink(None)
         self._mav.robust_parsing = True
+        self._mav_error = dialect.MAVError
+        self._verify = secret_key is not None
+        if self._verify:
+            self._mav.signing.secret_key = secret_key
+            self._mav.signing.allow_unsigned_callback = (
+                lambda _mav, msgid: msgid in unsigned_allowed_msgids
+            )
 
     def parse(self, data: bytes, recv_time: float) -> list[MessageEnvelope]:
         """Parse the frames in ``data`` (one datagram may hold several). Never raises.
@@ -260,7 +302,14 @@ class MavlinkFrameParser:
                     fields = msg.to_dict()
                     fields.pop("mavpackettype", None)
                     name = getattr(cls, "msgname", None) or msg.get_type()
-                except Exception:  # noqa: BLE001 - CRC/length mismatch on a known id
+                    if self._verify and signed:
+                        st.sig_valid += 1  # decode() above already raised if the HMAC did not match
+                except self._mav_error as exc:
+                    if self._verify and str(exc) == "Invalid signature":
+                        st.sig_invalid += 1
+                    st.bad_frames += 1  # CRC/length mismatch, or (with a key) a bad/rejected signature
+                    continue
+                except Exception:  # noqa: BLE001 - any other decode failure on a known id
                     st.bad_frames += 1
                     continue
             st.frames_received += 1
@@ -423,11 +472,24 @@ class UdpMavlinkTransport:
         pin_peer: bool = True,
         max_queue_bytes: int = 8 * 1024 * 1024,
         clock_ns: Callable[[], int] = time.monotonic_ns,
+        sign_secret_key: bytes | None = None,
+        sign_link_id: int = 0,
+        sign_initial_timestamp: int = 0,
     ) -> None:
         if (connect is None) == (bind is None):
             raise ValueError("give exactly one of connect=(host, port) or bind=(host, port)")
         if max_queue_bytes < 1:
             raise ValueError("max_queue_bytes must be >= 1")
+        if sign_secret_key is not None and len(sign_secret_key) != 32:
+            raise ValueError("sign_secret_key must be exactly 32 bytes (MAVLink 2 signing key length)")
+        # outgoing signing (opt-in; None = every message this transport sends is unsigned, the
+        # existing, unchanged default). Persisted here, not on a per-call MAVLink encoder object,
+        # because the MAVLink-2 signing timestamp must strictly advance across this transport's
+        # whole lifetime (pymavlink's own ``sign_packet`` auto-increments it by 1 per signed
+        # message -- see ``send_gcs_message``) for a verifier's anti-replay check to accept it.
+        self._sign_key = sign_secret_key
+        self._sign_link_id = sign_link_id
+        self._sign_timestamp = sign_initial_timestamp
         self._clock_ns = clock_ns
         self._q: queue.Queue[tuple[int, bytes]] = queue.Queue(maxsize=queue_size)
         self._max_bytes = max_queue_bytes
@@ -558,7 +620,12 @@ class UdpMavlinkTransport:
         MAVLink sequence counter (the one its heartbeats use), so a scripted command is
         indistinguishable on the wire from a real GCS's: ``encode`` receives a
         ``pymavlink`` ``MAVLink`` object and returns the encoded message (e.g.
-        ``lambda m: m.command_long_encode(...)``). Returns ``(sent, seq_used)``."""
+        ``lambda m: m.command_long_encode(...)``). Returns ``(sent, seq_used)``.
+
+        If this transport was constructed with ``sign_secret_key``, the message is signed
+        (MAVLink 2 signing, real HMAC-SHA256 -- see ``MavlinkFrameParser``'s verification side)
+        with a timestamp that strictly advances across every call this transport ever makes;
+        otherwise behaviour is unchanged (unsigned, as before this parameter existed)."""
         from pymavlink.dialects.v20 import common as mav
 
         with self._lock:
@@ -566,7 +633,27 @@ class UdpMavlinkTransport:
             seq = self._hb_seq
             m.seq = seq
             self._hb_seq = (seq + 1) % 256
-            return self.send(bytes(encode(m).pack(m))), seq
+            if self._sign_key is not None:
+                m.signing.secret_key = self._sign_key
+                m.signing.sign_outgoing = True
+                m.signing.link_id = self._sign_link_id
+                m.signing.timestamp = self._sign_timestamp
+            packed = bytes(encode(m).pack(m))
+            if self._sign_key is not None:
+                self._sign_timestamp = m.signing.timestamp  # advanced by one inside pack()/sign_packet()
+            return self.send(packed), seq
+
+    def enable_signing(self, secret_key: bytes, *, link_id: int = 0, initial_timestamp: int = 0) -> None:
+        """Turn on signing for every message this transport sends from now on (see
+        ``send_gcs_message``). Meant to be called AFTER a bootstrap ``SETUP_SIGNING`` message
+        has been sent unsigned (see :func:`send_setup_signing`) -- this method only changes
+        what THIS transport does when sending; it does not talk to the peer."""
+        if len(secret_key) != 32:
+            raise ValueError("secret_key must be exactly 32 bytes (MAVLink 2 signing key length)")
+        with self._lock:
+            self._sign_key = secret_key
+            self._sign_link_id = link_id
+            self._sign_timestamp = initial_timestamp
 
     def send_heartbeat(self) -> bool:
         from pymavlink.dialects.v20 import common as mav
@@ -612,6 +699,25 @@ class UdpMavlinkTransport:
                         self.dropped_foreign += 1  # pinned: a later sender cannot steer us
                         continue
                 self._enqueue(stamp, data)
+
+
+def send_setup_signing(transport: UdpMavlinkTransport, target_sysid: int, target_compid: int,
+                       secret_key: bytes, *, initial_timestamp: int = 0) -> tuple[bool, int]:
+    """Bootstrap MAVLink 2 signing on a link: send ONE unsigned ``SETUP_SIGNING`` command to
+    ``(target_sysid, target_compid)`` (PX4's own ``MavlinkSignControl::check_for_signing``,
+    scoped read-only from ``mavlink_sign_control.cpp``) carrying ``secret_key`` and
+    ``initial_timestamp``. Sent unsigned because, before this call, no key exists yet for
+    either side to sign with -- PX4 accepts the FIRST ``SETUP_SIGNING`` it receives for a
+    non-blank key unconditionally (it does not need to already be signed; only a later
+    *disable* -- a blank key -- must be signed with the key being disabled). This is a
+    "trust on first contact" bootstrap, not a hardened handshake: whichever client reaches
+    PX4 first with this message wins control of the key. Does NOT call
+    ``transport.enable_signing`` itself -- the caller does that afterwards, once, so the
+    order (and hence which messages go out signed) is explicit at the call site. PX4 also
+    rejects any ``SETUP_SIGNING`` while the vehicle is armed (``mavlink_main.cpp``).
+    Returns ``(sent, seq_used)`` exactly like :meth:`UdpMavlinkTransport.send_gcs_message`."""
+    return transport.send_gcs_message(lambda m: m.setup_signing_encode(
+        target_sysid, target_compid, secret_key, initial_timestamp))
 
 
 # --------------------------------------------------------------------------- #

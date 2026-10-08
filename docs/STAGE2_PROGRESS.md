@@ -709,8 +709,104 @@ no vehicle-behaviour or estimator claim (ground vehicle, ACK-only observable); n
 method already regression-checked in the prior entry — neither touches `detectors/`, `features/`, `fusion/`,
 or `pipeline.py`; the gate's own rule scopes the 9-minute benchmark re-run to detector/pipeline changes).
 
-**Current Stage-2 checkpoint:** P0/P1/P3 done. P2 live SITL fully populated: GPS-drift 10/10, command
+**Current Stage-2 checkpoint (superseded by the entry below):** P0/P1/P3 done. P2 live SITL fully populated: GPS-drift 10/10, command
 injection 10/10, drop 10/10, delay 9/10, replay-v2 10/10 (sequence-continuity mechanism), GCS impersonation
 naive 10/10 detected / informed 0/10 detected (this entry — the real, confirmed authentication gap). Next:
 P4 MAVLink-2 signing, scoped (PX4 runtime `SETUP_SIGNING`, no PX4 build changes needed) but not started —
 this entry's informed-attacker result is its "before" baseline.
+
+## 2026-10-08 - P4 MAVLink-2 signing: scoped, an AegisFlight-side verification capability added, live "before/after" pilot closes the impersonation gap (env: SITL + SITL-free unit tests)
+Per the task's own ordering ("first scope and understand... before implementing anything; prefer an
+AegisFlight-side/integration-level implementation first"), scoping came before any code change.
+
+**Scoping findings (read-only in both the PX4 tree and `pymavlink`; no PX4 source or build change):**
+1. **A real, previously-undisclosed-as-such correctness gap in this codebase's own "signed" notion.**
+   `MavlinkFrameParser`/the proxy's `FrameContext.signed` have always meant "the MAVLink-2 incompat
+   *signing* bit is set" — the trailing 13-byte signature is parsed over and skipped, **never
+   cryptographically checked against a key**. `require_signing: true` (`configs/detector.yaml`) would
+   therefore only ever verify that every frame *claims* to be signed, not that any signature is valid — an
+   attacker who sets the bit and appends 13 garbage bytes passes it completely. Confirmed by direct code
+   reading, not by a bug report. `MessageEnvelope.signed` (frozen field) keeps this exact, existing meaning
+   unchanged — no frozen-contract change was made or needed.
+2. **PX4's own mechanism** (`src/modules/mavlink/mavlink_sign_control.{h,cpp}`, `mavlink_main.cpp`, read-only
+   in the WSL tree): a live `SETUP_SIGNING` MAVLink2 command (32-byte secret + 8-byte initial timestamp) sets
+   the link's key; **PX4 accepts the FIRST non-blank key unconditionally** (it does not need to already be
+   signed — only a later *disable*, a blank key, must be signed with the current key) — a disclosed
+   "trust-on-first-contact" bootstrap, not a hardened handshake, and not an AegisFlight choice. `SETUP_SIGNING`
+   is **rejected while armed** (`mavlink_main.cpp`). The key persists to a file under the SITL instance's own
+   isolated run directory (confirmed: `~/aegis_sitl/i2/mavlink/mavlink-signing-key.bin`, NOT inside the PX4
+   tree — survives a PX4 restart within the same instance, found live, see pilot note below) and is reloaded
+   at boot. Once initialized, **PX4 signs ALL of its own outgoing traffic**, not just what it is willing to
+   accept unsigned from others (`_update_signing_state` sets `SIGN_OUTGOING` link-wide) — found live, not
+   anticipated (see pilot note). Only `HEARTBEAT`, `RADIO_STATUS`, `ADSB_VEHICLE`, `COLLISION` are accepted
+   unsigned once a key is active (`unsigned_messages[]`); `COMMAND_LONG` is not among them.
+3. **`pymavlink` already implements the real algorithm** (`MAVLink.check_signature`/`sign_packet`:
+   HMAC-SHA256 over the frame, truncated to 6 bytes, plus a per-stream monotonic-timestamp anti-replay
+   check) and wires it into `decode()` automatically once `signing.secret_key` is set, raising on a bad or
+   policy-violating signature — the primitive the implementation below uses directly rather than
+   reimplementing.
+
+**Implementation (additive; default behaviour unchanged for every existing caller without a key):**
+- `MavlinkFrameParser(..., secret_key: bytes | None = None, unsigned_allowed_msgids=...)`: with a key, every
+  claimed-signed frame is now REALLY verified via `pymavlink`'s own `decode()` signing path (not the bit
+  alone); an unsigned frame for a message not on the allowlist is now also rejected, mirroring PX4's own
+  policy. New `LiveStats.sig_valid`/`sig_invalid` counters (additive dataclass fields, not on the frozen
+  `MessageEnvelope`). No key -> byte-for-byte unchanged behaviour, confirmed by the regression below.
+- `UdpMavlinkTransport(..., sign_secret_key=None, sign_link_id=0, sign_initial_timestamp=0)` plus
+  `enable_signing()` and `send_gcs_message` signing a frame when a key is configured, with a timestamp that
+  strictly advances across the transport's whole lifetime (required for `pymavlink`'s own anti-replay check
+  to accept it) — tested for correctness (timestamp advance, wrong-key rejection, allowlist, replay-rejection,
+  bad key length) in `test_mavlink_live.py`, no SITL. New free function `send_setup_signing()` sends the
+  bootstrap command unsigned (by construction, since no key exists yet on either side).
+- 15 new unit tests; gate: 304 passed, `ruff check src tests scripts backend` clean; Stage-1 regression
+  (`aegis benchmark --out <scratch> --no-figures`) **TP/FP/TN/FN 6535 / 4 / 16826 / 65, identical** to the
+  committed baseline — confirms the change is inert without a key, as designed.
+
+**Live pilot (n=1; a first attempt at a brand-new capability, same convention as every other new attack this
+Stage-2 effort has built): does signing change the outcome of the informed-impersonation attack that
+defeated every detection mechanism (0/10 detected, 10/10 ACCEPTED by PX4, prior entry)?**
+1. First attempt: the attack's own passive target-learning (refuses to trust an unverified signed bit, by
+   design) never learned PX4's identity once PX4's own downlink became signed (finding 2 above) ->
+   `frames_injected` stayed 0 for the whole trial. Not a bug to hide — documented and bypassed by passing
+   the already-known target identity explicitly (irrelevant to what this experiment measures: PX4's
+   acceptance of an unsigned forged command, not the attack's own passive-learning mechanism).
+2. Second attempt reused the same isolated SITL run directory; PX4 booted with signing **already** active
+   from the first attempt's persisted key file (finding 2 above) — the outcome matched the hypothesis, but
+   attribution to *that* trial's own handshake was ambiguous, so it is kept as a disclosed diagnostic
+   (`artifacts/sitl/p4_sign_diag_persisted_key_001.*`), not the evidence trial.
+3. Clean rerun, persisted key file removed first (confirmed by PX4's own log showing `MAVLink signing key
+   accepted` exactly once, this run): **result** --
+   - `SETUP_SIGNING` sent unsigned, bootstrap succeeded (PX4 log confirms).
+   - The legitimate GCS's **signed** resend of the proven-accepted force-disarm: **ACCEPTED**
+     (`MAV_RESULT_ACCEPTED`, confirmed signed on the wire) — signing does not break real operation.
+   - The **exact same informed-impersonation attack** (sysid 255/190, correctly-tracked sequence,
+     `CommandInjectionAttack(seq_policy="track_identity")`, unchanged from the prior entry's 10/10-ACCEPTED
+     result) forged and delivered 2 unsigned `COMMAND_LONG` frames to PX4 (confirmed via the proxy's own
+     frame log) -- **0/2 acknowledged**. No ack at all (not a rejection *result*, no response whatsoever),
+     consistent with PX4's own mavlink library dropping an unsigned, non-allowlisted message before
+     `handle_message` ever sees it.
+   `artifacts/sitl/p4_sign_trial_001.*` (clean evidence trial), `artifacts/sitl/p4_sign_diag_persisted_key_001.*`
+   (superseded diagnostic, kept per the project's "preserve negative/ambiguous results" rule).
+
+**Reading this at the honesty level the task demands:** this is **one** live trial, not the n=10 design
+floor the rest of P2 uses — a pilot, explicitly. It is a real, measured "before -> after" flip on the exact
+attack that was previously undetected and unauthenticated (10/10 ACCEPTED, 0/10 detected -> 0/10 ACCEPTED),
+using PX4's own, unmodified signing mechanism and an AegisFlight-side verification capability that changes
+nothing without a key. **Not claimed:** a statistically powered rate (n=1); that signing is the only
+mitigation needed (the naive-forgery / replay cases were already independently caught by the
+sequence-continuity rule without signing); that this is secure against an attacker present *before* the
+legitimate GCS's bootstrap `SETUP_SIGNING` (the disclosed trust-on-first-contact property is PX4's own, not
+fixed here); that the IDS's own live pipeline is wired to a signed source in this trial (it is not -- this
+pilot measures PX4's own acceptance, a command-path effect, not an IDS detection outcome); any production
+key-management, rotation, or storage design (the key here is a fixed test value, not security-sensitive, and
+is never logged or committed in a production sense -- it is written into this trial's own public manifest
+for reproducibility of a test-only scenario, same convention as citing a test secret in code).
+
+**Current Stage-2 checkpoint:** P0/P1/P3 done. P2 live SITL fully populated and consolidated. P4: scoped
+(PX4 mechanism, pymavlink primitives, and this codebase's own prior signed-bit-only gap all documented);
+an additive, default-off verification/signing capability added and unit-tested; one live pilot shows the
+informed-impersonation gap closes (10/10 ACCEPTED -> 0/10 ACCEPTED) once signing is bootstrapped and active.
+Next: an n=10 batch of this same pilot for a defensible rate; the IDS's own live IDSPipeline is not yet
+wired to verify signatures itself (this pilot showed PX4's own rejection, not an IDS detection path) --
+natural next step is a `require_signing`-aware detector rule using the new `sig_invalid` counter; then
+Stage-2 step 5 (hardware/companion-computer integration assessment).
