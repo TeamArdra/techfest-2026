@@ -133,7 +133,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     write_manifest(out, manifest, prov["full_provenance"],
                    {"decisions": n_decisions, "threat_decisions": n_threats, "source_stats": ids_stats,
-                    "relay_stats": relay.stats})
+                    "relay_stats": relay.stats, "attack_frames_modify_failed": attack.frames_modify_failed})
     print(json.dumps({"frames_seen": attack.frames_seen, "frames_modified": attack.frames_modified,
                       "actual_effect": actual, "ids_decisions": n_decisions, "ids_threat_decisions": n_threats,
                       "relay_stats": relay.stats}, indent=2))

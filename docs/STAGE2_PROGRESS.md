@@ -981,3 +981,19 @@ every field except `fix_type`/`satellites_visible` and its length. No detector, 
    trial / no boot failure" is attested by the batch log, not by a per-trial PX4 boot artifact.
 
 **Gate after the test hardening:** `pytest` **341 passed** (316 baseline + 25 GNSS tests), `ruff check src tests scripts backend` clean. No SITL run, no attack run, PX4 untouched.
+
+## 2026-10-08 - GNSS attack instrumentation cleanup: `frames_modify_failed` counter (env: unit + artifact re-check; no SITL)
+Closes the open item from the reviewer entry above. `GnssDegradationAttack` now counts in-window MAVLink-2 `GPS_RAW_INT` frames that
+could not be decoded/rewritten (they are still passed through unmodified and nothing is raised, as before) in a new
+`frames_modify_failed` attribute. The trial driver records it as `ids_summary.attack_frames_modify_failed`; the summary's integrity
+gate (`make_p2n_summary.py`) now fails a trial whose counter is present and nonzero, and treats a manifest without the key as *not
+instrumented* (not as zero). Attack behaviour, parameters, thresholds and detector code are unchanged.
+
+**Tests:** 4 new unit tests (counter increments on a corrupt-CRC and a truncated in-window frame, and when the rewrite raises;
+stays 0 on the normal path incl. signed/MAVLink-1/other-message frames; not incremented outside the window, for the wrong direction,
+or for non-target frames). `pytest` **345 passed** (316 baseline + 29 GNSS tests), `ruff check src tests scripts backend` clean.
+**Integrity gate re-run, artifacts only (no new trials):** regenerating `P2_gnss_summary.md` from the 10 committed n=10 manifests is
+byte-identical to the committed file (10/10 integrity-passing, 10/10 detected). The 11 validated manifests pre-date the counter,
+so for them "no swallowed modify failure" remains **inferred** (modified-frame counts consistent with evidence-decision counts, per
+the review), not directly measured; future GNSS trials will measure it. A scratch check (not committed) confirmed the gate excludes a
+manifest edited to carry `attack_frames_modify_failed = 1` and keeps one carrying 0.

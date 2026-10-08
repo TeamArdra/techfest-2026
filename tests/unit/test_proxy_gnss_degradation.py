@@ -366,3 +366,56 @@ def test_unmodified_healthy_frames_do_not_trip_gnss_rule():
     healthy = [gps_raw(seq=i) for i in range(12)]
     results = _run_chain(healthy)
     assert not any("GNSS fix lost" in e for r in results for e in r.evidence)
+
+
+# --------------------------------------------------------------------------- #
+# frames_modify_failed: swallowed modify failures are counted, never raised
+# --------------------------------------------------------------------------- #
+
+
+def test_modify_failed_counter_increments_on_undecodable_in_window_frame():
+    a = _attack()
+    _learn(a)
+    bad = bytearray(gps_raw(seq=1))
+    bad[-1] ^= 0xFF  # corrupt CRC -> decode raises inside _modify
+    assert a(ctx_for(bytes(bad), "down", recv_ns=6_000_000_000)) == [bytes(bad)]  # original passed through
+    trunc = gps_raw(seq=2)[:12]
+    assert a(ctx_for(trunc, "down", recv_ns=6_100_000_000)) == [trunc]
+    assert a.frames_modify_failed == 2
+    assert a.frames_modified == 0
+
+
+def test_modify_failed_counter_increments_when_rewrite_raises(monkeypatch):
+    a = _attack()
+    _learn(a)
+
+    def boom(_ctx):
+        raise RuntimeError("pack failure")
+
+    monkeypatch.setattr(a, "_modify", boom)
+    raw = gps_raw(seq=1)
+    assert a(ctx_for(raw, "down", recv_ns=6_000_000_000)) == [raw]
+    assert (a.frames_modify_failed, a.frames_modified) == (1, 0)
+
+
+def test_modify_failed_counter_stays_zero_on_validated_normal_path():
+    a = _attack()
+    _learn(a)
+    for i, t in enumerate([1.0, 5.0, 7.0, 9.5, 14.9, 20.0], start=1):  # before / inside / after window
+        a(ctx_for(gps_raw(seq=i), "down", recv_ns=int(t * 1e9)))
+    a(ctx_for(gps_raw(seq=9, signed=True), "down", recv_ns=8_000_000_000))  # signed: skipped, not failed
+    a(ctx_for(gps_raw(seq=10, dialect=mav1), "down", recv_ns=8_000_000_000))  # MAVLink 1: not our wire format
+    a(ctx_for(gpi_raw(seq=11), "down", recv_ns=8_000_000_000))  # other message
+    assert a.frames_modified == 4
+    assert a.frames_modify_failed == 0
+
+
+def test_modify_failed_not_counted_outside_window_or_for_non_target_frames():
+    a = _attack()
+    _learn(a)
+    bad = bytearray(gps_raw(seq=1))
+    bad[-1] ^= 0xFF
+    a(ctx_for(bytes(bad), "down", recv_ns=1_000_000_000))  # before onset: never attempted
+    a(ctx_for(bytes(bad), "down", recv_ns=20_000_000_000))  # after window: never attempted
+    a(ctx_for(bytes(bad), "up", recv_ns=6_000_000_000))  # wrong direction
+    assert a.frames_modify_failed == 0

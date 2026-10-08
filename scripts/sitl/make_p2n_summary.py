@@ -63,7 +63,10 @@ def load_trial(manifest_path: Path) -> dict:
                     and m["frames_modified"] == eff.get("frames_modified")
                     and len(eff.get("fix_type_deltas_written", [])) == 1
                     and len(eff.get("satellites_visible_deltas_written", [])) == 1
-                    and m.get("frames_skipped_signed", 0) == 0)
+                    and m.get("frames_skipped_signed", 0) == 0
+                    # absent in manifests written before the counter existed (treated as not
+                    # instrumented, not as zero); when present it must be exactly 0
+                    and m["ids_summary"].get("attack_frames_modify_failed", 0) == 0)
     return {
         "trial": m["trial_id"], "idx": m["trial_index"], "onset": round(onset, 2), "dur": round(dur, 2),
         "fix": p["fix_type"], "sats": p["satellites_visible"], "hook_errors": rs["hook_errors"],

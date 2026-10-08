@@ -361,6 +361,10 @@ class GnssDegradationAttack:
         self.frames_dropped = 0
         self.frames_injected = 0
         self.frames_skipped_signed = 0
+        #: In-window MAVLink-2 GPS_RAW_INT frames that could NOT be decoded/rewritten and were
+        #: passed through unmodified (counted, never raised). Nonzero means the attack under-applied
+        #: its window; trial integrity gates should treat it as a failure.
+        self.frames_modify_failed = 0
 
     def __call__(self, ctx: FrameContext) -> list[bytes]:
         self.frames_seen += 1
@@ -394,7 +398,8 @@ class GnssDegradationAttack:
         try:
             new_raw, deltas = self._modify(ctx)
         except Exception:
-            return [ctx.raw]  # never raise: any decode/pack problem passes the original through
+            self.frames_modify_failed += 1
+            return [ctx.raw]  # never raise: any decode/pack problem passes the original through, counted
 
         self.frames_modified += 1
         self._log(ctx, action="modified", field_deltas=deltas, crc_recomputed=True,
