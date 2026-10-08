@@ -1,0 +1,13 @@
+{
+  "frames_injected": 3,
+  "actual_effect": {
+    "frames_injected": 3,
+    "acked": true,
+    "ack_count": 3,
+    "first_ack_result": 0,
+    "first_ack_result_name": "MAV_RESULT_ACCEPTED",
+    "time_to_first_ack_s": 0.0156369
+  },
+  "ids_decisions": 500,
+  "ids_threat_decisions": 3
+}

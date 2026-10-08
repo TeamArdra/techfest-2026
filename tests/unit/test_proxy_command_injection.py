@@ -469,3 +469,80 @@ def test_detector_fields_never_touched_by_this_module():
     a = _fresh_attack()
     assert not hasattr(a, "detector_decision")
     assert not hasattr(a, "time_to_detection_s")
+
+
+# --------------------------------------------------------------------------- #
+# seq_policy: impersonating an identity that is really transmitting (expected GCS 255/190)
+# --------------------------------------------------------------------------- #
+
+
+def _impersonator(**kw) -> CommandInjectionAttack:
+    return CommandInjectionAttack(PARAMS, warmup_s=0.0, rogue_sysid=255, rogue_compid=190, **kw)
+
+
+def test_default_seq_policy_impersonating_gcs_still_uses_own_counter_from_zero():
+    a = _impersonator()
+    _learn(a)
+    out = a(ctx_for(gcs_hb_raw(seq=17), "up", recv_ns=8_000_000_000))
+    inj = decode(out[1])
+    assert (inj.get_srcSystem(), inj.get_srcComponent()) == (255, 190)
+    assert inj.get_seq() == 0  # unchanged default behaviour: independent of the real 255/190 counter
+
+
+def test_track_identity_continues_the_impersonated_identitys_real_counter():
+    a = _impersonator(seq_policy="track_identity")
+    _learn(a)  # primes with a 255/190 frame, seq 0
+    out1 = a(ctx_for(gcs_hb_raw(seq=17), "up", recv_ns=8_000_000_000))
+    assert decode(out1[1]).get_seq() == 18
+    # the real identity advances; the next forgery continues from ITS counter, not from the previous forgery
+    a(ctx_for(gcs_hb_raw(seq=18), "up", recv_ns=8_400_000_000))
+    out2 = a(ctx_for(gcs_hb_raw(seq=19), "up", recv_ns=9_500_000_000))
+    assert decode(out2[1]).get_seq() == 20
+
+
+def test_track_identity_carrier_from_another_client_still_continues_the_identitys_counter():
+    a = _impersonator(seq_policy="track_identity")
+    _learn(a)
+    a(ctx_for(gcs_hb_raw(seq=40), "up", recv_ns=7_000_000_000))  # identity frame (also not due yet -> no inject? onset 5s)
+    other = a(ctx_for(gcs_hb_raw(seq=3, sysid=254, compid=191), "up", recv_ns=9_000_000_000))
+    forged = [decode(r) for r in other[1:]]
+    assert forged and forged[0].get_seq() == 42  # 40 was the last 255/190 frame seen; 41 was used at 7s
+
+
+def test_track_identity_burst_without_new_identity_frames_increments():
+    a = _impersonator(seq_policy="track_identity")
+    _learn(a)
+    a(ctx_for(gcs_hb_raw(seq=9, sysid=252, compid=193), "up", recv_ns=1_000_000_000))  # not the identity
+    out1 = a(ctx_for(gcs_hb_raw(seq=5, sysid=252, compid=193), "up", recv_ns=8_000_000_000))
+    out2 = a(ctx_for(gcs_hb_raw(seq=6, sysid=252, compid=193), "up", recv_ns=9_500_000_000))
+    assert [decode(out1[1]).get_seq(), decode(out2[1]).get_seq()] == [1, 2]  # _learn's 255/190 frame had seq 0
+
+
+def test_track_identity_seq_wraps_modulo_256():
+    a = _impersonator(seq_policy="track_identity")
+    _learn(a)
+    out = a(ctx_for(gcs_hb_raw(seq=255), "up", recv_ns=8_000_000_000))
+    assert decode(out[1]).get_seq() == 0
+
+
+def test_track_identity_fails_closed_until_the_identity_has_been_seen():
+    a = _impersonator(seq_policy="track_identity")
+    a(ctx_for(hb_raw(), "down", recv_ns=0))  # learn the PX4 target only
+    a(ctx_for(gcs_hb_raw(seq=4, sysid=252, compid=193), "up", recv_ns=0))  # sets the elapsed baseline
+    out = a(ctx_for(gcs_hb_raw(seq=5, sysid=252, compid=193), "up", recv_ns=8_000_000_000))
+    assert len(out) == 1  # nothing to continue -> nothing injected
+    assert a.frames_skipped_no_identity_seq == 1 and a.frames_injected == 0
+    out = a(ctx_for(gcs_hb_raw(seq=7), "up", recv_ns=8_500_000_000))  # now 255/190 speaks: its own frame carries it
+    assert len(out) == 2 and decode(out[1]).get_seq() == 8
+
+
+def test_track_identity_ignores_a_signed_identity_frame_for_learning():
+    a = _impersonator(seq_policy="track_identity")
+    a(ctx_for(hb_raw(), "down", recv_ns=0))
+    out = a(ctx_for(gcs_hb_raw(seq=30, signed=True), "up", recv_ns=8_000_000_000))
+    assert len(out) == 1  # signed: not learned from, and never used as a carrier
+
+
+def test_unknown_seq_policy_rejected():
+    with pytest.raises(ValueError):
+        CommandInjectionAttack(PARAMS, seq_policy="bogus")  # type: ignore[arg-type]
