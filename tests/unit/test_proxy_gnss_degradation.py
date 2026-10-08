@@ -140,7 +140,35 @@ def test_warmup_floor_delays_window_open():
     _learn(a, recv_ns=0)
     raw = gps_raw(seq=1)
     assert a(ctx_for(raw, "down", recv_ns=6_000_000_000)) == [raw]  # in window, but < warmup
-    assert a(ctx_for(gps_raw(seq=2), "down", recv_ns=9_000_000_000)) != [raw]
+    (after,) = a(ctx_for(gps_raw(seq=2), "down", recv_ns=9_000_000_000))
+    assert decode(after).fix_type == PARAMS.fix_type  # actually degraded, not merely a different seq
+    assert a.frames_modified == 1
+
+
+def test_extension_fields_and_length_unchanged_with_nonzero_extensions():
+    # GPS_RAW_INT has MAVLink-2 extension fields (alt_ellipsoid, h_acc, v_acc, vel_acc, hdg_acc, yaw);
+    # a rewrite must not zero or drop them. Build a frame with every extension nonzero.
+    m = _mk(3, 1, 5)
+    orig = bytes(m.gps_raw_int_encode(
+        123456, 3, LAT, LON, ALT, 121, 200, 450, 9000, 10,
+        alt_ellipsoid=490000, h_acc=1500, v_acc=2500, vel_acc=300, hdg_acc=4000, yaw=18000,
+    ).pack(m))
+    a = _attack()
+    _learn(a)
+    (new,) = a(ctx_for(orig, "down", recv_ns=6_000_000_000))
+    o, n = decode(orig), decode(new)
+    assert len(new) == len(orig)
+    for field in ("alt_ellipsoid", "h_acc", "v_acc", "vel_acc", "hdg_acc", "yaw"):
+        assert getattr(o, field) != 0 and getattr(n, field) == getattr(o, field), field
+    assert (n.fix_type, n.satellites_visible) == (PARAMS.fix_type, PARAMS.satellites_visible)
+
+
+def test_already_degraded_input_is_still_rewritten_and_logged_as_modified():
+    a = _attack()
+    _learn(a)
+    (new,) = a(ctx_for(gps_raw(seq=1, fix_type=PARAMS.fix_type, sats=PARAMS.satellites_visible),
+                       "down", recv_ns=6_000_000_000))
+    assert (decode(new).fix_type, decode(new).satellites_visible) == (PARAMS.fix_type, PARAMS.satellites_visible)
     assert a.frames_modified == 1
 
 

@@ -942,3 +942,42 @@ any verdict, so the GNSS claims are **not adversarially reviewed**. What was don
 n=10 artifacts (detections 10, pre-onset false alarms 0/1940, latency median 1.23 s / min 1.07 s / max 1.74 s, manifest and
 frame-log modified counts equal in every trial) with a separate script, matching `P2_gnss_summary.md`. A reviewer pass remains
 outstanding.
+
+## 2026-10-08 - Adversarial review of the GNSS-degradation milestone (`6a6c0e2`) (aegis-reviewer; env: SITL artifacts; no new trials)
+Independent `aegis-reviewer` pass, closing the review gap disclosed in the entry above. **Verdict: SUPPORTED as scoped**
+(link-level detection, SITL, positive control only); **no blocking findings.** The reviewer recomputed everything from the raw
+manifests/frame logs/decision files with its own scripts and reproduced every headline number: 10/10 detected; 1404 in-window
+GNSS-evidence decisions in n=10 (plus 162 in the pilot), all `threat=true`, `DOS`, with evidence equal to the drawn
+(fix_type, satellites) and no other evidence type; 0 threats among 1940 pre-onset decisions (max fused score 0.02); latency
+median 1.228 s / min 1.068 s / max 1.743 s; 0 threats after the window; manifest and frame-log modified counts equal; the
+regenerated `P2_gnss_summary.md` is byte-identical; a hand-built `GPS_RAW_INT` with nonzero MAVLink-2 extension fields keeps
+every field except `fix_type`/`satellites_visible` and its length. No detector, feature, fusion, config or pipeline file was touched.
+
+**Non-blocking findings and what was done** (no attack code, threshold, trial or committed result was changed):
+1. *0/1940 needs context* - it is pooled, heavily autocorrelated 5 Hz decisions from 10 independent boots (~388 s of benign
+   data; effective n is nearer 10 trials) of a **disarmed, static** vehicle, in the world/host the profile was calibrated on. It is
+   not an in-flight false-alarm rate. Wording fixed in `docs/VALIDATION_EVIDENCE.md` (this entry is the correction for the
+   "0/1940 pre-onset false alarms" and "fires within ~5 decisions of onset every time" phrasing in the previous entry: read them as
+   "after >=5 consecutive degraded decisions, ~1 s").
+2. *Latency* is dominated by the rule's 5-decision persistence plus a 0-0.2 s wait for the first modified frame, and the IDS and
+   relay clock origins differ by an unrecorded offset (estimated well under ~0.1-0.3 s, biasing latency slightly low; it cannot
+   affect the pre-onset result). Not detector speed; wording added to the evidence doc.
+3. *Provenance* - manifests record commit `5ff674b` + 5 dirty paths; the dirty set is the three `proxy/` files plus the driver and
+   summary script. **Correction:** the previous entry said the dirty paths included "tests" - they do not (the provenance path
+   filter excludes `tests/`). Gazebo version is not recorded in the manifests. Both noted in the evidence doc.
+4. *Test-count discrepancy* - the reviewer's hypothesis (unverified; the draft file was never in git) is that the earlier "328"
+   gate was run with an earlier uncommitted draft of GNSS tests present (328 - 316 = 12). Hypothesis only. Also, the
+   "2026-10-09" heading on the P4 entry is a date oddity: its commit `5ff674b` is dated 2026-10-08.
+5. *Tests* - `test_warmup_floor_delays_window_open` had a vacuous `!= [raw]` assert (rescued only by a counter assert). Fixed to
+   decode and check `fix_type`; added a nonzero-extension-field/length test and an already-degraded-input test. Remaining
+   known weak ones (`hasattr` detector-field check, a determinism test a no-op attack would pass) are left as they are.
+   **Open, not fixed (would change attack code, which produced the validated evidence):** the `except Exception` in the hook passes
+   a frame through with no `frames_modify_failed` counter, so a partial decode failure inside the window would not trip the
+   integrity gates. The data show modified-frame counts consistent with the evidence-decision counts in every trial, so it did not
+   occur here, but it is not instrumented.
+6. *Positive-control disclosure* - the degraded ranges were chosen relative to the known thresholds (disclosed). 10/10 is
+   near-deterministic by construction, not a sampled rate; the 95% Wilson lower bound for 10/10 is ~72% and no interval is claimed.
+7. *Process* - the Stage-1 benchmark regression was not re-run (justified: additive `proxy/` code only). "Fresh SITL boot per
+   trial / no boot failure" is attested by the batch log, not by a per-trial PX4 boot artifact.
+
+**Gate after the test hardening:** `pytest` **341 passed** (316 baseline + 25 GNSS tests), `ruff check src tests scripts backend` clean. No SITL run, no attack run, PX4 untouched.
