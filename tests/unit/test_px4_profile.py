@@ -89,3 +89,18 @@ def test_profile_vehicle_commands_legit_rogue_source_still_flagged():
     assert any("rogue telemetry" in e for e in rogue_tm.evidence)
     rogue_cmd = det.process(_frame(sources={(3, 1): 10}, n_sources=1, commands_recent=[rogue]))
     assert any("unexpected source" in e for e in rogue_cmd.evidence)
+
+
+def test_expected_gcs_sysid_command_never_flagged_by_provenance_rule_even_when_sensitive():
+    """Known, disclosed gap (``docs/ATTACKS.md`` ``command_injection:gcs_replay``), pinned here as a
+    SITL-free regression: the provenance rule's ``c.sysid not in self.expected_gcs`` check
+    short-circuits for ANY command from an expected GCS sysid (255/254 by default), including a
+    sensitive one (force-disarm) and regardless of whether it is a replay or freshly forged -- the
+    rule has no way to tell. This is why the live replay redesign
+    (``scripts/sitl/run_p2_replay_v2_trial.py``) cannot show a detection signal by construction, not
+    as a harness limitation."""
+    det = ProtocolDetector(load_config(PROFILE).detector["protocol"])
+    forged = CommandEvent(1.0, 255, 190, 400)  # force-disarm, impersonating the expected GCS identity
+    result = det.process(_frame(sources={(3, 1): 10}, n_sources=1, commands_recent=[forged]))
+    assert not any("unexpected source" in e for e in result.evidence)
+    assert result.attack_votes.get("COMMAND_INJECTION", 0.0) == 0.0

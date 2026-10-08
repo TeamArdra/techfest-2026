@@ -231,7 +231,10 @@ def test_mirror_uplink_to_clients_when_enabled_excludes_sender():
     r.pump_once()
     assert up.sent[-2:] == [gpi(2, 255, 190), hb(99, 7, 7)]  # upstream still gets both
     assert down.to(CLIENT_B) == [gpi(2, 255, 190), hb(99, 7, 7)]  # the OTHER client sees both
-    assert down.to(CLIENT_A) == []  # the sender gets no echo of its own uplink
+    # the sender gets NO echo of its own original frame, but DOES see the frame the hook added (the
+    # sender did not author it; otherwise an injection riding on the IDS tap's own heartbeat would be
+    # invisible to the IDS -- see tests/unit/test_mavlink_live_concurrency.py)
+    assert down.to(CLIENT_A) == [hb(99, 7, 7)]
     assert r.stats["mirrored_up"] == 2
 
 

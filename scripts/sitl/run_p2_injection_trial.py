@@ -66,6 +66,22 @@ def px4_describe(distro: str = "Ubuntu-24.04", px4_dir: str = "/home/astryx/PX4-
     return out.stdout.strip()
 
 
+class CarrierRecorder:
+    """Wraps the attack hook (installed as BOTH up_hook and down_hook); records the sysid of the uplink
+    client whose frame carried each injection. Changes no behaviour: the attack's output is returned
+    untouched. Ground truth for 'which client carried it', which the pre-fix batch did not log."""
+
+    def __init__(self, attack: CommandInjectionAttack) -> None:
+        self.attack = attack
+        self.carriers: list[int] = []
+
+    def __call__(self, ctx):
+        out = self.attack(ctx)
+        if ctx.direction == "up" and len(out) == 2:  # [carrier, injection]
+            self.carriers.append(ctx.sysid)
+        return out
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--px4-host", default=None)
@@ -99,7 +115,8 @@ def main(argv: list[str] | None = None) -> int:
     # visibility into uplink traffic (including this attack's own injected frames) -- see
     # docs/STAGE2_PROGRESS.md's "architectural finding" entry. Default-off elsewhere; this
     # trial specifically needs it to answer "would the IDS see this attack at all".
-    relay = make_udp_relay(px4_host, a.px4_port, a.relay_listen_port, up_hook=attack, down_hook=attack,
+    hook = CarrierRecorder(attack)
+    relay = make_udp_relay(px4_host, a.px4_port, a.relay_listen_port, up_hook=hook, down_hook=hook,
                            mirror_uplink_to_clients=True)
     relay.start()
     if not relay.wait_upstream_alive(timeout=15.0):
@@ -145,7 +162,8 @@ def main(argv: list[str] | None = None) -> int:
                 for m in tick.messages:
                     if m.sysid != 3 or m.msgname == "COMMAND_LONG":
                         ingest_f.write(json.dumps({"tick_t": round(tick.t, 2), "recv_time": round(m.recv_time, 3),
-                                                   "sysid": m.sysid, "compid": m.compid, "msg": m.msgname}) + "\n")
+                                                   "sysid": m.sysid, "compid": m.compid, "msg": m.msgname,
+                                                   "seq": m.seq}) + "\n")
                 asmt = pipe.process_tick(tick)
                 if asmt is None:
                     continue
@@ -189,6 +207,11 @@ def main(argv: list[str] | None = None) -> int:
         {**manifest.__dict__, "schema_id": manifest.schema_id, "schema_version": manifest.schema_version,
          "detector_decision": manifest.detector_decision, "time_to_detection_s": manifest.time_to_detection_s,
          "full_provenance": prov_raw,
+         # post-fix batch marker: hook-added frames are mirrored to ALL clients (carrier sender included);
+         # the pre-fix batch (p2i_trial_*) lacks these keys. injection_carriers[i] = sysid whose uplink
+         # frame carried injection i (rogue MAVLink seq == i).
+         "relay_mirror_semantics": "hook_added_frames_to_all_clients",
+         "injection_carriers": hook.carriers,
          "ids_summary": {"decisions": n_decisions, "threat_decisions": n_threats, "source_stats": ids_stats,
                          "relay_stats": relay.stats}},
         indent=2, default=str))

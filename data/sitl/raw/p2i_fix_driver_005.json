@@ -1,0 +1,68 @@
+{
+  "schema": "aegisflight.sitl_capture/1",
+  "purpose": "benign flight driver (253/192) during post-fix command-injection trial 005",
+  "environment": "SITL",
+  "attack_status": "NONE",
+  "claim_class": "none (benign reference / calibration capture)",
+  "started_utc": "2026-10-07T17:27:12.401453+00:00",
+  "duration_s": 142.81,
+  "frames": 63054,
+  "tlog": "p2i_fix_driver_005.tlog",
+  "link": {
+    "transport": "udp",
+    "host": "172.29.115.208",
+    "port": 14582,
+    "role": "GCS sysid=253 compid=192"
+  },
+  "vehicle": {
+    "sysid": 3,
+    "compid": 1
+  },
+  "px4_git_describe": "v1.18.0-rc1-27-gc239c63807",
+  "gazebo": "8.15.0",
+  "sim_model": "gz_x500 (headless)",
+  "client": {
+    "python": "3.13.15"
+  },
+  "flight_events": {
+    "home": {
+      "lat": 47.397742,
+      "lon": 8.5455939,
+      "alt": 488.194,
+      "rel": -0.013
+    },
+    "t_start": "2026-10-07T17:27:12.720889+00:00",
+    "arm_result": 0,
+    "t_armed": "2026-10-07T17:27:17.737818+00:00",
+    "takeoff_result": 0,
+    "t_at_altitude": "2026-10-07T17:27:34.377603+00:00",
+    "legs_reached": [
+      true,
+      true,
+      false,
+      false
+    ],
+    "land_result": 0,
+    "t_landed": "2026-10-07T17:29:32.199955+00:00",
+    "disarmed_after_land": true
+  },
+  "gazebo_note": "installed version (gz sim --versions), not queried from the running server",
+  "provenance": {
+    "collected_utc": "2026-10-07T17:29:35.859170+00:00",
+    "aegisflight_commit": "e0b28d793c378f54f75b03be9a30bdda17ba4183",
+    "working_tree_dirty": true,
+    "dirty_paths_count": 3,
+    "python": "3.13.15",
+    "packages": {
+      "pymavlink": "2.4.50",
+      "numpy": "2.5.3",
+      "scikit-learn": "1.9.1",
+      "joblib": "1.6.0",
+      "scipy": "1.18.1"
+    },
+    "model_sha256": "3fe74cddf3689e169610ffd783b109b6539cc6c03629bd1e4bb8b1d3842939c4",
+    "configs_sha256": "f9f7de15a4127dab1260a32c9412a0a051d3b5b68530eced074ae87c2693cb23",
+    "command_line": "scripts/sitl/record_flight.py --port 14582 --sysid 253 --compid 192 --out data/sitl/raw/p2i_fix_driver_005 --purpose benign flight driver (253/192) during post-fix command-injection trial 005",
+    "tlog_sha256": "49fe3cac577cc186b42b1a395da412828a55c33b678c4cc0b9c6a1ab97878fd9"
+  }
+}

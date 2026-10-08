@@ -34,9 +34,11 @@ Behaviour
   ``up_hook`` injects toward PX4 (e.g. a rogue ``COMMAND_LONG``) -- because ``_handle_up``
   only ever sends the hook's output to ``self.upstream``. Setting this flag makes the
   relay behave like a real bump-in-the-wire tap on a single physical link: the SAME
-  frames the up hook decided to send upstream are ALSO fanned out to every OTHER learned
-  client (never echoed back to the client that sent them), counted separately in
-  ``mirrored_up``. This is opt-in and purely additive: it changes nothing when left at
+  frames the up hook decided to send upstream are ALSO fanned out to the learned clients,
+  counted separately in ``mirrored_up``: an UNMODIFIED original frame goes to every client
+  except its sender (no self-echo); a frame the hook created or modified (e.g. an injected
+  ``COMMAND_LONG`` riding on a client's heartbeat) goes to EVERY client, the carrier's
+  sender included, since the sender did not author it as it appears on the wire. This is opt-in and purely additive: it changes nothing when left at
   its default, so the already-reviewed downlink-attack results stay byte-for-byte
   reproducible.
 * **Framing**: each datagram is split header-first into single frames (v1 ``0xFE`` /
@@ -517,10 +519,15 @@ class MavlinkRelay:
                     st.send_failures += 1
             if self.mirror_uplink_to_clients:
                 others = [a for a in self._clients if a != addr]
-                if others:
-                    for raw in out:
+                for raw in out:
+                    # The sender must not see an echo of its OWN frame. A frame the hook created or
+                    # modified (raw != the original) was not authored by the sender as it went on the
+                    # wire, so every client -- the sender included -- must see it: otherwise an
+                    # injection that rides on the IDS tap's own heartbeat is invisible to the IDS.
+                    targets = others if raw == fr.raw else list(self._clients)
+                    if targets:
                         st.mirrored_up += 1
-                        for other in others:
+                        for other in targets:
                             if not self.downstream.sendto(raw, other):
                                 st.send_failures += 1
 

@@ -1,0 +1,500 @@
+{"t": 0.0, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 0.2, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 0.4, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 0.6, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 0.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.794, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 1.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.794, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 1.2, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 1.4, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 1.6, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 1.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.794, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 2.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.794, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 2.2, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 2.4, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 2.6, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 2.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.794, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 3.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.794, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 3.2, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 3.4, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 3.6, "threat": false, "type": "BENIGN", "score": 0.0, "evidence": []}
+{"t": 3.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 4.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 4.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 4.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 4.6, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 4.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 5.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 5.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 5.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 5.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 5.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 6.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 6.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 6.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 6.6, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 6.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 7.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 7.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 7.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 7.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 7.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 8.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 8.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 8.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 8.6, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 8.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 9.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 9.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 9.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 9.6, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 9.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 10.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 10.2, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 10.4, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 10.6, "threat": false, "type": "BENIGN", "score": 0.022, "evidence": []}
+{"t": 10.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 11.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 11.2, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 11.4, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 11.6, "threat": false, "type": "BENIGN", "score": 0.022, "evidence": []}
+{"t": 11.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 12.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 12.2, "threat": false, "type": "BENIGN", "score": 0.022, "evidence": []}
+{"t": 12.4, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 12.6, "threat": false, "type": "BENIGN", "score": 0.022, "evidence": []}
+{"t": 12.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 13.0, "threat": false, "type": "BENIGN", "score": 0.022, "evidence": []}
+{"t": 13.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 13.4, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 13.6, "threat": false, "type": "BENIGN", "score": 0.022, "evidence": []}
+{"t": 13.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 14.0, "threat": false, "type": "BENIGN", "score": 0.022, "evidence": []}
+{"t": 14.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 14.4, "threat": false, "type": "BENIGN", "score": 0.023, "evidence": []}
+{"t": 14.6, "threat": false, "type": "BENIGN", "score": 0.023, "evidence": []}
+{"t": 14.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 15.0, "threat": false, "type": "BENIGN", "score": 0.024, "evidence": []}
+{"t": 15.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 15.4, "threat": false, "type": "BENIGN", "score": 0.025, "evidence": []}
+{"t": 15.6, "threat": false, "type": "BENIGN", "score": 0.027, "evidence": []}
+{"t": 15.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 16.0, "threat": false, "type": "BENIGN", "score": 0.023, "evidence": []}
+{"t": 16.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 16.4, "threat": false, "type": "BENIGN", "score": 0.023, "evidence": []}
+{"t": 16.6, "threat": false, "type": "BENIGN", "score": 0.024, "evidence": []}
+{"t": 16.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 17.0, "threat": false, "type": "BENIGN", "score": 0.024, "evidence": []}
+{"t": 17.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 17.4, "threat": false, "type": "BENIGN", "score": 0.029, "evidence": []}
+{"t": 17.6, "threat": false, "type": "BENIGN", "score": 0.034, "evidence": []}
+{"t": 17.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.8, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 18.0, "threat": false, "type": "BENIGN", "score": 0.026, "evidence": []}
+{"t": 18.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 18.4, "threat": false, "type": "BENIGN", "score": 0.026, "evidence": []}
+{"t": 18.6, "threat": false, "type": "BENIGN", "score": 0.026, "evidence": []}
+{"t": 18.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 19.0, "threat": false, "type": "BENIGN", "score": 0.023, "evidence": []}
+{"t": 19.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 19.4, "threat": false, "type": "BENIGN", "score": 0.022, "evidence": []}
+{"t": 19.6, "threat": false, "type": "BENIGN", "score": 0.022, "evidence": []}
+{"t": 19.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 20.0, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 20.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 20.4, "threat": false, "type": "BENIGN", "score": 0.022, "evidence": []}
+{"t": 20.6, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 20.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 21.0, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 21.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.8, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 21.4, "threat": false, "type": "BENIGN", "score": 0.027, "evidence": []}
+{"t": 21.6, "threat": false, "type": "BENIGN", "score": 0.033, "evidence": []}
+{"t": 21.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.803, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 22.0, "threat": false, "type": "BENIGN", "score": 0.049, "evidence": []}
+{"t": 22.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.804, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 22.4, "threat": false, "type": "BENIGN", "score": 0.037, "evidence": []}
+{"t": 22.6, "threat": false, "type": "BENIGN", "score": 0.047, "evidence": []}
+{"t": 22.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.804, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 23.0, "threat": false, "type": "BENIGN", "score": 0.038, "evidence": []}
+{"t": 23.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.801, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 23.4, "threat": false, "type": "BENIGN", "score": 0.031, "evidence": []}
+{"t": 23.6, "threat": false, "type": "BENIGN", "score": 0.029, "evidence": []}
+{"t": 23.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.8, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 24.0, "threat": false, "type": "BENIGN", "score": 0.024, "evidence": []}
+{"t": 24.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 24.4, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 24.6, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 24.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 25.0, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 25.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 25.4, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 25.6, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 25.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 26.0, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 26.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 26.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 26.6, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 26.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 27.0, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 27.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 27.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 27.6, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 27.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 28.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 28.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 28.4, "threat": false, "type": "BENIGN", "score": 0.022, "evidence": []}
+{"t": 28.6, "threat": false, "type": "BENIGN", "score": 0.025, "evidence": []}
+{"t": 28.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 29.0, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 29.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 29.4, "threat": false, "type": "BENIGN", "score": 0.025, "evidence": []}
+{"t": 29.6, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 29.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 30.0, "threat": false, "type": "BENIGN", "score": 0.025, "evidence": []}
+{"t": 30.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 30.4, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 30.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 30.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 31.0, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 31.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 31.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 31.6, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 31.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 32.0, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 32.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 32.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 32.6, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 32.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 33.0, "threat": false, "type": "BENIGN", "score": 0.022, "evidence": []}
+{"t": 33.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 33.4, "threat": false, "type": "BENIGN", "score": 0.024, "evidence": []}
+{"t": 33.6, "threat": false, "type": "BENIGN", "score": 0.028, "evidence": []}
+{"t": 33.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.802, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 34.0, "threat": false, "type": "BENIGN", "score": 0.048, "evidence": []}
+{"t": 34.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.803, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 34.4, "threat": false, "type": "BENIGN", "score": 0.041, "evidence": []}
+{"t": 34.6, "threat": false, "type": "BENIGN", "score": 0.038, "evidence": []}
+{"t": 34.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.803, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 35.0, "threat": false, "type": "BENIGN", "score": 0.032, "evidence": []}
+{"t": 35.2, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 35.4, "threat": false, "type": "BENIGN", "score": 0.022, "evidence": []}
+{"t": 35.6, "threat": false, "type": "BENIGN", "score": 0.022, "evidence": []}
+{"t": 35.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 36.0, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 36.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 36.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 36.6, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 36.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 37.0, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 37.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 37.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 37.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 37.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 38.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 38.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 38.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 38.6, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 38.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 39.0, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 39.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 39.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 39.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 39.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 40.0, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 40.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 40.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 40.6, "threat": false, "type": "BENIGN", "score": 0.028, "evidence": []}
+{"t": 40.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.8, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 41.0, "threat": false, "type": "BENIGN", "score": 0.025, "evidence": []}
+{"t": 41.2, "threat": false, "type": "BENIGN", "score": 0.023, "evidence": []}
+{"t": 41.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 41.6, "threat": false, "type": "BENIGN", "score": 0.025, "evidence": []}
+{"t": 41.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 42.0, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 42.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 42.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 42.6, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 42.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 43.0, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 43.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 43.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 43.6, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 43.8, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 44.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 44.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 44.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 44.6, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 44.8, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 45.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 45.2, "threat": false, "type": "BENIGN", "score": 0.024, "evidence": []}
+{"t": 45.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 45.6, "threat": false, "type": "BENIGN", "score": 0.026, "evidence": []}
+{"t": 45.8, "threat": false, "type": "BENIGN", "score": 0.027, "evidence": []}
+{"t": 46.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.803, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 46.2, "threat": false, "type": "BENIGN", "score": 0.049, "evidence": []}
+{"t": 46.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.802, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 46.6, "threat": false, "type": "BENIGN", "score": 0.038, "evidence": []}
+{"t": 46.8, "threat": false, "type": "BENIGN", "score": 0.033, "evidence": []}
+{"t": 47.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.8, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 47.2, "threat": false, "type": "BENIGN", "score": 0.025, "evidence": []}
+{"t": 47.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 47.6, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 47.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 48.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 48.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 48.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 48.6, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 48.8, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 49.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 49.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 49.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 49.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 49.8, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 50.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 50.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 50.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 50.6, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 50.8, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 51.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 51.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 51.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 51.6, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 51.8, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 52.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 52.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 52.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 52.6, "threat": false, "type": "BENIGN", "score": 0.025, "evidence": []}
+{"t": 52.8, "threat": false, "type": "BENIGN", "score": 0.026, "evidence": []}
+{"t": 53.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 53.2, "threat": false, "type": "BENIGN", "score": 0.024, "evidence": []}
+{"t": 53.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 53.6, "threat": false, "type": "BENIGN", "score": 0.022, "evidence": []}
+{"t": 53.8, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 54.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 54.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 54.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 54.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 54.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 55.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 55.2, "threat": false, "type": "BENIGN", "score": 0.021, "evidence": []}
+{"t": 55.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 55.6, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 55.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 56.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 56.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 56.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 56.6, "threat": true, "type": "COMMAND_INJECTION", "score": 0.799, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 56.8, "threat": true, "type": "COMMAND_INJECTION", "score": 0.8, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 57.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.801, "evidence": ["rogue telemetry source(s): sys253/comp192", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 57.2, "threat": true, "type": "COMMAND_INJECTION", "score": 0.807, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 57.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.811, "evidence": ["rogue telemetry source(s): sys252/comp193", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 57.6, "threat": true, "type": "COMMAND_INJECTION", "score": 0.811, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 57.8, "threat": true, "type": "COMMAND_INJECTION", "score": 0.812, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 58.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.816, "evidence": ["rogue telemetry source(s): sys253/comp192", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 58.2, "threat": true, "type": "COMMAND_INJECTION", "score": 0.841, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 58.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.851, "evidence": ["rogue telemetry source(s): sys252/comp193", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 58.6, "threat": true, "type": "COMMAND_INJECTION", "score": 0.812, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 58.8, "threat": true, "type": "COMMAND_INJECTION", "score": 0.799, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 59.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 59.2, "threat": true, "type": "COMMAND_INJECTION", "score": 0.799, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 59.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 59.6, "threat": true, "type": "COMMAND_INJECTION", "score": 0.799, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 59.8, "threat": true, "type": "COMMAND_INJECTION", "score": 0.799, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 60.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys253/comp192", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 60.2, "threat": true, "type": "COMMAND_INJECTION", "score": 0.799, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 60.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 60.6, "threat": true, "type": "COMMAND_INJECTION", "score": 0.799, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 60.8, "threat": true, "type": "COMMAND_INJECTION", "score": 0.799, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 61.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys253/comp192", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 61.2, "threat": true, "type": "COMMAND_INJECTION", "score": 0.799, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 61.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 61.6, "threat": true, "type": "COMMAND_INJECTION", "score": 0.799, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 61.8, "threat": true, "type": "COMMAND_INJECTION", "score": 0.8, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 62.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.8, "evidence": ["rogue telemetry source(s): sys253/comp192", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 62.2, "threat": true, "type": "COMMAND_INJECTION", "score": 0.8, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 62.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 62.6, "threat": true, "type": "COMMAND_INJECTION", "score": 0.799, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 62.8, "threat": true, "type": "COMMAND_INJECTION", "score": 0.799, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 63.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys253/comp192", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 63.2, "threat": true, "type": "COMMAND_INJECTION", "score": 0.798, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 63.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 63.6, "threat": true, "type": "COMMAND_INJECTION", "score": 0.798, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 63.8, "threat": true, "type": "COMMAND_INJECTION", "score": 0.798, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 64.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 64.2, "threat": true, "type": "COMMAND_INJECTION", "score": 0.798, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 64.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 64.6, "threat": true, "type": "COMMAND_INJECTION", "score": 0.798, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 64.8, "threat": true, "type": "COMMAND_INJECTION", "score": 0.798, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 65.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 65.2, "threat": true, "type": "COMMAND_INJECTION", "score": 0.798, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 65.4, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 65.6, "threat": true, "type": "COMMAND_INJECTION", "score": 0.798, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 65.8, "threat": true, "type": "COMMAND_INJECTION", "score": 0.798, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 66.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 66.2, "threat": true, "type": "COMMAND_INJECTION", "score": 0.798, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 66.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 66.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 66.8, "threat": true, "type": "COMMAND_INJECTION", "score": 0.798, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 67.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 67.2, "threat": true, "type": "COMMAND_INJECTION", "score": 0.798, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 67.4, "threat": true, "type": "COMMAND_INJECTION", "score": 0.799, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 67.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 67.8, "threat": true, "type": "COMMAND_INJECTION", "score": 0.799, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 68.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys253/comp192", "1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 68.2, "threat": true, "type": "COMMAND_INJECTION", "score": 0.799, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 68.4, "threat": true, "type": "COMMAND_INJECTION", "score": 0.798, "evidence": ["1 command(s) from unexpected source sys66/comp200; sensitive: MAV_CMD_COMPONENT_ARM_DISARM"]}
+{"t": 68.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 68.8, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 69.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 69.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 69.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 69.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 69.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 70.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 70.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 70.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 70.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 70.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 71.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 71.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 71.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 71.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 71.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 72.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 72.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 72.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 72.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 72.8, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 73.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 73.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 73.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 73.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 73.8, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 74.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 74.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 74.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 74.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 74.8, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 75.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 75.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 75.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 75.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 75.8, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 76.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 76.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 76.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 76.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 76.8, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 77.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 77.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 77.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 77.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 77.8, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 78.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 78.2, "threat": false, "type": "BENIGN", "score": 0.024, "evidence": []}
+{"t": 78.4, "threat": false, "type": "BENIGN", "score": 0.026, "evidence": []}
+{"t": 78.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 78.8, "threat": false, "type": "BENIGN", "score": 0.022, "evidence": []}
+{"t": 79.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.799, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 79.2, "threat": false, "type": "BENIGN", "score": 0.027, "evidence": []}
+{"t": 79.4, "threat": false, "type": "BENIGN", "score": 0.029, "evidence": []}
+{"t": 79.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 79.8, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 80.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 80.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 80.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 80.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 80.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 81.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 81.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 81.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 81.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 81.8, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 82.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 82.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 82.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 82.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 82.8, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 83.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 83.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 83.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 83.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 83.8, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 84.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 84.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 84.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 84.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 84.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 85.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 85.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 85.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 85.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 85.8, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 86.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 86.2, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 86.4, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 86.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 86.8, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 87.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 87.2, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 87.4, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 87.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 87.8, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 88.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 88.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 88.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 88.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 88.8, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 89.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 89.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 89.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 89.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 89.8, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 90.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 90.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 90.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 90.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 90.8, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 91.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 91.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 91.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 91.6, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 91.8, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 92.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 92.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 92.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 92.6, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 92.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 93.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 93.2, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 93.4, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 93.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 93.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 94.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 94.2, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 94.4, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 94.6, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 94.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 95.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 95.2, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 95.4, "threat": false, "type": "BENIGN", "score": 0.018, "evidence": []}
+{"t": 95.6, "threat": false, "type": "BENIGN", "score": 0.019, "evidence": []}
+{"t": 95.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 96.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 96.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 96.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 96.6, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 96.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 97.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 97.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 97.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 97.6, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 97.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 98.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 98.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 98.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 98.6, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 98.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
+{"t": 99.0, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys253/comp192"]}
+{"t": 99.2, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 99.4, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 99.6, "threat": false, "type": "BENIGN", "score": 0.02, "evidence": []}
+{"t": 99.8, "threat": true, "type": "MAVLINK_ANOMALY", "score": 0.798, "evidence": ["rogue telemetry source(s): sys252/comp193"]}
