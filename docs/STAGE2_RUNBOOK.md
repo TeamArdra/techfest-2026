@@ -50,6 +50,11 @@ Gazebo version, link, vehicle ids, flight events, `attack_status: NONE`, `enviro
 ```
 Environment `SITL (replayed tlog)`; benign capture, so every `threat=True` is a false alarm.
 
+## 3b. Serial transport (software-only; no hardware has been connected)
+`SerialMavlinkTransport` (`pip install -e ".[serial]"`) is unit-tested on virtual ports only.
+Usage, counters, timestamp semantics and limits: `docs/SERIAL_TRANSPORT.md`. Tests:
+`.venv/Scripts/python.exe -m pytest tests/unit/test_mavlink_serial.py` (PTY tests skip on Windows).
+
 ## 4. Stage-1 regression gate (run before calling any milestone done)
 ```bash
 .venv/Scripts/python.exe -m pytest -q

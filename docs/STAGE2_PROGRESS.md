@@ -997,3 +997,24 @@ byte-identical to the committed file (10/10 integrity-passing, 10/10 detected). 
 so for them "no swallowed modify failure" remains **inferred** (modified-frame counts consistent with evidence-decision counts, per
 the review), not directly measured; future GNSS trials will measure it. A scratch check (not committed) confirmed the gate excludes a
 manifest edited to carry `attack_frames_modify_failed = 1` and keeps one carrying 0.
+
+## 2026-10-09 - Serial MAVLink transport (software only; env: unit, no SITL, no hardware)
+Additive `SerialMavlinkTransport` + `MavlinkStreamFramer` (`src/aegisflight/sources/mavlink_serial.py`), a second
+`FrameTransport` beside `UdpMavlinkTransport`; details, counters and limits in `docs/SERIAL_TRANSPORT.md`. No detector,
+feature, fusion, pipeline, threshold, config, frozen contract, attack or recorded artifact was touched; `mavlink_live.py` is
+unchanged (the new module imports its framing constants, CRC helper and dialect loader).
+- **Dependency (approved by the user's instruction naming pyserial):** `pyserial>=3.5` as an optional `serial` extra and in `dev`;
+  core `dependencies` unchanged; imported lazily. Pure Python, no transitive dependencies.
+- **Design points:** CRC-confirmed framing with one-byte-at-a-time resync (a stray magic byte cannot swallow real frames);
+  stale-partial flush after an idle timeout; bounded queue (count and bytes) and < 280 retained framer bytes; reader-thread
+  reconnect with partial-frame discard; passive (no heartbeat). Timestamps are host-side read-completion times, not wire times;
+  no counter claims to measure loss below the driver.
+- **Found by the tests, fixed before commit:** an out-of-dialect message id accepted on bare header sanity let a false magic byte
+  swallow real frames; the unknown-id filter is now stricter than the parser's (compat 0, compid != 0, msgid <= 0xFFFF).
+  Residual false-accept estimated ~1 in 65k stray magic bytes (from field widths, not measured).
+- **Tests:** 38 new in `tests/unit/test_mavlink_serial.py`. Windows full suite: **380 passed, 3 skipped** (the 3 PTY tests; PTYs
+  do not exist on Windows); `ruff check src tests scripts backend` clean. The 3 PTY tests were run once on Linux (WSL
+  Ubuntu-24.04, Python 3.12.3) in a throwaway stub harness that is not committed: 3 passed. Virtual ports used on Windows:
+  pyserial `socket://` (loopback TCP), which is not a termios tty.
+- **Not run:** Stage-1 benchmark regression (no detector/feature/fusion/pipeline file changed), any SITL trial, any hardware.
+  Never connected to a physical flight controller, USB-CDC device, UART or radio.
