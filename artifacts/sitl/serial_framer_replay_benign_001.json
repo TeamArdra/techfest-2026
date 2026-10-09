@@ -1,0 +1,31 @@
+{
+  "tlog": "data/sitl/raw/benign_001.tlog",
+  "tlog_sha256": "9686c31dee3b34aac5c885a9b0066e541a564c7b639d020b0eb04cfeeb0a1569",
+  "environment": "REPLAY (PX4 SITL capture re-chunked into fixed-size reads; no timing)",
+  "read_size_bytes": 256,
+  "frames_in_capture": 35067,
+  "bytes_in_capture": 1491121,
+  "out_of_dialect_frames_in_capture": 413,
+  "out_of_dialect_ids_in_capture": {
+    "8": 93,
+    "290": 93,
+    "291": 93,
+    "380": 46,
+    "410": 10,
+    "411": 31,
+    "514": 47
+  },
+  "default_policy": {
+    "frames_emitted": 34654,
+    "unverifiable_rejects": 433,
+    "crc_rejects": 105,
+    "garbage_bytes": 17012,
+    "crc_bytes_checked": 1417046
+  },
+  "accept_unverified_ids": {
+    "frames_emitted": 35067,
+    "unverified_accepted": 413,
+    "crc_rejects": 0,
+    "garbage_bytes": 0
+  }
+}

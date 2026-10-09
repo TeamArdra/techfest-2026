@@ -29,12 +29,21 @@ from pymavlink.dialects.v20 import common as mav2
 
 from aegisflight.sources.mavlink_live import LiveMavlinkSource, MavlinkFrameParser, _x25
 from aegisflight.sources.mavlink_serial import (
+    ALLOWED_URL_SCHEMES,
     MAX_FRAME_BYTES,
+    MAX_TRACKED_UNVERIFIABLE_IDS,
     MavlinkStreamFramer,
     SerialMavlinkTransport,
+    _crc_x25,
 )
 
 pytest.importorskip("serial", reason="pyserial not installed (pip install 'aegisflight[serial]')")
+
+#: Hard upper bound on CRC steps per input byte. Every failed candidate drops exactly one byte,
+#: so candidates evaluated <= bytes fed; one candidate costs at most v2 header(10) + payload(255)
+#: = 265 steps (the header's 9 non-magic bytes + payload + the crc_extra byte). A WORK bound,
+#: not a wall-clock or real-time claim.
+CRC_STEPS_PER_BYTE_CAP = 265
 
 # --------------------------------------------------------------------------- #
 # frame builders
@@ -147,7 +156,9 @@ def test_framer_false_magic_does_not_swallow_following_frames():
     f = MavlinkStreamFramer()
     out = f.feed(bytes([0xFD, 200, 0, 0]) + b"".join(real))
     assert out == real
-    assert f.crc_rejects >= 1 and f.garbage_bytes >= 4
+    # this candidate's id (bytes 7..9 of the "header") is outside the dialect: unverifiable,
+    # not a CRC failure -- the two counters must not be conflated
+    assert f.unverifiable_rejects >= 1 and f.crc_rejects == 0 and f.garbage_bytes >= 4
 
 
 def test_framer_stale_false_candidate_is_broken_by_flush():
@@ -175,12 +186,28 @@ def test_framer_unknown_incompat_flags_dropped():
     good = hb(2)
     f = MavlinkStreamFramer()
     assert f.feed(bytes(bad) + good) == [good]
+    # refused on the header alone: not a CRC failure, not an unverifiable id
+    assert f.header_rejects == 1 and f.crc_rejects == 0 and f.unverifiable_rejects == 0
 
 
-def test_framer_unknown_ids_header_sanity_only():
+def test_framer_refuses_unverifiable_ids_by_default():
+    """An id with no crc_extra cannot be CRC-checked, so it is not presented as a frame."""
     f = MavlinkStreamFramer()
-    ok = raw_v2(60001)  # v2, sysid 3: accepted on header sanity (CRC not verifiable)
+    frame = raw_v2(60001, crc_extra=77)  # perfectly well-formed, but the framer cannot know that
+    assert f.feed(frame) == []
+    assert f.unverifiable_rejects == 1 and f.unverified_accepted == 0 and f.crc_rejects == 0
+    assert f.unverifiable_ids == {60001: 1}
+    assert f.frames_out == 0 and f.pending_bytes == 0
+    # a run of known frames right after it is untouched
+    real = [hb(0), att(1), gpi(2)]
+    assert f.feed(b"".join(real)) == real
+
+
+def test_framer_opt_in_unverified_mode_is_header_plausibility_only():
+    f = MavlinkStreamFramer(accept_unverified_ids=True)
+    ok = raw_v2(60001)  # CRC bytes are junk and nothing checks them
     assert f.feed(ok) == [ok]
+    assert f.unverified_accepted == 1 and f.crc_rejects == 0
     assert f.feed(raw_v2(60001, sysid=0)) == []  # sysid 0 refused
     v1 = bytes([0xFE, 3, 0, 3, 1, unknown_v1_id()]) + b"\x01\x02\x03" + b"\xaa\xbb"
     assert f.feed(v1) == []  # every v1 id is in the dialect: an unknown one is garbage
@@ -191,14 +218,18 @@ def test_framer_unknown_ids_header_sanity_only():
     bad_compat = bytearray(raw_v2(60001))
     bad_compat[3] = 1
     assert f.feed(bytes(bad_compat)) == []
+    assert f.unverified_accepted == 1 and f.unverifiable_rejects == 5
 
 
 def test_framer_extra_crc_makes_unknown_id_verifiable():
     f = MavlinkStreamFramer(extra_crc={60001: 77})
     good = raw_v2(60001, crc_extra=77)
     assert f.feed(good) == [good]
-    assert f.feed(raw_v2(60001, crc_extra=78)) == []  # wrong crc_extra: rejected
-    assert f.crc_rejects >= 1
+    assert f.unverifiable_rejects == 0 and f.unverified_accepted == 0  # verified, not "unverified"
+    assert f.feed(raw_v2(60001, crc_extra=78)) == []  # wrong crc_extra: CRC failure
+    assert f.crc_rejects == 1 and f.unverifiable_rejects == 0
+    assert f.feed(raw_v2(60002, crc_extra=77)) == []  # a different id has no entry: unverifiable
+    assert f.unverifiable_rejects == 1
 
 
 def test_framer_chunking_invariance_random_splits():
@@ -227,6 +258,7 @@ def test_framer_fuzz_never_raises_and_memory_stays_bounded():
         assert f.pending_bytes < MAX_FRAME_BYTES
     f.flush_stale()
     assert f.pending_bytes < MAX_FRAME_BYTES
+    assert f.crc_bytes_checked <= CRC_STEPS_PER_BYTE_CAP * f.bytes_in
 
 
 def test_framer_reset_drops_partial_and_reports_size():
@@ -247,6 +279,219 @@ def test_framer_output_is_clean_input_for_the_existing_parser():
     envs = [e for fr in out for e in p.parse(fr, 0.0)]
     assert len(envs) == 30 and p.stats.bad_frames == 0
     assert [e.seq for e in envs] == [i % 256 for i in range(30)]
+
+
+# --------------------------------------------------------------------------- #
+# M1: corrupted headers / inserted bytes must not fabricate frames
+# --------------------------------------------------------------------------- #
+
+
+def drain(f: MavlinkStreamFramer, data: bytes) -> list[bytes]:
+    """Feed ``data`` then let the idle-line flush run until nothing is pending."""
+    out = f.feed(data)
+    while f.pending_bytes:
+        out += f.flush_stale()
+    return out
+
+
+def sources_of(frames: list[bytes]) -> set[tuple[int, int]]:
+    p = MavlinkFrameParser()
+    return {(e.sysid, e.compid) for fr in frames for e in p.parse(fr, 0.0)}
+
+
+def is_subsequence(sub: list[bytes], full: list[bytes]) -> bool:
+    it = iter(full)
+    return all(any(x == y for y in it) for x in sub)
+
+
+def test_crc_table_is_bit_identical_to_the_reference_x25():
+    rng = random.Random(99)
+    for n in (0, 1, 2, 7, 64, 255, 264):
+        for _ in range(20):
+            data = bytes(rng.randrange(256) for _ in range(n))
+            init = rng.choice((0xFFFF, 0, rng.randrange(0x10000)))
+            assert _crc_x25(data, init) == _x25(data, init)
+    # chained exactly as the framer uses it (payload CRC, then the crc_extra byte)
+    assert _crc_x25(b"\x4d", _crc_x25(b"\x01\x02\x03")) == _x25(b"\x4d", _x25(b"\x01\x02\x03"))
+
+
+@pytest.mark.parametrize("bit", range(24))
+def test_msgid_bit_flip_never_yields_a_frame_and_neighbours_survive(bit):
+    """The review's M1: one flipped bit in a frame's id field turns it into another id. Known
+    ids fail the CRC (different crc_extra); unknown ids cannot be verified. Neither may emerge
+    as a frame, and the frames on either side must be unaffected."""
+    before, victim, after = hb(0), att(1), gpi(2)
+    bad = bytearray(victim)
+    bad[7 + bit // 8] ^= 1 << (bit % 8)
+    f = MavlinkStreamFramer()
+    out = drain(f, before + bytes(bad) + after)
+    assert out == [before, after]
+    assert f.crc_rejects + f.unverifiable_rejects >= 1
+    assert f.unverified_accepted == 0
+    assert sources_of(out) == {(3, 1)}  # no phantom source can reach the rogue-source logic
+
+
+def test_msgid_bit_flip_in_v1_frames_never_yields_a_frame():
+    for bit in range(8):
+        bad = bytearray(v1_hb(1))
+        bad[5] ^= 1 << bit
+        f = MavlinkStreamFramer()
+        good = v1_hb(2)
+        assert drain(f, bytes(bad) + good) == [good]
+
+
+def test_opt_in_unverified_mode_does_accept_a_corrupted_id_documented_limitation():
+    """Characterisation, not an endorsement: with accept_unverified_ids=True a flipped high id
+    bit survives as a plausible frame carrying a garbage payload. That is why it is off."""
+    bad = bytearray(att(1))
+    bad[8] ^= 0x80  # id 30 -> 30 + 0x8000, outside the dialect
+    f = MavlinkStreamFramer(accept_unverified_ids=True)
+    out = f.feed(bytes(bad))
+    assert out == [bytes(bad)] and f.unverified_accepted == 1
+    assert MavlinkStreamFramer().feed(bytes(bad)) == []  # default: refused
+
+
+@pytest.mark.parametrize("insert", [0x00, 0x01, 0xFD, 0xFE, 0xFF])
+def test_inserted_byte_never_fabricates_a_frame_and_neighbours_survive(insert):
+    before, victim, after, tail = hb(0), att(1), gpi(2), hb(3)
+    originals = [before, victim, after, tail]
+    for at in range(1, len(victim)):  # strictly inside the victim frame
+        mutated = victim[:at] + bytes([insert]) + victim[at:]
+        stream = before + mutated + after + tail
+        f = MavlinkStreamFramer()
+        out = drain(f, stream)
+        # inserting a copy of the leading magic byte right after it is just one garbage byte in
+        # front of an intact victim; every other insertion destroys the victim
+        intact = mutated == bytes([insert]) + victim
+        want = originals if intact else [before, after, tail]
+        assert out == want, f"insert 0x{insert:02x} at {at}"
+        assert all(fr in originals for fr in out)
+        assert sources_of(out) == {(3, 1)}
+    # inserted byte BETWEEN frames: all four frames survive, the byte is counted as garbage
+    f = MavlinkStreamFramer()
+    assert drain(f, before + victim + bytes([insert]) + after + tail) == originals
+
+
+@pytest.mark.parametrize(
+    "prefix",
+    [
+        pytest.param(bytes([0xFD, 255, 0, 0]), id="v2-max-len-candidate"),
+        pytest.param(bytes([0xFD, 9, 0x02, 0]), id="v2-unknown-incompat-bit"),
+        pytest.param(bytes([0xFD, 9, 0x80, 0]), id="v2-unknown-incompat-high-bit"),
+        pytest.param(bytes([0xFD, 0, 0, 0, 5, 0, 0, 0xE1, 0xEA, 0x00]), id="v2-sysid0-compid0"),
+        pytest.param(bytes([0xFD, 4, 0, 1, 5, 3, 1, 0x01, 0x00, 0x03]), id="v2-compat-set-id-above-0xffff"),
+        pytest.param(bytes([0xFE, 255, 0, 3, 1]), id="v1-max-len-truncated-header"),
+        pytest.param(bytes([0xFE, 3, 0, 3, 1, 0xFF]) + b"\x01\x02\x03\xaa\xbb", id="v1-unknown-id"),
+        pytest.param(bytes([0xFD, 0x40, 0]), id="v2-header-cut-short"),
+        pytest.param(bytes([0xFD] * 12), id="run-of-magic-bytes"),
+    ],
+)
+def test_malformed_candidate_headers_do_not_block_or_corrupt_following_frames(prefix):
+    real = [hb(i) if i % 2 else att(i) for i in range(12)]  # > 265 bytes behind the prefix
+    f = MavlinkStreamFramer()
+    out = drain(f, prefix + b"".join(real))
+    assert out == real
+    assert f.frames_out == len(real)
+    assert sources_of(out) == {(3, 1)}
+
+
+def test_seeded_corruption_campaign_emits_only_original_frames_in_order():
+    """Deterministic campaign (seeded): bit flips, insertions and deletions at random places in a
+    longer stream, fed in random chunks. Nothing may be emitted that was not sent (no phantom
+    frame, no duplicate, no reordering) and no phantom source may appear. A 16-bit CRC makes a
+    false accept a ~1-in-65k event per corrupted known-id candidate; with this fixed seed the
+    campaign is deterministic, so this is a regression test, not a proof of impossibility."""
+    rng = random.Random(20261009)
+    originals = frame_stream(60)
+    stream = bytearray(b"".join(originals))
+    for _ in range(40):
+        at = rng.randrange(len(stream))
+        kind = rng.randrange(3)
+        if kind == 0:
+            stream[at] ^= 1 << rng.randrange(8)
+        elif kind == 1:
+            stream.insert(at, rng.randrange(256))
+        else:
+            del stream[at]
+    f = MavlinkStreamFramer()
+    out, i = [], 0
+    while i < len(stream):
+        n = rng.randint(1, 120)
+        out += f.feed(bytes(stream[i : i + n]))
+        i += n
+    while f.pending_bytes:
+        out += f.flush_stale()
+    assert is_subsequence(out, originals)
+    assert len(out) == len(set(out))
+    assert sources_of(out) <= {(3, 1)}
+    assert len(out) >= 20  # corruption hit at most 40 of 60 frames: most of the stream survives
+    assert f.crc_bytes_checked <= CRC_STEPS_PER_BYTE_CAP * f.bytes_in
+
+
+def test_unverifiable_id_tracking_is_bounded():
+    f = MavlinkStreamFramer()
+    n_ids = MAX_TRACKED_UNVERIFIABLE_IDS + 40
+    for i in range(n_ids):
+        f.feed(raw_v2(40000 + i, crc_extra=1))
+    assert len(f.unverifiable_ids) == MAX_TRACKED_UNVERIFIABLE_IDS
+    assert f.unverifiable_id_overflow == 40
+    assert f.unverifiable_rejects == n_ids
+
+
+# --------------------------------------------------------------------------- #
+# M2: bounded CPU work
+# --------------------------------------------------------------------------- #
+
+
+def test_work_bound_on_densely_overlapping_false_v1_candidates():
+    """Adversarial: a known id (HEARTBEAT) with len 255 repeated every 6 bytes, so a long false
+    candidate starts at nearly every position. This is the worst shape a stream can take."""
+    unit = bytes([0xFE, 255, 0, 1, 1, 0])
+    f = MavlinkStreamFramer()
+    out = f.feed(unit * 2000)
+    assert out == [] and f.pending_bytes < MAX_FRAME_BYTES
+    ratio = f.crc_bytes_checked / f.bytes_in
+    assert ratio > 20  # the stream really is adversarial (otherwise the bound proves nothing)
+    assert f.crc_bytes_checked <= CRC_STEPS_PER_BYTE_CAP * f.bytes_in
+    assert f.crc_rejects > 0 and f.unverifiable_rejects == 0
+
+
+def test_work_bound_on_densely_overlapping_false_v2_candidates():
+    unit = bytes([0xFD, 255, 0, 0, 0, 1, 1, 0, 0, 0])  # v2 HEARTBEAT id, len 255, every 10 bytes
+    f = MavlinkStreamFramer()
+    assert f.feed(unit * 1500) == []
+    assert f.crc_bytes_checked / f.bytes_in > 15
+    assert f.crc_bytes_checked <= CRC_STEPS_PER_BYTE_CAP * f.bytes_in
+    assert f.pending_bytes < MAX_FRAME_BYTES
+
+
+def test_unknown_id_candidates_cost_no_crc_work_at_all():
+    """Early reject: the same dense shape with an id that has no crc_extra never reaches the CRC."""
+    unit = bytes([0xFD, 255, 0, 0, 0, 1, 1, 0xE1, 0xEA, 0x00])  # id 60129: outside the dialect
+    f = MavlinkStreamFramer()
+    assert f.feed(unit * 1500) == []
+    assert f.crc_bytes_checked == 0
+    assert f.unverifiable_rejects > 100 and f.pending_bytes < MAX_FRAME_BYTES
+
+
+def test_random_garbage_costs_little_crc_work_and_bounded_memory():
+    rng = random.Random(5)
+    f = MavlinkStreamFramer()
+    total = 0
+    for _ in range(50):
+        chunk = rng.randbytes(4096)
+        total += len(chunk)
+        f.feed(chunk)
+        assert f.pending_bytes < MAX_FRAME_BYTES
+    assert f.bytes_in == total
+    assert f.crc_bytes_checked <= total  # measured ~0.2 steps/byte for random data; 5x headroom
+
+
+def test_large_single_feed_is_linear_not_quadratic_in_bookkeeping():
+    """200 KB of garbage with no magic byte, in ONE feed: the consumed prefix is cut once."""
+    f = MavlinkStreamFramer()
+    assert f.feed(bytes(200_000)) == []
+    assert f.garbage_bytes == 200_000 and f.pending_bytes == 0 and f.resync_events == 1
 
 
 # --------------------------------------------------------------------------- #
@@ -381,6 +626,24 @@ def test_transport_stale_partial_is_flushed_after_timeout():
     assert tr.partial_timeouts == 1
 
 
+def test_transport_stamp_is_the_resolving_read_not_the_read_that_delivered_the_last_byte():
+    """Documents the real stamp semantics: a whole, valid frame queued behind a still-incomplete
+    false candidate is held, and is stamped by the read that RESOLVES the candidate (here read 2),
+    even though its last byte arrived in read 1."""
+    real = hb(0)
+    ticks = itertools.count(1)
+
+    def clock() -> int:  # deterministic per-read stamps: only the reader thread advances it
+        return next(ticks) * 1_000_000 if threading.current_thread().name == "mavlink-serial-rx" else 0
+
+    # read 1: false 212-byte candidate header + a complete real frame; read 2: the candidate's tail
+    port = FakePort([bytes([0xFD, 200, 0, 0]) + real, bytes(212 - 4 - len(real))])
+    tr, _ = make_tr([port], clock_ns=clock)
+    with tr:
+        got = collect(tr, 1)
+    assert got == [(2_000_000, real)]  # stamped by read 2, not read 1 (1_000_000)
+
+
 def test_transport_bounded_queue_counts_overflow_and_releases_byte_budget():
     frames = frame_stream(20)
     port = FakePort([b"".join(frames)])
@@ -407,9 +670,12 @@ def test_transport_stats_dict_is_complete_and_honest_about_scope():
     with tr:
         collect(tr, 1)
     s = tr.stats
-    for key in ("connected", "bytes_received", "garbage_bytes", "resync_events", "crc_rejects",
-                "partial_timeouts", "dropped_overflow", "queue_high_water", "max_poll_gap_s",
-                "disconnects", "reconnects", "open_failures", "last_error"):
+    for key in ("connected", "reader_running", "bytes_received", "garbage_bytes",
+                "resync_events", "header_rejects", "crc_rejects", "unverifiable_rejects",
+                "unverified_accepted", "unverifiable_ids", "unverifiable_id_overflow",
+                "crc_bytes_checked", "partial_timeouts", "reader_faults", "dropped_overflow",
+                "queue_high_water", "max_poll_gap_s", "disconnects", "reconnects",
+                "open_failures", "last_error"):
         assert key in s
     assert not any("kernel" in k or "os_drop" in k or "lost" in k for k in s)  # no pretend loss counter
 
@@ -514,6 +780,180 @@ def test_transport_rejects_bad_arguments():
         SerialMavlinkTransport("x", queue_size=0)
     with pytest.raises(ValueError):
         SerialMavlinkTransport("x", max_queue_bytes=0)
+
+
+@pytest.mark.parametrize("name", ["reconnect_interval_s", "partial_timeout_s", "read_timeout_s"])
+@pytest.mark.parametrize("bad", [0, 0.0, -1.0, float("nan"), float("inf")])
+def test_transport_rejects_non_positive_or_non_finite_intervals(name, bad):
+    with pytest.raises(ValueError, match=name):
+        SerialMavlinkTransport("x", **{name: bad})
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "expect_frame"),
+    [({}, False), ({"extra_crc": {60001: 77}}, True), ({"accept_unverified_ids": True}, True)],
+)
+def test_transport_unverified_id_options_reach_the_framer(kwargs, expect_frame):
+    fr = raw_v2(60001, crc_extra=77)
+    want = 2 if expect_frame else 1
+    tr, _ = make_tr([FakePort([fr, hb(0)])], **kwargs)
+    with tr:
+        wait_for(lambda: tr.datagrams_received >= want, what="frames read")
+        got = [d for _, d in tr.poll()]
+    assert (fr in got) is expect_frame and hb(0) in got
+    if not expect_frame:
+        assert tr.unverifiable_rejects == 1 and tr.unverifiable_ids == {60001: 1}
+
+
+# --------------------------------------------------------------------------- #
+# pyserial URL policy
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.parametrize("port", ["COM5", "COM12", "\\\\.\\COM10", "/dev/ttyACM0",
+                                  "/dev/serial/by-id/usb-3D_Robotics-if00"])
+def test_plain_device_names_are_accepted_without_allow_url(port):
+    tr = SerialMavlinkTransport(port)  # constructing must not open or import anything
+    assert tr.port == port
+    tr.close()
+
+
+@pytest.mark.parametrize("port", ["socket://127.0.0.1:5760", "rfc2217://host:2217", "SOCKET://x:1",
+                                  "spy:///tmp/leak.txt", "loop://", "alt://spy://COM1"])
+def test_urls_are_refused_unless_allow_url(port):
+    with pytest.raises(ValueError, match="allow_url"):
+        SerialMavlinkTransport(port)
+
+
+@pytest.mark.parametrize("port", ["spy://COM1?file=out.txt", "SPY:///tmp/x", "alt://spy://COM1",
+                                  "loop://", "hwgrep://0403", "cp2110://x", "file:///etc/passwd",
+                                  "nosuchscheme://x"])
+def test_dangerous_or_unknown_url_schemes_are_refused_even_with_allow_url(port):
+    with pytest.raises(ValueError, match="not allowed"):
+        SerialMavlinkTransport(port, allow_url=True)
+
+
+def test_allowed_url_schemes_are_exactly_the_network_serial_ones():
+    assert ALLOWED_URL_SCHEMES == {"socket", "rfc2217"}
+    for scheme in sorted(ALLOWED_URL_SCHEMES):
+        SerialMavlinkTransport(f"{scheme}://127.0.0.1:1", allow_url=True).close()
+
+
+@pytest.mark.parametrize("port", ["", "COM5\x00x"])
+def test_empty_or_nul_port_is_refused(port):
+    with pytest.raises(ValueError):
+        SerialMavlinkTransport(port)
+
+
+def test_default_factory_never_reaches_the_url_handler_for_plain_names(monkeypatch):
+    import serial
+
+    calls: dict[str, list] = {"Serial": [], "serial_for_url": []}
+    monkeypatch.setattr(serial, "Serial", lambda *a, **k: calls["Serial"].append((a, k)) or "S")
+    monkeypatch.setattr(serial, "serial_for_url",
+                        lambda *a, **k: calls["serial_for_url"].append((a, k)) or "U")
+    assert SerialMavlinkTransport("COM7", baudrate=115200)._factory() == "S"
+    assert calls["serial_for_url"] == []
+    args, kw = calls["Serial"][0]
+    assert args == ("COM7",) and kw["baudrate"] == 115200 and kw["rtscts"] is False
+    assert SerialMavlinkTransport("socket://h:1", allow_url=True)._factory() == "U"
+    assert len(calls["serial_for_url"]) == 1
+
+
+def test_serial_factory_replaces_opening_and_the_port_label_is_not_a_url_check():
+    tr, _ = make_tr([FakePort()])  # label "FAKE"
+    assert tr.port == "FAKE"
+    tr.close()
+
+
+# --------------------------------------------------------------------------- #
+# L1: reader-thread failures are visible, never silent
+# --------------------------------------------------------------------------- #
+
+
+def _raise_boom(_data: bytes):
+    raise ValueError("boom in feed")
+
+
+def test_framer_exception_marks_transport_unhealthy_and_shutdown_stays_prompt():
+    port = FakePort([hb(0)])
+    tr, _ = make_tr([port], reconnect=False)
+    tr._framer.feed = _raise_boom  # type: ignore[method-assign]
+    tr.start()
+    thread = tr._thread
+    wait_for(lambda: tr.reader_faults == 1, what="fault recorded")
+    wait_for(lambda: not tr.reader_running, what="reader thread exit (reconnect=False)")
+    assert tr.connected is False and tr.stats["connected"] is False
+    assert tr.stats["reader_running"] is False and tr.stats["reader_faults"] == 1
+    assert tr.disconnects == 1  # the port was closed
+    assert "reader fault" in (tr.last_error or "") and "boom in feed" in (tr.last_error or "")
+    assert port.closed and tr.poll() == []
+    t0 = time.monotonic()
+    tr.close()
+    tr.close()  # idempotent
+    assert time.monotonic() - t0 < 1.5
+    assert thread is not None and not thread.is_alive()
+
+
+def test_framer_exception_with_reconnect_recovers_through_the_normal_policy():
+    real_feed = MavlinkStreamFramer.feed
+    state = {"n": 0}
+
+    def flaky(self, data):
+        state["n"] += 1
+        if state["n"] == 1:
+            raise ValueError("first feed explodes")
+        return real_feed(self, data)
+
+    p1, p2 = FakePort([hb(0)]), FakePort([att(1)])
+    tr, calls = make_tr([p1, p2])
+    tr._framer.feed = flaky.__get__(tr._framer)  # type: ignore[method-assign]
+    with tr:
+        got = collect(tr, 1)
+        wait_for(lambda: tr.connected, what="reconnected after the fault")
+        assert [d for _, d in got] == [att(1)]  # the frame in the faulted read is lost, not replayed
+        assert tr.reader_faults == 1 and tr.reconnects == 1 and tr.disconnects == 1
+        assert "first feed explodes" in (tr.last_error or "")
+        assert tr.reader_running
+    assert p1.closed and p2.closed and calls[0] == 2
+
+
+def test_persistent_framer_fault_does_not_spin_and_close_is_still_prompt():
+    ports = [FakePort([hb(i)]) for i in range(30)]
+    tr, calls = make_tr(ports, reconnect_interval_s=0.02)
+    tr._framer.feed = _raise_boom  # type: ignore[method-assign]
+    tr.start()
+    wait_for(lambda: tr.reader_faults >= 3, what="repeated faults")
+    # one reconnect wait per fault: it cannot fault faster than the reconnect interval allows
+    assert tr.reader_faults <= calls[0]
+    t0 = time.monotonic()
+    tr.close()
+    assert time.monotonic() - t0 < 1.5
+    assert not tr.reader_running and tr.connected is False
+
+
+def test_unrecoverable_fault_handler_failure_still_ends_disconnected():
+    port = FakePort([hb(0)])
+    tr, _ = make_tr([port])
+    tr._framer.feed = _raise_boom  # type: ignore[method-assign]
+
+    def broken_handler(_exc):
+        raise OSError("handler broke too")
+
+    tr._on_disconnect = broken_handler  # type: ignore[method-assign]
+    tr.start()
+    wait_for(lambda: not tr.reader_running, what="reader gave up")
+    assert tr.connected is False and port.closed  # the finally-block closed it
+    assert "unrecoverable" in (tr.last_error or "") and "handler broke too" in (tr.last_error or "")
+    tr.close()
+
+
+def test_read_exception_during_close_is_not_counted_as_a_disconnect():
+    port = FakePort()
+    tr, _ = make_tr([port])
+    tr.start()
+    tr.close()
+    assert tr.disconnects == 0 and tr.reader_faults == 0
 
 
 def test_transport_poll_gap_tracks_consumer_stalls():
@@ -627,7 +1067,7 @@ def vport():
 
 def test_virtual_port_fragmented_stream_is_reassembled(vport):
     frames = frame_stream(12)
-    tr = SerialMavlinkTransport(vport.url, reconnect_interval_s=0.02)
+    tr = SerialMavlinkTransport(vport.url, allow_url=True, reconnect_interval_s=0.02)
     with tr:
         vport.send(b"".join(frames), chunk=7, delay=0.001)
         got = collect(tr, 12, timeout=10)
@@ -637,7 +1077,7 @@ def test_virtual_port_fragmented_stream_is_reassembled(vport):
 
 def test_virtual_port_garbage_burst_and_resync(vport):
     a, b, c = hb(1), att(2), gpi(3)
-    tr = SerialMavlinkTransport(vport.url)
+    tr = SerialMavlinkTransport(vport.url, allow_url=True)
     with tr:
         vport.send(b"\x00\x11\x22" + a + bytes([0xFD, 120, 0, 0]) + b + c + b"\xee\xee" + a)
         got = collect(tr, 4, timeout=10)
@@ -647,7 +1087,7 @@ def test_virtual_port_garbage_burst_and_resync(vport):
 
 def test_virtual_port_peer_close_then_reconnect(vport):
     a, b = hb(1), att(2)
-    tr = SerialMavlinkTransport(vport.url, reconnect_interval_s=0.05)
+    tr = SerialMavlinkTransport(vport.url, allow_url=True, reconnect_interval_s=0.05)
     with tr:
         vport.send(a)
         collect(tr, 1)
@@ -663,7 +1103,7 @@ def test_virtual_port_peer_close_then_reconnect(vport):
 
 
 def test_virtual_port_send_reaches_the_device(vport):
-    tr = SerialMavlinkTransport(vport.url)
+    tr = SerialMavlinkTransport(vport.url, allow_url=True)
     with tr:
         vport.wait_connected()
         assert tr.send(b"hello-fc")
@@ -675,7 +1115,7 @@ def test_virtual_port_unreachable_with_reconnect_disabled_raises():
     s.bind(("127.0.0.1", 0))
     port = s.getsockname()[1]
     s.close()  # nothing listens here now
-    tr = SerialMavlinkTransport(f"socket://127.0.0.1:{port}", reconnect=False)
+    tr = SerialMavlinkTransport(f"socket://127.0.0.1:{port}", allow_url=True, reconnect=False)
     with pytest.raises(RuntimeError, match="cannot open serial port"):
         tr.start()
     tr.close()

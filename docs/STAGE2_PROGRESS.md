@@ -1018,3 +1018,30 @@ unchanged (the new module imports its framing constants, CRC helper and dialect 
   pyserial `socket://` (loopback TCP), which is not a termios tty.
 - **Not run:** Stage-1 benchmark regression (no detector/feature/fusion/pipeline file changed), any SITL trial, any hardware.
   Never connected to a physical flight controller, USB-CDC device, UART or radio.
+
+## 2026-10-09 - Serial transport hardening after the independent review of `662a5ae` (software only; env: unit + one REPLAY framing check; no SITL run, no hardware)
+Fixes for the confirmed review findings, in `sources/mavlink_serial.py` only (`mavlink_live.py`, detectors, fusion, thresholds,
+frozen contracts and every recorded benchmark/attack artifact are untouched). Details: `docs/SERIAL_TRANSPORT.md`.
+- **M1 (unknown ids accepted without a CRC) - fixed.** Ids with no `crc_extra` are now refused by default; `extra_crc` makes an id
+  verifiable; `accept_unverified_ids=True` is an opt-in, documented as verifying nothing. No search over the 256 `crc_extra`
+  values. Counters split by meaning: `header_rejects`, `crc_rejects` (verifiable ids only), `unverifiable_rejects`,
+  `unverified_accepted`, plus a bounded `unverifiable_ids` tally. **Cost, measured:** `artifacts/sitl/serial_framer_replay_benign_001.json`
+  (REPLAY of a SITL capture, framing only): 413 of 35,067 recorded frames (7 PX4 ids outside pymavlink's dialect) are not presented
+  by default; the other 34,654 are. Their `crc_extra` could not be derived from pymavlink's bundled XML, so no table is shipped.
+- **M2 (CPU on adversarial input) - fixed to a work bound, not a time guarantee.** Table-driven CRC (bit-identical to `_x25`, tested),
+  early reject of unverifiable ids (0 CRC steps), in-place scan with one buffer cut per call, `crc_bytes_checked` counter; hard cap
+  265 CRC steps per input byte, worst crafted shapes tried 26-43. Asserted as counted work only, no wall-clock assertion.
+- **L1 (reader-thread death invisible) - fixed.** Any exception in the reader loop closes the port, sets `connected` False, counts
+  `reader_faults`, records `last_error`, and follows the existing reconnect policy; the thread's `finally` closes the port even if
+  the handler fails. `reader_running` added. Shutdown remains prompt and idempotent.
+- **Small items - fixed:** non-positive/non-finite `reconnect_interval_s`, `partial_timeout_s`, `read_timeout_s` now raise
+  `ValueError`; pyserial URLs refused unless `allow_url=True` and then only `socket`/`rfc2217` (never `spy://`, `alt://`, ...), and
+  plain device names bypass `serial_for_url` entirely; timestamp documentation corrected (the stamp is the read that *resolves* a frame,
+  which can be later than the read that delivered its last byte when a false candidate holds it). **Not implemented:** per-offset
+  timestamps (deliberately, to avoid destabilising the framer).
+- **Tests:** 97 new (135 in `tests/unit/test_mavlink_serial.py`). Windows full suite: **477 passed, 3 skipped** (the 3 PTY tests;
+  PTYs do not exist on Windows); `ruff check src tests scripts backend` clean. Linux (WSL Ubuntu-24.04, Python 3.12.3, pyserial 3.5,
+  throwaway stub harness, not committed): 134 of 135 passed incl. the 3 PTY tests; the one failure is the stubbed `TelemetryTick`
+  harness artifact (the test passes on Windows).
+- **Not run:** Stage-1 benchmark regression (no detector/feature/fusion/pipeline file changed), any SITL attack batch, any hardware.
+  Still never connected to a physical flight controller, USB-CDC device, UART or radio.
