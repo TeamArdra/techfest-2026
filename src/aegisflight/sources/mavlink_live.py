@@ -179,6 +179,27 @@ def _load_dialect() -> Any:
 PX4_UNSIGNED_ALLOWED_MSGIDS: frozenset[int] = frozenset({0, 109, 246, 247})  # HEARTBEAT, RADIO_STATUS,
 # ADSB_VEHICLE, COLLISION
 
+#: ``crc_extra`` for the seven message ids a PX4 SITL stream carries that pymavlink's ``all`` dialect
+#: does not define. NOT applied by default; pass it as ``extra_crc=`` (parser, ``frame_ticks``,
+#: ``LiveMavlinkSource``, ``SerialMavlinkTransport``) to have those frames CRC-verified.
+#: Provenance (read-only, local): the PX4 tree ``/home/astryx/PX4-Autopilot`` at
+#: ``v1.18.0-rc1-27-gc239c63807`` -- the version recorded in ``data/sitl/raw/benign_001.json`` --
+#: (a) the ``MAVLINK_MESSAGE_CRCS`` table of its generated build headers
+#: ``build/px4_sitl_default/mavlink/{common,development}/*.h`` and (b) ``crc_extra`` computed by
+#: pymavlink's ``mavparse`` from ``src/modules/mavlink/mavlink/message_definitions/v1.0/``
+#: (mavlink submodule ``f9cb1f9e``). The two sources agree on all seven. Verified for THAT build
+#: only; id 514 comes from the *development* dialect, which upstream may change. ArduPilot or
+#: any other firmware must be checked against its own definitions before reusing these.
+PX4_SITL_EXTRA_CRC: dict[int, int] = {
+    8: 117,    # LINK_NODE_STATUS (common)
+    290: 251,  # ESC_INFO (common)
+    291: 10,   # ESC_STATUS (common)
+    380: 232,  # TIME_ESTIMATE_TO_TARGET (common)
+    410: 160,  # EVENT (common)
+    411: 106,  # CURRENT_EVENT_SEQUENCE (common)
+    514: 197,  # ESTIMATOR_SENSOR_FUSION_STATUS (development)
+}
+
 
 class MavlinkFrameParser:
     """Raw bytes -> ``MessageEnvelope`` list, header-first (see module docstring).
@@ -328,7 +349,8 @@ class _TickAssembler:
     def __init__(self, sample_rate_hz: float, label_fn: Callable[[float], AttackType] | None,
                  stats: LiveStats, origin_us: int | None = None, *,
                  secret_key: bytes | None = None,
-                 unsigned_allowed_msgids: frozenset[int] = PX4_UNSIGNED_ALLOWED_MSGIDS) -> None:
+                 unsigned_allowed_msgids: frozenset[int] = PX4_UNSIGNED_ALLOWED_MSGIDS,
+                 extra_crc: dict[int, int] | None = None) -> None:
         if sample_rate_hz <= 0:
             raise ValueError("sample_rate_hz must be > 0")
         self.dt = 1.0 / sample_rate_hz
@@ -336,7 +358,8 @@ class _TickAssembler:
         self.label_fn = label_fn or (lambda _t: AttackType.BENIGN)
         self.stats = stats
         self.parser = MavlinkFrameParser(stats, secret_key=secret_key,
-                                         unsigned_allowed_msgids=unsigned_allowed_msgids)
+                                         unsigned_allowed_msgids=unsigned_allowed_msgids,
+                                         extra_crc=extra_crc)
         self.origin_us = origin_us
         self.next_k = 0
         self._pending: dict[int, list[MessageEnvelope]] = {}
@@ -383,16 +406,19 @@ def frame_ticks(
     stats: LiveStats | None = None,
     secret_key: bytes | None = None,
     unsigned_allowed_msgids: frozenset[int] = PX4_UNSIGNED_ALLOWED_MSGIDS,
+    extra_crc: dict[int, int] | None = None,
 ) -> Iterator[TelemetryTick]:
     """Data-driven ticks from ``(recv_time_s, datagram_bytes)`` pairs (arrival order).
 
     ``origin_s`` None -> rebase to the first frame. Gaps in the timestamps produce
     empty ticks; the final tick is the one holding the last frame. ``secret_key`` (P4,
-    additive, default ``None`` = unchanged): see :class:`LiveMavlinkSource`.
+    additive, default ``None`` = unchanged): see :class:`LiveMavlinkSource`. ``extra_crc``
+    (additive, default ``None`` = unchanged): see :class:`MavlinkFrameParser`.
     """
     asm = _TickAssembler(sample_rate_hz, label_fn, stats if stats is not None else LiveStats(),
                          None if origin_s is None else round(origin_s * 1e6),
-                         secret_key=secret_key, unsigned_allowed_msgids=unsigned_allowed_msgids)
+                         secret_key=secret_key, unsigned_allowed_msgids=unsigned_allowed_msgids,
+                         extra_crc=extra_crc)
     for recv_s, data in frames:
         k = asm.ingest(round(recv_s * 1e6), data)
         if k is not None:
@@ -801,13 +827,15 @@ class LiveMavlinkSource:
         max_sleep_s: float = 0.05,
         secret_key: bytes | None = None,
         unsigned_allowed_msgids: frozenset[int] = PX4_UNSIGNED_ALLOWED_MSGIDS,
+        extra_crc: dict[int, int] | None = None,
     ) -> None:
         if origin not in ("first_frame", "start"):
             raise ValueError("origin must be 'first_frame' or 'start'")
         self.transport = transport
         self._stats = LiveStats()
         self._asm = _TickAssembler(sample_rate_hz, label_fn, self._stats,
-                                   secret_key=secret_key, unsigned_allowed_msgids=unsigned_allowed_msgids)
+                                   secret_key=secret_key, unsigned_allowed_msgids=unsigned_allowed_msgids,
+                                   extra_crc=extra_crc)
         self._origin_mode = origin
         self._settle_us = round(settle_s * 1e6)
         self._max_ticks = max_ticks

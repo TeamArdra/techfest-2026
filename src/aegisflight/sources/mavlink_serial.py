@@ -88,10 +88,18 @@ MAX_FRAME_BYTES = _V2_HEADER + 255 + _CRC + _SIGNATURE  # 280
 #: be able to grow this dict). Further distinct ids are only counted in ``unverifiable_id_overflow``.
 MAX_TRACKED_UNVERIFIABLE_IDS = 64
 
-#: pyserial URL schemes this transport will open, and only with ``allow_url=True``. Everything
-#: else (``spy://`` writes a file, ``alt://`` can wrap it, ``hwgrep://``, ``cp2110://``, ...)
-#: is refused: the port string may come from configuration.
-ALLOWED_URL_SCHEMES = frozenset({"socket", "rfc2217"})
+#: pyserial URL schemes this transport will open, and only with ``allow_url=True``. Only
+#: ``socket://`` (a raw TCP client that sends nothing on connect, so it stays passive).
+#: Everything else is refused because the port string may come from configuration:
+#: ``rfc2217://`` sends Telnet option negotiation (baud, data bits, ... ) to the peer on open,
+#: which contradicts the passive-observation model; ``spy://`` writes a file, ``alt://`` can wrap
+#: it, ``hwgrep://``, ``cp2110://``, ``loop://`` ... are not needed.
+ALLOWED_URL_SCHEMES = frozenset({"socket"})
+
+#: Upper bound for ``max_read_bytes``. A read never needs more than the driver has buffered
+#: (a USB-CDC/UART driver buffer is a few KiB; the default read is 4096), and the framer holds
+#: one read plus < 280 bytes, so this also bounds the framer's buffer.
+MAX_READ_BYTES_LIMIT = 65536
 
 
 def _build_x25_table() -> tuple[int, ...]:
@@ -228,6 +236,12 @@ class MavlinkStreamFramer:
         buf = self._buf
         n = len(buf)
         pos = 0  # candidates are examined in place; the consumed prefix is cut once, at the end
+        # Cached position of the next magic byte of each kind at or after the current search
+        # start (``n`` = none left). The buffer does not change during a scan, so a "none" answer
+        # stays valid, and each kind is searched for at most once per stretch of buffer: without
+        # the cache an absent 0xFE made every garbage run before a 0xFD rescan to the end of the
+        # buffer (quadratic, e.g. the repeating 00 FD 00 02).
+        next_v2 = next_v1 = -1
         while pos < n:
             magic = buf[pos]
             if magic == _V2_MAGIC:
@@ -245,9 +259,16 @@ class MavlinkStreamFramer:
                     break
                 total = _V1_HEADER + buf[pos + 1] + _CRC
             else:  # not a frame start: skip the whole run up to the next magic byte
-                cut = [p for p in (buf.find(_V2_MAGIC, pos + 1), buf.find(_V1_MAGIC, pos + 1))
-                       if p > 0]
-                end = min(cut) if cut else n
+                start = pos + 1
+                if next_v2 < start:
+                    next_v2 = buf.find(_V2_MAGIC, start)
+                    if next_v2 < 0:
+                        next_v2 = n
+                if next_v1 < start:
+                    next_v1 = buf.find(_V1_MAGIC, start)
+                    if next_v1 < 0:
+                        next_v1 = n
+                end = min(next_v2, next_v1)
                 self._discard(end - pos)
                 pos = end
                 continue
@@ -401,6 +422,8 @@ class SerialMavlinkTransport:
         _positive_finite("reconnect_interval_s", reconnect_interval_s)
         if max_read_bytes < 1 or max_queue_bytes < 1 or queue_size < 1:
             raise ValueError("max_read_bytes, queue_size and max_queue_bytes must be >= 1")
+        if max_read_bytes > MAX_READ_BYTES_LIMIT:
+            raise ValueError(f"max_read_bytes must be <= {MAX_READ_BYTES_LIMIT}")
         if serial_factory is None:
             _check_port(port, allow_url)
         self.port = port

@@ -1045,3 +1045,32 @@ frozen contracts and every recorded benchmark/attack artifact are untouched). De
   harness artifact (the test passes on Windows).
 - **Not run:** Stage-1 benchmark regression (no detector/feature/fusion/pipeline file changed), any SITL attack batch, any hardware.
   Still never connected to a physical flight controller, USB-CDC device, UART or radio.
+
+## 2026-10-10 - Serial transport: closing the caveats of the independent review of `2297e14` (software only; env: unit + REPLAY of a SITL capture; no SITL run, no hardware)
+Bounded fixes; details and numbers in `docs/SERIAL_TRANSPORT.md` and
+`artifacts/sitl/serial_framer_replay_benign_001.json` (regenerated; same tlog SHA-256 as before, capture untouched; the previous
+version of that artifact, committed in `2297e14`, is superseded). No detector, fusion, threshold, frozen contract, benchmark or
+attack artifact changed. `mavlink_live.py` got one additive change (below).
+- **Verified crc_extra for the 7 out-of-dialect PX4 ids - resolved for PX4 SITL only.** 8:117 LINK_NODE_STATUS, 290:251 ESC_INFO,
+  291:10 ESC_STATUS, 380:232 TIME_ESTIMATE_TO_TARGET, 410:160 EVENT, 411:106 CURRENT_EVENT_SEQUENCE, 514:197
+  ESTIMATOR_SENSOR_FUSION_STATUS (development dialect). Sources, both local and read-only, agreeing on all seven: the PX4 SITL build's
+  generated `MAVLINK_MESSAGE_CRCS` (PX4 `v1.18.0-rc1-27-gc239c63807`, the version in the capture manifest) and `crc_extra` computed by
+  pymavlink `mavparse` from the PX4 tree's XML (mavlink submodule `f9cb1f9e`). As a consistency check, all 413 capture frames verify.
+  Constant `PX4_SITL_EXTRA_CRC` in `mavlink_live.py`, **off by default**. Not verified for ArduPilot (the physical Pixhawk 6X).
+- **Additive pass-through:** `extra_crc=` (default `None`) on `_TickAssembler`, `frame_ticks` and `LiveMavlinkSource`, forwarded to the
+  existing `MavlinkFrameParser(extra_crc=)`; tested end to end.
+- **Replay evidence (one benign capture, original timestamps, unchanged pipeline, px4_sitl profile + PX4 model):** default policy
+  emits exactly the 34,654 non-refused frames (list equality, reference-CRC re-check, 0 unverified); 413 genuine refused frames
+  (matching per id) vs 20 false unverifiable candidates, 105 false `crc_rejects`; 98/104 one-second windows get a sequence gap
+  (2/104 for the full capture); ML score shifts by mean 5.5e-4 / max 3.1e-3 on 481/519 decisions, no trigger crossing or threat flag
+  changed. With `PX4_SITL_EXTRA_CRC` features and scores are identical to the full capture. One capture only.
+- **CRC work:** the all-`0xFE` stream costs 257.7 steps/byte (test asserts `(240, 265]`); the earlier 26/43 figures were not worst cases and
+  are no longer described as such. Still counted work, not wall-clock.
+- **Scan complexity:** next-magic positions cached; the repeating `00 FD 00 02` 64 KiB buffer examined 536,969,204 bytes at `2297e14`
+  vs 114,682 now (one-off scratch comparison); linear-work test added. `max_read_bytes` capped at 65,536.
+- **URLs:** `rfc2217` removed (Telnet negotiation on open contradicts passive observation); only `socket://` remains behind
+  `allow_url=True`, with a test that connecting sends nothing.
+- **Tests:** Windows full suite **502 passed, 3 skipped** (the 3 PTY tests), `ruff check src tests scripts backend` clean. Linux
+  (WSL, py3.12.3, throwaway stub harness): 157 of 160 serial-file tests passed incl. the 3 PTY tests; the 3 that fail there build a
+  real `TelemetryTick` the harness stubs out and pass on Windows.
+- **Not run:** Stage-1 benchmark regression, any SITL batch, `aegis-reviewer` on the new claims, any hardware.

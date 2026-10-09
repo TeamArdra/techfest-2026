@@ -27,10 +27,18 @@ import pytest
 from pymavlink.dialects.v10 import common as mav1
 from pymavlink.dialects.v20 import common as mav2
 
-from aegisflight.sources.mavlink_live import LiveMavlinkSource, MavlinkFrameParser, _x25
+from aegisflight.sources.mavlink_live import (
+    PX4_SITL_EXTRA_CRC,
+    LiveMavlinkSource,
+    MavlinkFrameParser,
+    _load_dialect,
+    _x25,
+    frame_ticks,
+)
 from aegisflight.sources.mavlink_serial import (
     ALLOWED_URL_SCHEMES,
     MAX_FRAME_BYTES,
+    MAX_READ_BYTES_LIMIT,
     MAX_TRACKED_UNVERIFIABLE_IDS,
     MavlinkStreamFramer,
     SerialMavlinkTransport,
@@ -443,9 +451,24 @@ def test_unverifiable_id_tracking_is_bounded():
 # --------------------------------------------------------------------------- #
 
 
+def test_work_bound_all_0xfe_stream_approaches_but_never_exceeds_the_cap():
+    """The densest shape found: every byte is a v1 magic whose header (len 254, id 254 = a known
+    v1 id) makes a ~262-byte candidate at EVERY position, so nearly each input byte costs a full
+    CRC pass. This, not the 26/43 steps-per-byte shapes below, is the worst case seen; the
+    documented cap of 265 steps per input byte must still hold."""
+    n = 30_000
+    f = MavlinkStreamFramer()
+    assert f.feed(b"\xfe" * n) == []
+    ratio = f.crc_bytes_checked / f.bytes_in
+    assert 240 < ratio <= CRC_STEPS_PER_BYTE_CAP
+    assert f.crc_bytes_checked <= CRC_STEPS_PER_BYTE_CAP * f.bytes_in
+    assert f.pending_bytes < MAX_FRAME_BYTES and f.frames_out == 0
+
+
 def test_work_bound_on_densely_overlapping_false_v1_candidates():
     """Adversarial: a known id (HEARTBEAT) with len 255 repeated every 6 bytes, so a long false
-    candidate starts at nearly every position. This is the worst shape a stream can take."""
+    candidate starts at every sixth position (a dense shape, but not the densest: see the
+    all-0xFE test)."""
     unit = bytes([0xFE, 255, 0, 1, 1, 0])
     f = MavlinkStreamFramer()
     out = f.feed(unit * 2000)
@@ -492,6 +515,167 @@ def test_large_single_feed_is_linear_not_quadratic_in_bookkeeping():
     f = MavlinkStreamFramer()
     assert f.feed(bytes(200_000)) == []
     assert f.garbage_bytes == 200_000 and f.pending_bytes == 0 and f.resync_events == 1
+
+
+class _CountingBuf(bytearray):
+    """bytearray that counts what ``find`` does: calls, bytes examined (up to the hit, or to the
+    end on a miss) and misses. A work counter, not a clock."""
+
+    def __init__(self, *a):
+        super().__init__(*a)
+        self.calls = 0
+        self.examined = 0
+        self.misses = 0
+
+    def find(self, sub, start=0, end=None):  # noqa: D401 - signature mirrors bytearray.find
+        hit = super().find(sub, start)
+        self.calls += 1
+        self.examined += (len(self) if hit < 0 else hit + 1) - start
+        self.misses += hit < 0
+        return hit
+
+
+def test_scan_alternating_garbage_and_magic_is_linear_not_quadratic():
+    """The repeating 00 FD 00 02: every FD is a header-rejected candidate (incompat 0x02) and
+    every 00 starts a garbage run that must find the next magic. With an uncached search the
+    absent 0xFE made each of those runs rescan to the end of the buffer (~n^2/8 bytes)."""
+    n_units = 16_384
+    data = bytes([0x00, 0xFD, 0x00, 0x02]) * n_units
+    n = len(data)
+    assert n == MAX_READ_BYTES_LIMIT  # the largest single read the transport allows
+    f = MavlinkStreamFramer()
+    f._buf = _CountingBuf()
+    assert f.feed(data) == []
+    buf = f._buf
+    # the pattern really exercises the repeated-search branch (not just a run of zero bytes) ...
+    # (the last two FDs sit < 10 bytes from the end of the buffer: their headers are incomplete,
+    # so they wait for more data instead of being rejected)
+    assert f.header_rejects == n_units - 2
+    assert f.garbage_bytes + f.pending_bytes == n and f.pending_bytes < 10
+    assert buf.calls >= n_units
+    naive_examined = n_units * n // 2  # one end-of-buffer rescan per garbage run, on average
+    assert naive_examined > 100 * n
+    # ... and still costs O(n): the absent 0xFE is searched for once, every hit is found by a short scan
+    assert buf.misses <= 2
+    assert buf.examined <= 4 * n
+
+
+def test_large_single_read_of_valid_mixed_frames_and_split_tail():
+    frames = frame_stream(1200) + [v1_hb(7), signed_hb(8), v1_hb(9)]
+    blob = b"".join(frames)
+    assert len(blob) > 16_384
+    cut = len(blob) - 5  # the last frame arrives split
+    f = MavlinkStreamFramer()
+    out = f.feed(blob[:cut])
+    assert out == frames[:-1] and f.pending_bytes == len(frames[-1]) - 5
+    assert f.feed(blob[cut:]) == [frames[-1]]
+    assert f.garbage_bytes == 0 and f.crc_rejects == 0 and f.unverifiable_rejects == 0
+
+
+# --------------------------------------------------------------------------- #
+# PX4 out-of-dialect ids with provenance-verified crc_extra
+# --------------------------------------------------------------------------- #
+
+#: One genuine frame per id, copied from data/sitl/raw/benign_001.tlog (benign PX4 SITL capture,
+#: PX4 v1.18.0-rc1-27-gc239c63807, sysid 3 / compid 1). Real bytes, so these tests do not need the
+#: git-ignored tlog. All seven verify under PX4_SITL_EXTRA_CRC (provenance: see that constant).
+PX4_REAL_FRAMES: dict[int, bytes] = {
+    8: bytes.fromhex("fd150000cc0301080000c0f09d0100000000eb3b000000000000da21000001889b"),
+    290: bytes.fromhex("fd2e0000bd0301220100c0f09d0100000000000000000000000000000000000000000000000000000000000088138813881388130004000fce2c"),
+    291: bytes.fromhex("fd040000be0301230100c0f09d019c8b"),
+    380: bytes.fromhex("fd140000a803017c010000000000ffffffffffffffffffffffffffffffff2619"),
+    410: bytes.fromhex("fd1e0000df03019a0100e093a8019c6700001b00000088000000100080000000b03a7f80b03a7f80fe55"),
+    411: bytes.fromhex("fd010000d703019b01001fdddf"),
+    514: bytes.fromhex("fd340000c003010202000000c07f0000c07f0000c07f0000c07f0000c07f0000c07f0000c07f0000c07f0000c07f01010000010101000001000000010001ddea"),
+}
+
+
+def test_px4_extra_crc_table_covers_exactly_the_out_of_dialect_vectors():
+    known = _load_dialect().mavlink_map
+    assert set(PX4_SITL_EXTRA_CRC) == set(PX4_REAL_FRAMES) == {8, 290, 291, 380, 410, 411, 514}
+    for mid, fr in PX4_REAL_FRAMES.items():
+        assert mid not in known  # genuinely outside pymavlink's dialect
+        assert fr[7] | fr[8] << 8 | fr[9] << 16 == mid and len(fr) == 12 + fr[1]
+
+
+@pytest.mark.parametrize("mid", sorted(PX4_REAL_FRAMES))
+def test_px4_real_frames_are_refused_by_default_and_verified_with_extra_crc(mid):
+    fr = PX4_REAL_FRAMES[mid]
+    f = MavlinkStreamFramer()
+    assert f.feed(fr) == [] and f.unverifiable_rejects == 1 and f.crc_rejects == 0
+    f = MavlinkStreamFramer(extra_crc=PX4_SITL_EXTRA_CRC)
+    assert f.feed(fr) == [fr]
+    # verified, not "unverified": no CRC bypass, nothing counted as unverifiable or unverified
+    assert (f.unverifiable_rejects, f.unverified_accepted, f.crc_rejects) == (0, 0, 0)
+    assert f.crc_bytes_checked > 0
+
+
+@pytest.mark.parametrize("mid", sorted(PX4_REAL_FRAMES))
+def test_px4_real_frame_corruption_is_rejected_and_neighbours_survive(mid):
+    """Every single-bit flip anywhere in a genuine frame (header, payload, CRC): the corrupted
+    frame is never emitted, and the intact frame after it always is."""
+    fr, good = PX4_REAL_FRAMES[mid], hb(5)
+    for bit in range(8 * len(fr)):
+        bad = bytearray(fr)
+        bad[bit // 8] ^= 1 << (bit % 8)
+        f = MavlinkStreamFramer(extra_crc=PX4_SITL_EXTRA_CRC)
+        out = drain(f, bytes(bad) + good)
+        assert bytes(bad) not in out, f"id {mid} bit {bit}"
+        assert out == [good], f"id {mid} bit {bit}"
+
+
+def test_px4_wrong_extra_crc_is_rejected_not_trusted():
+    fr = PX4_REAL_FRAMES[290]
+    f = MavlinkStreamFramer(extra_crc={290: (PX4_SITL_EXTRA_CRC[290] + 1) & 0xFF})
+    assert f.feed(fr) == [] and f.crc_rejects == 1 and f.unverifiable_rejects == 0
+
+
+def test_extra_crc_never_overrides_a_dialect_id():
+    f = MavlinkStreamFramer(extra_crc={0: 99, 30: 99})  # HEARTBEAT and ATTITUDE are in the dialect
+    frames = [hb(0), att(1)]
+    assert f.feed(b"".join(frames)) == frames
+
+
+def test_extra_crc_passes_through_frame_ticks_and_the_parser_verifies_it():
+    from aegisflight.sources.mavlink_live import LiveStats
+
+    real = [PX4_REAL_FRAMES[m] for m in sorted(PX4_REAL_FRAMES)]
+    pairs = [(i * 0.1, fr) for i, fr in enumerate(real + [hb(0)])]
+
+    def run(extra):
+        st = LiveStats()
+        names = [m.msgname for t in frame_ticks(pairs, stats=st, extra_crc=extra)
+                 for m in t.messages]
+        return st, names
+
+    st, names = run(None)  # default parser: header-sanity only, counted as unverified
+    assert st.unverified_frames == 7 and st.bad_frames == 0 and "MSG_8" in names
+    st, names = run(PX4_SITL_EXTRA_CRC)  # verified by the parser too
+    assert st.unverified_frames == 0 and st.bad_frames == 0 and st.frames_received == 8
+    assert sorted(n for n in names if n.startswith("MSG_")) == sorted(f"MSG_{m}" for m in PX4_REAL_FRAMES)
+    bad = bytearray(PX4_REAL_FRAMES[291])
+    bad[-1] ^= 0x01  # corrupt the CRC: the verifying parser drops it
+    st = LiveStats()
+    list(frame_ticks([(0.0, bytes(bad)), (0.1, hb(0))], stats=st, extra_crc=PX4_SITL_EXTRA_CRC))
+    assert st.bad_frames == 1 and st.frames_received == 1
+
+
+def test_live_source_over_serial_carries_extra_crc_end_to_end():
+    real = [PX4_REAL_FRAMES[m] for m in sorted(PX4_REAL_FRAMES)]
+    frames = real + [hb(0), att(1), gpi(2)] * 3
+    results = {}
+    for label, src_extra in (("verified", PX4_SITL_EXTRA_CRC), ("parser-default", None)):
+        tr, _ = make_tr([FakePort([b"".join(frames)])], extra_crc=PX4_SITL_EXTRA_CRC)
+        src = LiveMavlinkSource(tr, sample_rate_hz=10.0, max_ticks=4, extra_crc=src_extra)
+        try:
+            names = [m.msgname for t in src.stream() for m in t.messages]
+        finally:
+            src.close()
+        results[label] = (src.stats, names)
+        assert sum(n.startswith("MSG_") for n in names) == 7  # the transport delivered all seven
+    assert results["verified"][0]["unverified_frames"] == 0
+    assert results["parser-default"][0]["unverified_frames"] == 7
+    assert results["verified"][0]["bad_frames"] == results["parser-default"][0]["bad_frames"] == 0
 
 
 # --------------------------------------------------------------------------- #
@@ -780,6 +964,9 @@ def test_transport_rejects_bad_arguments():
         SerialMavlinkTransport("x", queue_size=0)
     with pytest.raises(ValueError):
         SerialMavlinkTransport("x", max_queue_bytes=0)
+    with pytest.raises(ValueError, match="max_read_bytes"):
+        SerialMavlinkTransport("x", max_read_bytes=MAX_READ_BYTES_LIMIT + 1)
+    SerialMavlinkTransport("x", max_read_bytes=MAX_READ_BYTES_LIMIT).close()  # the limit itself is fine
 
 
 @pytest.mark.parametrize("name", ["reconnect_interval_s", "partial_timeout_s", "read_timeout_s"])
@@ -827,16 +1014,18 @@ def test_urls_are_refused_unless_allow_url(port):
 
 @pytest.mark.parametrize("port", ["spy://COM1?file=out.txt", "SPY:///tmp/x", "alt://spy://COM1",
                                   "loop://", "hwgrep://0403", "cp2110://x", "file:///etc/passwd",
-                                  "nosuchscheme://x"])
+                                  "nosuchscheme://x", "rfc2217://host:2217", "RFC2217://host:2217"])
 def test_dangerous_or_unknown_url_schemes_are_refused_even_with_allow_url(port):
     with pytest.raises(ValueError, match="not allowed"):
         SerialMavlinkTransport(port, allow_url=True)
 
 
-def test_allowed_url_schemes_are_exactly_the_network_serial_ones():
-    assert ALLOWED_URL_SCHEMES == {"socket", "rfc2217"}
-    for scheme in sorted(ALLOWED_URL_SCHEMES):
-        SerialMavlinkTransport(f"{scheme}://127.0.0.1:1", allow_url=True).close()
+def test_only_passive_socket_urls_are_allowed():
+    """rfc2217:// sends Telnet option negotiation to the peer on open, which contradicts the
+    passive-observation model, so it is NOT allowed; socket:// is a raw TCP client that sends
+    nothing on connect (see test_virtual_port_connect_sends_nothing)."""
+    assert ALLOWED_URL_SCHEMES == {"socket"}
+    SerialMavlinkTransport("socket://127.0.0.1:1", allow_url=True).close()
 
 
 @pytest.mark.parametrize("port", ["", "COM5\x00x"])
@@ -1108,6 +1297,18 @@ def test_virtual_port_send_reaches_the_device(vport):
         vport.wait_connected()
         assert tr.send(b"hello-fc")
         wait_for(lambda: bytes(vport.received) == b"hello-fc", what="device received write")
+
+
+def test_virtual_port_connect_sends_nothing(vport):
+    """Passive-observation check for the one allowed URL scheme: opening socket:// and reading
+    emits no bytes toward the peer (rfc2217:// would start Telnet negotiation here)."""
+    tr = SerialMavlinkTransport(vport.url, allow_url=True)
+    with tr:
+        vport.wait_connected()
+        vport.send(hb(1))
+        collect(tr, 1)
+        time.sleep(0.2)
+    assert bytes(vport.received) == b"" and tr.bytes_sent == 0
 
 
 def test_virtual_port_unreachable_with_reconnect_disabled_raises():

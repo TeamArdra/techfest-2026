@@ -25,12 +25,17 @@ no transitive dependencies; also part of `[dev]`). It is imported lazily: the co
 every other module work without it.
 
 **Port strings and pyserial URLs.** `port` is a device name. Anything containing `://` is a
-pyserial URL and is refused with `ValueError` unless `allow_url=True`, and then only the schemes
-in `ALLOWED_URL_SCHEMES` (`socket`, `rfc2217`) pass; `spy://` (which writes a file), `alt://`,
-`hwgrep://`, `loop://`, `file://` and unknown schemes are always refused. A plain device name is
-opened with `serial.Serial` directly, so no URL handler can be imported for it. This matters if
-the port ever comes from configuration. (With an injected `serial_factory` the port string is
-only a label and is not checked.) The `socket://` tests pass `allow_url=True`.
+pyserial URL and is refused with `ValueError` unless `allow_url=True`, and then only
+`socket://` passes (`ALLOWED_URL_SCHEMES == {"socket"}`): a raw TCP client that sends nothing on
+connect (a test checks this), so it stays passive. Everything else is always refused,
+including `rfc2217://` (it sends Telnet option negotiation, i.e. baud/data-bit commands, to the
+peer on open, which contradicts passive observation), `spy://` (writes a file), `alt://`,
+`hwgrep://`, `loop://`, `file://` and unknown schemes. A plain device name is opened with
+`serial.Serial` directly, so no URL handler can be imported for it. This matters if the port
+ever comes from configuration. (With an injected `serial_factory` the port string is only a
+label and is not checked.) The `socket://` tests pass `allow_url=True`. `max_read_bytes` must be
+<= 65,536 (`MAX_READ_BYTES_LIMIT`; the default is 4,096, and a read never needs more than the
+driver has buffered), which also bounds the framer's buffer.
 
 The IDS is **passive** here: no GCS heartbeat is sent. `send(bytes)` writes raw bytes (for a
 future relay upstream); heartbeats, signing and command helpers are not implemented. A flight
@@ -53,7 +58,24 @@ decodes unchanged.
   phantom `sysid`/`compid` can reach the rogue-source logic). So such candidates are rejected
   (`unverifiable_rejects`, ids tallied in `unverifiable_ids`) and the scan resumes one byte on.
   - `extra_crc={msgid: crc_extra}` makes an id verifiable; it is then CRC-checked like a dialect
-    id. Supply values taken from the definitions the flight controller was built with.
+    id. Supply values taken from the definitions the flight controller was built with. Pass the
+    same dict to `LiveMavlinkSource(..., extra_crc=...)` (additive, default `None`; also on
+    `frame_ticks`) so the parser CRC-verifies those frames too instead of counting them as
+    header-sanity-only `unverified_frames`.
+  - `aegisflight.sources.mavlink_live.PX4_SITL_EXTRA_CRC` holds the seven values for the ids PX4
+    SITL sends that pymavlink's dialect lacks. **Verified for PX4 `v1.18.0-rc1-27-gc239c63807`
+    only** (the build recorded in `data/sitl/raw/benign_001.json`), from two local, authoritative
+    sources that agree on all seven: (a) the `MAVLINK_MESSAGE_CRCS` tables in that build's
+    generated headers, `build/px4_sitl_default/mavlink/{common,development}/*.h`; (b) `crc_extra`
+    computed by pymavlink's `mavparse` from the PX4 tree's own XML,
+    `src/modules/mavlink/mavlink/message_definitions/v1.0/` (mavlink submodule `f9cb1f9e`). Both
+    were read-only. 8 `LINK_NODE_STATUS` = 117, 290 `ESC_INFO` = 251, 291 `ESC_STATUS` = 10,
+    380 `TIME_ESTIMATE_TO_TARGET` = 232, 410 `EVENT` = 160, 411 `CURRENT_EVENT_SEQUENCE` = 106
+    (all `common`); 514 `ESTIMATOR_SENSOR_FUSION_STATUS` = 197 (`development` dialect, which
+    upstream may change). As a consistency check only, not as the source, all 413 such frames in
+    the capture verify under these values. They are **not applied by default** and were **not
+    verified against ArduPilot** (the physical Pixhawk 6X runs ArduPilot; its dialect and message
+    set must be checked against its own definitions before reusing them).
   - `accept_unverified_ids=True` is an opt-in compatibility mode: header plausibility only (v2,
     compat 0, sysid and compid non-zero, msgid <= 0xFFFF; v1 never). **It verifies nothing**:
     a corrupted id on any frame survives as a plausible frame with a garbage payload
@@ -61,18 +83,34 @@ decodes unchanged.
     frames (estimated from the field widths, not measured). Off by default.
   - There is deliberately no search over the 256 possible `crc_extra` values: against a 16-bit
     CRC a match is a coincidence about 1 time in 65,536 per guess, not proof of integrity.
-  - **Cost on real PX4 traffic (REPLAY of a SITL capture, framing only; no detection claim):**
-    in `artifacts/sitl/serial_framer_replay_benign_001.json` (regenerate:
-    `python scripts/sitl/serial_framer_replay.py data/sitl/raw/benign_001.tlog --json
-    artifacts/sitl/serial_framer_replay_benign_001.json`; the tlog itself is local and
-    git-ignored) the capture holds 35,067 frames, 413 of them with ids outside the dialect (8,
-    290, 291, 380, 410, 411, 514). The default policy emits exactly the other 34,654;
-    `accept_unverified_ids=True` emits all 35,067. The refused frames are not invalid, only
-    unverifiable here. Their `crc_extra` could not be derived from the XML bundled with pymavlink
-    (those ids are absent), so no verified `extra_crc` table is shipped; take the values from the
-    definitions the flight controller was built with. Rescanning inside the refused frames also
-    produced 105 `crc_rejects` and ~17 kB of `garbage_bytes` in that file, so on such a link
-    those two counters are not pure link-quality indicators.
+  - **Effect on real PX4 traffic (REPLAY of a SITL capture; framing and features only, no
+    detection claim, no hardware):** all numbers are in
+    `artifacts/sitl/serial_framer_replay_benign_001.json` (regenerate: `python
+    scripts/sitl/serial_framer_replay.py data/sitl/raw/benign_001.tlog --json
+    artifacts/sitl/serial_framer_replay_benign_001.json`; the tlog is local and git-ignored, its
+    SHA-256 is recorded). The capture holds 35,067 frames, 413 with the seven out-of-dialect ids.
+    - *Default policy:* emits exactly the 34,654 other frames, identical bytes in identical order
+      (list equality against the capture, not a count), each re-verified with the reference CRC,
+      `unverified_accepted == 0`. The 413 refused frames match the capture per id (8:93, 290:93,
+      291:93, 380:46, 410:10, 411:31, 514:47); **433** unverifiable candidates were counted, of
+      which 413 are those genuine frames and **20 are false candidates** met while rescanning
+      inside them, plus 105 `crc_rejects` and ~17 kB `garbage_bytes` that are all false (the
+      capture is uncorrupted). So on such a link `crc_rejects`/`garbage_bytes` are not pure
+      link-quality indicators.
+    - *Consequence for features (unchanged `IDSPipeline`, `configs/px4_sitl` profile,
+      `models/isoforest_px4.joblib`, original per-frame timestamps kept):* the dropped frames
+      punch holes in the per-source sequence numbers. 98 of 104 one-second windows (158 of 519
+      decisions) show a sequence gap, against 2 of 104 (2 of 519) for the full capture; mean
+      `loss_ratio` 0.0136 vs 0.0039. The ML score moved on 481 of 519 decisions by a mean
+      absolute 5.5e-4 (max 3.1e-3); no ML-trigger crossing and no threat flag changed in this
+      one benign capture. That is a measurement on one capture, not a statement about other flights, attacks or
+      other models.
+    - *With `PX4_SITL_EXTRA_CRC` (framer and parser):* all 35,067 frames, exactly the capture
+      (bytes and order), zero unverifiable/crc/header rejects, and features and ML scores
+      **identical** to the full-capture baseline (zero difference on every decision).
+    - Not modelled: serial read-completion timestamps (frames keep their original capture
+      stamps), baud-rate effects, and any real serial link. A replay does not show
+      physical-hardware compatibility or detector correctness on a live link.
 - A candidate that never completes (link idle for `partial_timeout_s`, default 1 s) is broken by
   dropping its first byte and rescanning (`partial_timeouts`).
 - **CPU work is bounded, not real-time guaranteed.** Every failed candidate drops exactly one
@@ -81,10 +119,24 @@ decodes unchanged.
   `crc_bytes_checked`. A candidate must have a CRC-verifiable id to reach the CRC at all, so
   out-of-dialect candidates cost 0 CRC steps (a test asserts this) and the random-garbage test
   asserts no more than 1 step per input byte. The CRC is table-driven (bit-identical to
-  `mavlink_live._x25`, checked by a test). The worst shapes tried, a known id with a 255-byte
-  payload restarting every 6 (v1) or 10 (v2) bytes, cost about 43 and 26 steps per byte
-  (deterministic counters, asserted as `> 20` / `> 15` so the tests really are adversarial). The
-  tests assert counted work, not wall-clock time; there is no real-time guarantee.
+  `mavlink_live._x25`, checked by a test). The densest shape found is a stream of all `0xFE`: a
+  v1 candidate with a 254-byte payload starts at every byte and costs about **258 steps per
+  input byte** (257.7 measured; a test asserts it lies in `(240, 265]`), which is why the cap is
+  stated as 265. Sparser crafted streams cost less, e.g. a known id with a 255-byte payload
+  restarting every 6 (v1) or 10 (v2) bytes costs about 43 and 26 steps per byte; those are
+  illustrative, not worst cases. The tests assert counted CRC work, never wall-clock time;
+  nothing here is a real-time or latency guarantee.
+- **Scan cost is linear in the buffer.** The position of the next `0xFD`/`0xFE` is cached while
+  the buffer is scanned, so each kind is searched for at most once per stretch of buffer. Before
+  this, a buffer such as the repeating `00 FD 00 02` (a header-rejected `FD` after every garbage
+  byte, no `0xFE` anywhere) rescanned to the end of the buffer for each garbage run: for one
+  64 KiB read, `find()` examined 536,969,204 bytes (8,194x the buffer, 16,383 end-of-buffer
+  misses) at `2297e14` against 114,682 (1.7x, 1 miss) now (one-off scratch comparison running
+  the test's counting wrapper against `git show 2297e14:...`; not a committed artifact). A test
+  counts exactly that
+  (a work counter wrapped around `find()`, not a clock) and checks the pattern really takes the
+  repeated-search branch. A large single read of valid mixed v1/v2/signed frames with a split
+  tail is also tested.
 - Memory: after any call fewer than 280 bytes are retained; garbage is discarded, never stored.
   The output queue is bounded by count (`queue_size`) and bytes (`max_queue_bytes`); overflow
   drops the newest frame and is counted.
@@ -161,8 +213,15 @@ USB drops, radio loss before `read()` returned the bytes); there is deliberately
   unchanged `MavlinkFrameParser`) that no phantom `(sysid, compid)` appears. The campaign is
   seeded and therefore a regression test, not a proof (a 16-bit CRC still admits ~1 false accept
   in 65k corrupted known-id candidates).
-- Work bounds: table CRC bit-identical to `_x25`; dense adversarial v1/v2 streams stay under the
-  265-steps-per-byte cap; out-of-dialect candidates cost 0 CRC steps; bounded diagnostics.
+- Work bounds: table CRC bit-identical to `_x25`; the all-`0xFE` stream and dense v1/v2 streams
+  stay under the 265-steps-per-byte cap; out-of-dialect candidates cost 0 CRC steps; bounded
+  diagnostics; the alternating `00 FD 00 02` buffer is scanned in linear work (find-call counter).
+- The seven PX4 ids: one genuine frame per id (real bytes from the benign capture) is refused by
+  default and accepted with `PX4_SITL_EXTRA_CRC`; every single-bit flip of each of those frames
+  (all header, payload and CRC bits) is rejected while the following frame survives; a wrong
+  `crc_extra` is rejected; `extra_crc` never overrides a dialect id; the dict passes through
+  `frame_ticks`, the parser and `LiveMavlinkSource` (parser stops counting them as
+  `unverified_frames` and CRC-verifies them).
 - Transport tests over a scripted fake port: stamps (including the held-behind-a-false-candidate
   case), counters, stale partial, overflow and byte budget, open failure, reconnect cycles,
   `reconnect=False`, prompt shutdown, `send()`, argument validation, the pyserial URL policy, and
@@ -172,13 +231,13 @@ USB drops, radio loss before `read()` returned the bytes); there is deliberately
 - Real pyserial over a `socket://` virtual port (loopback TCP server playing the device): works
   on every OS, including Windows.
 - Real pyserial over a PTY pair: POSIX only, **skipped on Windows** (no `pty` module). A
-  Windows-only run therefore does not exercise a termios tty. After the M1/M2/L1 hardening the
-  file was run again on Linux (WSL Ubuntu-24.04, Python 3.12.3, pyserial 3.5) through a
-  throwaway harness that stubbed only the heavy `aegisflight.sources.stream` import: the 3 PTY
-  tests passed, and so did 134 of the file's 135 tests (the one failure is the
-  `LiveMavlinkSource` test, which needs the real `TelemetryTick` the harness stubs out; it
-  passes on Windows). That harness is not committed, so this result is a one-off observation,
-  not something CI reproduces. To repeat it natively:
+  Windows-only run therefore does not exercise a termios tty. After the latest changes the file
+  was run again on Linux (WSL Ubuntu-24.04, Python 3.12.3, pyserial 3.5) through a throwaway
+  harness that stubbed only the heavy `aegisflight.sources.stream` import: the 3 PTY tests
+  passed, and so did 157 of the file's 160 tests (the 3 failures are the tests that build a
+  real `TelemetryTick` - the `LiveMavlinkSource` and `frame_ticks` ones - which the harness
+  stubs out; they pass on Windows). That harness is not committed, so this result is a one-off
+  observation, not something CI reproduces. To repeat it natively:
   `pytest tests/unit/test_mavlink_serial.py` on any Linux/macOS checkout with `.[dev]` installed
   (not done here: the repo is deliberately not installed inside WSL).
 
@@ -186,9 +245,16 @@ USB drops, radio loss before `read()` returned the bytes); there is deliberately
 - Never run against hardware: real baud rates, USB-CDC enumeration, COM-port naming, flow
   control, port permissions (`dialout` on Linux) and the write path against a real device are
   unverified.
-- No verified `extra_crc` table for the ids PX4 sends outside pymavlink's dialect; with the
-  default policy those frames (about 1.2% of the SITL capture above) are not presented, so
-  message-rate features derived from this transport undercount them. Decide per link.
+- The verified `PX4_SITL_EXTRA_CRC` table covers PX4 SITL `v1.18.0-rc1-27-gc239c63807` only and
+  is off by default. For any other firmware (notably ArduPilot on the Pixhawk 6X) the ids it
+  sends outside pymavlink's dialect have no verified values here; with the default policy those
+  frames are refused (about 1.2% of the PX4 SITL capture), which punches sequence gaps into the
+  per-source counters (98 of 104 one-second windows in the replay above). Derive the values from
+  that firmware's own definitions, or recalibrate on a capture taken through the same path,
+  before relying on sequence-gap/loss features over serial.
+- The feature effect was measured on one benign SITL capture through the replay path with the
+  original timestamps; serial read-completion stamps, real baud rates and other models/flights
+  were not measured.
 - No per-byte-offset timestamps (see Timestamps); no kernel/driver loss counter.
 - No CLI entry point, config key or dashboard wiring; use the Python API.
 - No auto-baud, no MAVLink-router integration, no serial proxy/relay upstream.
