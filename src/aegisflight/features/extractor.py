@@ -31,6 +31,12 @@ from ..mavlink.codec import MODE_NAMES
 # magnitude-clamped so a single position snap-back can't dominate the window.
 _RESID_WINDOW = 15
 _RESID_CLAMP_M = 30.0
+# Link-gap guard. Both position-vs-velocity checks assume a short, continuous fix interval
+# (constant velocity over dt) and a fresh velocity. After a transport outage longer than this
+# (matches the 2 s GPS-dropout rule, which reports the outage itself) the first fix would be
+# compared against 8+ s of manoeuvre, and a fresh ATTITUDE against a stale GPS velocity, so both
+# are skipped until GPS is fresh again. Gap-free streams are unaffected (benchmark-identical).
+_LINK_GAP_S = 2.0
 # ML feature vector order (policy-free continuous signals, benign-stable).
 # NB: battery_v_rate is deliberately excluded — it is ~0 in steady flight
 # (tiny variance), so throttle transitions read as extreme outliers and cause
@@ -225,7 +231,9 @@ class FeatureExtractor:
         if self._last_fix is not None:
             t0, lat0, lon0 = self._last_fix
             dt = t - t0
-            if dt > 1e-6:
+            if dt > _LINK_GAP_S:
+                pass  # outage: constant-velocity assumption invalid; re-anchor on this fix
+            elif dt > 1e-6:
                 # measured displacement (local NE metres)
                 dn = math.radians(lat - lat0) * EARTH_RADIUS_M
                 de = math.radians(lon - lon0) * EARTH_RADIUS_M * math.cos(math.radians(lat))
@@ -294,7 +302,7 @@ class FeatureExtractor:
         batt_rise = max(0.0, batt_rate)  # V/s upward (implausible if large)
         # yaw vs course
         yaw_course = 0.0
-        if gps_speed > 2.0 and snap.yaw is not None:
+        if gps_speed > 2.0 and snap.yaw is not None and snap.gps_age <= _LINK_GAP_S:
             course = math.degrees(math.atan2(snap.vy or 0.0, snap.vx or 0.0)) % 360.0
             yaw_deg = math.degrees(snap.yaw) % 360.0
             yaw_course = abs(wrap_deg_180(yaw_deg - course))
