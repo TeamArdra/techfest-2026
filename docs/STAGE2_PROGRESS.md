@@ -1074,3 +1074,29 @@ attack artifact changed. `mavlink_live.py` got one additive change (below).
   (WSL, py3.12.3, throwaway stub harness): 157 of 160 serial-file tests passed incl. the 3 PTY tests; the 3 that fail there build a
   real `TelemetryTick` the harness stubs out and pass on Windows.
 - **Not run:** Stage-1 benchmark regression, any SITL batch, `aegis-reviewer` on the new claims, any hardware.
+
+## 2026-10-10 - Stage-2 baseline sprint: physical Pixhawk 6X (BENCH), ArduPilot SITL integration, one pre-registered link-level attack, onboard-deployment assessment
+Additive only: no detector, feature, fusion, threshold, config, frozen contract, PX4 artifact or committed evidence was changed (`git status`: only `.gitignore`,
+one export in `sources/__init__.py`, and new files; the pre-existing `docs/.obsidian/workspace.json` modification is untouched). Reports: `docs/HARDWARE_BENCH_PIXHAWK6X.md`,
+`docs/ARDUPILOT_SITL.md`, `docs/ONBOARD_DEPLOYMENT.md`; evidence rows in `docs/VALIDATION_EVIDENCE.md` §1c.
+- **P0 (BENCH, physical Pixhawk 6X, passive, USB, disarmed, props off, nothing transmitted):** identified ArduPilot / quadrotor / sysid 1 / MAVLink 1. 179 s = 198 frames, only HEARTBEAT
+  (1.006 Hz) + TIMESYNC (0.10 Hz): **1 of the 6 messages the pipeline reads**; 0 CRC/parser/garbage errors; a second concurrent open failed fast (`PermissionError`). Replayed through the unchanged
+  pipeline: 896/896 decisions flagged (no GPS/attitude). **Not established:** firmware version, hardware reconnect (needs a physical replug; the shell is not elevated), any useful telemetry
+  (requires a human to set stream parameters, or the monitor to transmit — forbidden this sprint). `artifacts/hardware/`.
+- **P1 (SITL, ArduCopter 4.7.1, isolated network namespace):** new additive `LengthPrefixedPipeTransport` + `TapTransport`; the unchanged `LiveMavlinkSource`/`IDSPipeline`/`EventStore` ingest live. 5 benign flights:
+  0 bad/unverified frames, 0 late ticks, pipe byte-identical, isolation proven per run. Stage-1 config: ML on → 126/2,339 in-flight alert decisions; **ML off → 0/2,329** (+5 start-up alerts/flight before GPS lock) → the
+  Stage-1 ML model did not transfer to this ArduPilot-SITL pipe path (selected-on-data) and is disabled for every ArduPilot result. Latency (ML off) mean 0.18 ms, CPU 1.0–1.4 % of a core, RSS ≈ 59 MB (ML on: 10.3 ms, 5.5–7.5 %, ≈ 165 MB) on one laptop.
+  SITL RTF measured 0.917–0.923. `artifacts/ardupilot/BASELINE_SUMMARY.md`.
+- **P2 (SITL, link-level detection):** pre-registered (recorded and hashed, self-timestamped, before any attack run) downlink position-drift scenario; reused the reviewed `PositionDriftAttack` plus an attacker-observable airborne gate.
+  **3/3 DETECTED**, first `GPS_SPOOFING` +2.7–2.9 s, control arm clean, byte-for-byte reproducible from the recorded tlogs. Disclosed (addendum, 4 entries): post-registration evaluator edits (a `KeyError`; a mislabelled field), an orchestrator option, and post-review hardening of the orchestrator/evaluator/`frame_pipe`/`frame_tap` and one collector bug that
+  crashed the first attempt before any data. `artifacts/ardupilot/p2_position_drift_preregistration{,_addendum}.json`.
+- **Deployment preparation (SITL + VIRTUAL-SERIAL):** receive-only serial runner (`scripts/hardware/run_serial_ids.py`) and a loopback virtual device. 3,442 ArduPilot frames through the real serial transport: 0 framing errors,
+  `bytes_sent = 0`, CPU 0.57 %; an 8.5 s simulated cable pull was survived by the transport, **but the detectors alert during the outage and emit false alerts at recovery** (known gap B5).
+  Passive-monitor experiment: **ArduCopter 4.7.1 has no `SRn_*` parameters, they are `MAVn_*`** — my first parameter file was a silent no-op and my first hypothesis (a GCS heartbeat unlocks streams) was **wrong**; with the right names a
+  strictly receive-only monitor got all six messages and 0 in-flight alerts (8,589 frames). Cost metric `measure_replay_cost.py`: 0.00101 CPU-s per telemetry-second (ML off), 0.0501 (ML on), laptop only.
+- **Tests / gate:** 39 new tests; full suite **541 passed, 3 skipped**; `ruff check src tests scripts backend` clean; Stage-1 benchmark regression (scratch dir, `--no-figures`) **6535 / 4 / 16826 / 65 — identical** to the committed baseline;
+  PX4 tree `git status --porcelain --untracked-files=no` empty at `v1.18.0-rc1-27-gc239c63807`; ArduPilot tree 0 tracked changes; no leftover simulator or listener.
+- **Process note:** a stray `D:\Users\RajTi\AppData\Local\Temp\ap_smoke_{art,raw}` (output of a smoke run whose relative `--out-dir` resolved against the drive root) was created by mistake; the removal was blocked by the safety check
+  because of the directory name and was left for the owner to delete.
+- **Independent review (done):** `aegis-reviewer`, `ecc:python-reviewer`, `ecc:security-reviewer`. Fixed: transport short-record handling, runner no-clobber + bounded memory + exit codes, `--name` validation, a no-frames watchdog, evaluator vacuous-pass guards, doc overstatements (no-0.0.0.0 wording, "no heartbeat needed", B5 count, Ctrl-C, MAVLink-1 wording, RTF, ML z-range, stale counts). Accepted/open (low): collector and harness scripts are in the registered, hashed set and were deliberately not edited (no real-vehicle guard in `ap_gcs_pipe.py`; outer-shell signal trap; pid-reuse before SIGKILL in the post-check; `socket://` host not restricted when `--allow-url`; ML model path resolved from the CWD).
+- **Not run / open:** any physical replug, any parameter write to the board, ML retraining on ArduPilot, post-reconnect hold-down, target-computer measurements.

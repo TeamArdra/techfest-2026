@@ -41,6 +41,10 @@ QUICKSTART  →  HANDOFF  →  ARCHITECTURE  →  END_TO_END_FLOW  →  FILE_REF
 - [EXTERNAL_DATA.md](EXTERNAL_DATA.md) — public real-flight datasets, feature compatibility, external validation.
 - [VALIDATION_EVIDENCE.md](VALIDATION_EVIDENCE.md) — real evidence vs simulation-only vs future work; overclaim audit.
 - [REPORT_ALIGNMENT.md](REPORT_ALIGNMENT.md) — Stage-1 report sections ↔ files/artifacts; TC-01…TC-06.
+- Stage 2 (hardware path), 2026-10-10: [HARDWARE_BENCH_PIXHAWK6X.md](HARDWARE_BENCH_PIXHAWK6X.md) — physical Pixhawk 6X, passive
+  (`BENCH`); [ARDUPILOT_SITL.md](ARDUPILOT_SITL.md) — ArduCopter 4.7.1 integration, benign baseline, one pre-registered link-level
+  attack (`SITL`); [ONBOARD_DEPLOYMENT.md](ONBOARD_DEPLOYMENT.md) — readiness assessment and blockers;
+  [SERIAL_TRANSPORT.md](SERIAL_TRANSPORT.md) — the serial transport.
 - [TESTING.md](TESTING.md) — the 44-test suite.
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md) — symptom → fix.
 

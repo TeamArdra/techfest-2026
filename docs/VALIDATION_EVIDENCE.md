@@ -58,6 +58,25 @@ the pre-fix command-injection batch, dirty (3-4 paths) during the post-fix injec
 batches; each manifest's `full_provenance.working_tree_dirty`/`dirty_paths_count` records this per trial. All
 code for the above is now committed. GNSS-degradation batch: its manifests record commit `5ff674b` plus 5 dirty `src`/`scripts` paths (the attack, driver and summary code, committed afterwards in `6a6c0e2`; consistent by file timestamps, not hash-verified), and no Gazebo version is recorded in them.
 
+## 1c. ArduPilot evidence (Stage 2, 2026-10-10): `SITL` + `BENCH` + `REPLAY` — not flight, not public data
+
+New in this sprint; **separate from, and never merged with, Section 1b (PX4)**. Full detail: `docs/ARDUPILOT_SITL.md`,
+`docs/HARDWARE_BENCH_PIXHAWK6X.md`, `docs/ONBOARD_DEPLOYMENT.md`, `artifacts/ardupilot/`, `artifacts/hardware/`.
+`BENCH` = a physical flight controller on a desk, disarmed, no props, no airframe (not `HITL`, not `FIELD`).
+
+| Env | Claim class | Claim we can make | Evidence |
+|---|---|---|---|
+| `BENCH` | none (stream description) | A **physical Pixhawk 6X** (ArduPilot, quadrotor, sysid 1, **MAVLink 1**, disarmed) read **passively over USB for 179 s** gave 198 frames — HEARTBEAT 1.006 Hz and TIMESYNC 0.10 Hz **only** — with 0 CRC/parser/garbage errors, 0 sequence loss, `bytes_sent = 0`. That is **1 of the 6 messages** the pipeline reads; replayed through the unchanged pipeline every one of the 896 decisions is a threat (missing GPS/attitude), so the board is not usable as-is. **Firmware version not determined; reconnect not measured on hardware; nothing was written to the board.** | `artifacts/hardware/pixhawk6x_passive_probe_001.json`, `…_pipeline_replay_{ml,noml}.json`, `docs/HARDWARE_BENCH_PIXHAWK6X.md` |
+| `SITL` | none (ingestion) | The unchanged parser/pipeline ingests **ArduCopter 4.7.1** live (isolated network namespace; only a stdout pipe leaves it; isolation proved per run and re-checked after): 8 flights, 0 bad / 0 unverified frames, 0 late ticks, pipe byte-identical to the in-namespace log, hash chain intact, no leak/orphan. Both telemetry configurations deliver all six messages. | `artifacts/ardupilot/ap_*/manifest.json`, `summary.json` |
+| `SITL` | none (benign reference) | With the **Stage-1 configuration, no ArduPilot profile**: ML detector on → **126 / 2,339** in-flight decisions are alerts (5.4 %); ML off → **0 / 2,329** over 5 flights (+ exactly 5 start-up alerts per flight before GPS lock). The Stage-1 ML model does **not** transfer to this ArduPilot-SITL pipe path (inter-arrival-jitter z up to +19, strongly negative after start-up; part of it may be path-induced) — the same family of result as PX4 and ALFA. ML was turned off because of this on these same flights, so 0/2,329 is selected-on-data. Not a false-alarm *rate*: 5 flights of one simple scripted trajectory. | `artifacts/ardupilot/BASELINE_SUMMARY.md` |
+| `SITL` | **link-level detection** | One **pre-registered** scenario (downlink `GLOBAL_POSITION_INT` drift, 5 m/s east × 25 s, in-path between simulator and IDS, ML off): **3 of 3 `DETECTED`**, first `GPS_SPOOFING` alert 2.7–2.9 s after onset, `physics_consistency` only, paired clean control 0 alerts in the window, 0 pre-onset in-flight alerts, all validity gates passed; re-applying the spec to the clean tlog reproduces the observed tlog **byte for byte (3,660/3,660 frames, ×3)** and the live verdicts re-derive on 695–696/695–696 decisions. **Not** estimator compromise, **not** physical deviation (the simulator never receives a modified frame), **not** a rate (n=3). Post-registration edits (evaluator x2, orchestrator, transport hardening after review) are disclosed with hashes in the addendum; "pre-registered" means recorded and hashed with a self-written timestamp, not cryptographically signed. The attack rewrites only lat/lon (velocity truthful) so the physics check trips by construction; a velocity-consistent offset was not tested. | `docs/ARDUPILOT_SITL.md` §6, `artifacts/ardupilot/p2_position_drift_preregistration{,_addendum}.json`, `artifacts/ardupilot/ap_attack_drift_00{1,2,3}/{evaluation,reproducibility}.json` |
+| `SITL` | none (deployment path) | A monitor that **never transmits** (`tx_frames 0`) on a second serial port whose streams are set by **persistent `MAV2_*` parameters** received all six messages (8,589 frames, 141 s) and the unchanged pipeline raised 0 in-flight alerts (0/476). **ArduCopter 4.7.1 has no `SRn_*` parameters** (they are `MAVn_*`); a first, wrong-named parameter file was a silent no-op and the first hypothesis (a GCS heartbeat is needed) was wrong — both disclosed. | `artifacts/ardupilot/ap_passive_monitor_params_001/`, `…/passive_monitor_param_readback/README.md` |
+| `REPLAY` over a loopback **virtual** serial port | none (software path) | The real serial transport + receive-only runner on 3,442 ArduPilot SITL frames: 0 framing errors, `bytes_sent = 0`, clean shutdown, hash chain intact, CPU 0.57 % of a core (laptop). An 8.5 s simulated cable pull: the transport reconnected by itself (`reconnects = 1`); the detectors alerted during the outage (expected) **and produced a burst of false alerts at recovery** (sequence gap, heading mismatch, position residual). | `artifacts/ardupilot/serial_path_replay_001/` |
+
+**Not claimed (ArduPilot):** that a flight controller with *no* GCS connected streams to a parameter-configured port (a GCS was active on SERIAL0 in that test); anything about a vehicle in the air, the physical board's firmware, estimator or flight behaviour; detection by the ML
+detector on ArduPilot; detection of any attack other than the one scenario above; a detection or false-alarm *rate*; defence against replay/injection on
+the physical link (the observed USB stream was MAVLink 1 with no signatures, so nothing in it could be authenticated); any figure measured on a companion computer. The SITL ran at a real-time factor of 0.917–0.923.
+
 ## 2. Simulation-only evidence
 
 | Claim | Evidence | Caveat |
@@ -97,6 +116,11 @@ code for the above is now committed. GNSS-degradation batch: its manifests recor
   behaviour, confirmed by an identical Stage-1 regression). `MessageEnvelope.signed` (a
   frozen field) keeps its original, existing meaning; the real verification lives in new,
   separate `LiveStats` counters instead.
+* **ArduPilot (2026-10-10):** (a) the Stage-1 ML detector is unusable on ArduPilot SITL (§1c) and no ArduPilot-trained model exists; every ArduPilot result is rules + physics only.
+  (b) After a transport outage the detectors emit a transient burst of false alerts at recovery (`sequence gap`, heading/course mismatch, position residual) — measured on a virtual serial port, not fixed.
+  (c) The physical Pixhawk 6X, passively read, provides 1 of the 6 required messages and the observed USB stream was MAVLink 1 with no signatures; its firmware version is unknown.
+  (d) Start-up alerts (5 per boot before GPS lock) are not suppressed; only the heartbeat/GPS sentinel part is coverable by the existing `startup_grace_s`.
+  (e) Reconnect on a real USB/UART device is untested. (f) No measurement on a companion computer.
 * `gps_spoofing:sudden_offset` — a constant, self-consistent offset is caught only at the
   jump (see v2 per-mode recall).
 * Link-impairment stress shows the sequence/rate rules and ML network features are

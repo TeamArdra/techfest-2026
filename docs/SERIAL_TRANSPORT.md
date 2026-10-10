@@ -6,9 +6,16 @@ existing `FrameTransport` seam (`poll()` / `close()`), beside `UdpMavlinkTranspo
 Nothing downstream changed: no detector, feature, fusion, pipeline, threshold, config or frozen
 contract was touched.
 
-**Status: unit-tested on virtual serial endpoints. It has never been connected to a physical
-flight controller, a USB-CDC device, a UART or a telemetry radio.** No evidence run was made with
-it, so it adds no validation claim; it removes a software prerequisite for one.
+**Status: unit-tested on virtual serial endpoints, plus (2026-10-10) one physical contact:** a
+passive, receive-only read of a **Pixhawk 6X over USB-CDC (Windows COM5)** for 15 s and 180 s: 198
+valid MAVLink-1 frames, 0 CRC/header/garbage errors, `bytes_sent = 0`, and a deliberate second open
+of the same port failed fast with `PermissionError`
+(`docs/HARDWARE_BENCH_PIXHAWK6X.md`, `artifacts/hardware/pixhawk6x_passive_probe_001.json`). It has
+**not** been connected to a UART or a telemetry radio, its reconnect has not been exercised against
+the real device, and the board streamed only HEARTBEAT/TIMESYNC (1 of the 6 messages the IDS reads),
+so this adds a framing/transport observation, not a detection claim. ArduPilot SITL bytes were also
+run through it over a loopback virtual port with a headless runner (`scripts/hardware/run_serial_ids.py`,
+`artifacts/ardupilot/serial_path_replay_001/`).
 
 ## Usage
 ```python
@@ -242,20 +249,23 @@ USB drops, radio loss before `read()` returned the bytes); there is deliberately
   (not done here: the repo is deliberately not installed inside WSL).
 
 ## Not done / not claimed
-- Never run against hardware: real baud rates, USB-CDC enumeration, COM-port naming, flow
-  control, port permissions (`dialout` on Linux) and the write path against a real device are
-  unverified.
+- Hardware coverage is **one passive USB-CDC contact on one board** (Windows): real UART baud
+  rates, flow control, port permissions (`dialout` on Linux), the write path, USB re-enumeration
+  and the reconnect path against a real device are unverified.
 - The verified `PX4_SITL_EXTRA_CRC` table covers PX4 SITL `v1.18.0-rc1-27-gc239c63807` only and
-  is off by default. For any other firmware (notably ArduPilot on the Pixhawk 6X) the ids it
-  sends outside pymavlink's dialect have no verified values here; with the default policy those
-  frames are refused (about 1.2% of the PX4 SITL capture), which punches sequence gaps into the
-  per-source counters (98 of 104 one-second windows in the replay above). Derive the values from
-  that firmware's own definitions, or recalibrate on a capture taken through the same path,
-  before relying on sequence-gap/loss features over serial.
+  is off by default. For other firmware, ids outside pymavlink's dialect have no verified values
+  here; with the default policy those frames are refused (about 1.2% of the PX4 SITL capture),
+  which punches sequence gaps into the per-source counters (98 of 104 one-second windows in the
+  replay above). **Observed for ArduPilot (not a guarantee):** every id seen was inside pymavlink's
+  `all` dialect (0 `unverifiable_rejects` in 198 BENCH frames; 0 `unverified_frames` in 8 ArduCopter 4.7.1
+  SITL captures), so the PX4 table is not needed there; a different message set could differ. Derive the
+  values from the firmware's own definitions, or recalibrate on a capture taken through the same path,
+  before relying on sequence-gap/loss features over serial for any id outside the dialect.
 - The feature effect was measured on one benign SITL capture through the replay path with the
   original timestamps; serial read-completion stamps, real baud rates and other models/flights
   were not measured.
 - No per-byte-offset timestamps (see Timestamps); no kernel/driver loss counter.
-- No CLI entry point, config key or dashboard wiring; use the Python API.
+- No `aegis` CLI sub-command, config key or dashboard wiring; use the Python API or the standalone receive-only runner
+  `scripts/hardware/run_serial_ids.py` (untested on a real device beyond the passive probe; see `docs/ONBOARD_DEPLOYMENT.md`).
 - No auto-baud, no MAVLink-router integration, no serial proxy/relay upstream.
 - No calibration for a real link's message rates; no attack was run over serial.
