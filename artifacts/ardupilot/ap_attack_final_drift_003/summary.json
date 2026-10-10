@@ -1,0 +1,195 @@
+{
+  "schema": "aegisflight.ardupilot_sitl_run/1",
+  "environment": "SITL (ArduCopter 4.7.1 in an isolated netns; pipe transport; wall-clock 1x)",
+  "attack": "position_drift:onset=5,duration=25,rate=5,bearing=90,airborne_m=12",
+  "claim_class": "link-level detection (downlink modified between simulator and IDS; estimator and flight unaffected)",
+  "harness": "standard",
+  "monitor_transmits_heartbeat": false,
+  "receive_only_monitor": false,
+  "stream_config": "six",
+  "profile": "flight",
+  "started_utc": "2026-10-10T09:48:07.171815+00:00",
+  "harness_exit_code": 0,
+  "ticks": 1296,
+  "link_span_s": 128.2,
+  "decisions_total": 648,
+  "decisions": 644,
+  "post_link_decisions": 4,
+  "threat_decisions": 184,
+  "alert_decisions": 12,
+  "alert_decisions_post_link": 0,
+  "false_alarm_rate_per_decision": null,
+  "by_phase": {
+    "boot": {
+      "decisions": 2,
+      "threat": 2,
+      "alerts": 1
+    },
+    "await_gps": {
+      "decisions": 50,
+      "threat": 46,
+      "alerts": 4
+    },
+    "arm": {
+      "decisions": 164,
+      "threat": 9,
+      "alerts": 0
+    },
+    "takeoff": {
+      "decisions": 48,
+      "threat": 0,
+      "alerts": 0
+    },
+    "square": {
+      "decisions": 162,
+      "threat": 127,
+      "alerts": 7
+    },
+    "rtl": {
+      "decisions": 190,
+      "threat": 0,
+      "alerts": 0
+    },
+    "landed": {
+      "decisions": 28,
+      "threat": 0,
+      "alerts": 0
+    },
+    "post_link": {
+      "decisions": 4,
+      "threat": 0,
+      "alerts": 0
+    }
+  },
+  "alert_types": {
+    "DOS": 3,
+    "TELEMETRY_MANIPULATION": 1,
+    "GPS_SPOOFING": 8
+  },
+  "message_coverage_pipeline": {
+    "HEARTBEAT": {
+      "count": 132,
+      "rate_hz": 1.03
+    },
+    "SYS_STATUS": {
+      "count": 254,
+      "rate_hz": 1.981
+    },
+    "GPS_RAW_INT": {
+      "count": 634,
+      "rate_hz": 4.945
+    },
+    "GLOBAL_POSITION_INT": {
+      "count": 634,
+      "rate_hz": 4.945
+    },
+    "ATTITUDE": {
+      "count": 1269,
+      "rate_hz": 9.898
+    },
+    "VFR_HUD": {
+      "count": 634,
+      "rate_hz": 4.945
+    }
+  },
+  "other_messages": {
+    "COMMAND_ACK": {
+      "count": 17,
+      "rate_hz": 0.133
+    },
+    "GPS_GLOBAL_ORIGIN": {
+      "count": 2,
+      "rate_hz": 0.016
+    },
+    "HOME_POSITION": {
+      "count": 2,
+      "rate_hz": 0.016
+    },
+    "PARAM_VALUE": {
+      "count": 37,
+      "rate_hz": 0.289
+    },
+    "STATUSTEXT": {
+      "count": 37,
+      "rate_hz": 0.289
+    },
+    "TIMESYNC": {
+      "count": 12,
+      "rate_hz": 0.094
+    }
+  },
+  "aggregate_msg_rate_hz": 28.58,
+  "link_bytes_per_s": 1132.4,
+  "decision_latency_ms": {
+    "mean": 0.1763,
+    "p50": 0.189,
+    "p95": 0.229,
+    "p99": 0.262,
+    "max": 0.33
+  },
+  "tick_close_to_emit_ms": {
+    "p50": 5.5438,
+    "p95": 5.8917,
+    "p99": 7.4943,
+    "max": 117.92
+  },
+  "resources_ids_process": {
+    "cpu_pct_of_one_core_mean": 0.88,
+    "cpu_pct_of_one_core_max": 16.8,
+    "cpu_seconds_total": 1.22,
+    "wall_seconds": 131.0,
+    "rss_mb_max": 58.9,
+    "threads_max": 20,
+    "note": "Windows IDS process only (this script incl. pipeline, ML, SQLite); the WSL simulator is excluded"
+  },
+  "source_stats": {
+    "datagrams_received": 3664,
+    "frames_received": 3664,
+    "bad_frames": 0,
+    "sig_valid": 0,
+    "sig_invalid": 0,
+    "unverified_frames": 0,
+    "ticks_emitted": 1296,
+    "late_ticks": 1,
+    "late_frames": 0,
+    "dropped_overflow": 0,
+    "dropped_overflow_bytes": 0,
+    "queue_high_water": 18,
+    "max_poll_gap_s": 0.2118656
+  },
+  "pipe_stats": {
+    "frames_received": 3664,
+    "bytes_received": 145183,
+    "dropped_overflow": 0,
+    "dropped_overflow_bytes": 0,
+    "queue_high_water": 18,
+    "max_poll_gap_s": 0.2118656,
+    "eof": true,
+    "reader_running": false,
+    "last_error": null
+  },
+  "tap_stats": {
+    "frames_in": 3664,
+    "frames_out": 3664,
+    "hook_errors": 0,
+    "first_hook_error": null
+  },
+  "pipe_integrity": {
+    "checked": true,
+    "wsl_frames": 3664,
+    "windows_frames": 3664,
+    "identical_prefix_frames": 3664,
+    "identical": true,
+    "clock_offset_us_median": 212,
+    "clock_offset_us_spread": 142703
+  },
+  "hash_chain": {
+    "ok": true,
+    "length": 12,
+    "detail": "chain intact"
+  },
+  "orphan_arducopter_after_run": "none",
+  "ml_enabled": false,
+  "config_dir": "configs (Stage-1 default)",
+  "decision_span_s": 129.4
+}

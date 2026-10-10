@@ -1,0 +1,25 @@
+{
+  "schema": "aegisflight.serial_path_replay_manifest/1",
+  "environment": "REPLAY of an ArduCopter SITL capture over a LOOPBACK VIRTUAL serial port (socket://, 127.0.0.1) -- NOT a serial device",
+  "claim_class": "none (software-path behaviour: simulated cable pull, recovery alerts)",
+  "purpose": "Re-run of serial_path_replay_001 (same capture, same 8 s drop at stream t=70) after the extractor link-gap fix (commit eae85e6). Historical run 001 is unchanged.",
+  "recorded_utc": "2026-10-10T09:43:00Z",
+  "commands": [
+    "scripts/hardware/virtual_serial_replay.py data/ardupilot/raw/ap_benign_six_002.clean.tlog --port 18762 --drop-at 70 --drop-for 8 --ready-file <f>",
+    "scripts/hardware/run_serial_ids.py --port socket://127.0.0.1:18762 --allow-url --out-dir artifacts/ardupilot/serial_path_replay_002 --seconds 150 --health-interval 10"
+  ],
+  "capture_sha256": "c87abf04a36e3dfc42dae15c51deda6f164b44a14cc0bfb7838c6f02f945cfb2",
+  "ml_enabled": false,
+  "config": "Stage-1 configs/ unchanged",
+  "git_head_at_run": "444f385de4ab9886ae49c55b20b9ec0adc2ce71b",
+  "working_tree_at_run": "src/aegisflight/features/extractor.py + tests/unit/test_extractor_link_gap.py uncommitted; committed unchanged afterwards as eae85e6 (extractor sha256 prefix 6eb7aab5922fce5c)",
+  "n": "1 run, 1 outage, 1 capture",
+  "reading": {
+    "steady_state": "frames 3442, crc/garbage 0, bytes_sent 0, disconnects 2 / reconnects 1, hash chain intact (10 events)",
+    "outage_alerts_t_73_to_77": "heartbeat-stale / GPS-dropout DOS alerts during the real outage (unchanged from run 001; the IDS cannot tell host-side port loss from link loss)",
+    "recovery_alert_t_78_6": "ONE alert, MAVLINK_ANOMALY from protocol_rule only: 'sequence gap 218 > 30' (+ GPS dropout 8.7 s). 218 frames really were lost, so this is a true observation, kept by design. Run 001 had in addition heading/course mismatch 89 deg (TELEMETRY_MANIPULATION) and position residual 29 m (GPS_SPOOFING) at 78.6-78.8 s; both are gone.",
+    "alerts_after_t_142": "the replay stream ended (capture ~139 s) before the runner's deadline; silence alerts are an artefact of run length",
+    "start_up_alerts_t_0_to_10": "the known 5 start-up alerts (unchanged, not addressed)",
+    "not_shown": "reconnect on a real USB/UART device; any other outage length or vehicle state (a single 8.5 s outage in straight-and-level-ish flight)"
+  }
+}

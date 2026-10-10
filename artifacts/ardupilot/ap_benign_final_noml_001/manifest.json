@@ -1,0 +1,55 @@
+{
+  "schema": "aegisflight.ardupilot_sitl_manifest/1",
+  "name": "ap_benign_final_noml_001",
+  "wsl_run_dir": "/home/astryx/aegis_sitl_ap/logs/ap_benign_final_noml_001_20261010T095020Z",
+  "distro": "Ubuntu-24.04",
+  "command": [
+    "D:\\Ardra\\techfest-2026\\aegisflight\\.venv\\Scripts\\python.exe",
+    "scripts/ardupilot/run_ap_sitl_ids.py",
+    "--name",
+    "ap_benign_final_noml_001",
+    "--stream",
+    "six",
+    "--profile",
+    "flight",
+    "--no-ml"
+  ],
+  "fetched_from_wsl": [
+    "preflight.txt",
+    "postcheck.txt",
+    "events.jsonl",
+    "downlink.tlog",
+    "arducopter.log",
+    "ss_default_before.txt",
+    "ss_default_after.txt"
+  ],
+  "clean_tlog": {
+    "path": "D:\\Ardra\\techfest-2026\\aegisflight\\data\\ardupilot\\raw\\ap_benign_final_noml_001.clean.tlog",
+    "sha256": "b508a97c7b309ccb2dca6cae6dfbe56ea07ec3e4caec07b35cafc2cac84a5454"
+  },
+  "observed_tlog": {
+    "path": "D:\\Ardra\\techfest-2026\\aegisflight\\data\\ardupilot\\raw\\ap_benign_final_noml_001.observed.tlog",
+    "sha256": "b508a97c7b309ccb2dca6cae6dfbe56ea07ec3e4caec07b35cafc2cac84a5454"
+  },
+  "attack": null,
+  "origin_ns": 46789513868800,
+  "provenance": {
+    "collected_utc": "2026-10-10T09:52:31.487224+00:00",
+    "aegisflight_commit": "eae85e6ecae4489a9fcd1e477af735f8780b8586",
+    "working_tree_dirty": false,
+    "dirty_paths_count": 0,
+    "python": "3.13.15",
+    "packages": {
+      "pymavlink": "2.4.50",
+      "numpy": "2.5.3",
+      "scikit-learn": "1.9.1",
+      "joblib": "1.6.0",
+      "scipy": "1.18.1"
+    },
+    "model_sha256": "3fe74cddf3689e169610ffd783b109b6539cc6c03629bd1e4bb8b1d3842939c4",
+    "configs_sha256": "f9f7de15a4127dab1260a32c9412a0a051d3b5b68530eced074ae87c2693cb23",
+    "command_line": "scripts/ardupilot/run_ap_sitl_ids.py --name ap_benign_final_noml_001 --stream six --profile flight --no-ml"
+  },
+  "preflight": "== ap_netns_run 20261010T095020Z run_dir=/home/astryx/aegis_sitl_ap/logs/ap_benign_final_noml_001_20261010T095020Z\nkernel:         6.18.40.1-microsoft-standard-WSL2\nbinary sha256:  fdc6f68f84e1473597dff39b91b412d081d09ba03716892ebcc78d76aadeb247\nardupilot HEAD: dbe792162d06cab66c3475fd5556bf7a120f119e\ndefaults:       /home/astryx/ardupilot/Tools/autotest/default_params/copter.parm sha256 5e01345b45d1c6190b28bece5638bbdd4cf1cce35e05bbbf480ab24d2b51aa0e\ncollector:      /mnt/d/Ardra/techfest-2026/aegisflight/scripts/ardupilot/ap_gcs_pipe.py sha256 41ff775144d9e35fd0f244af5f3f6ad1e64920e9a5e5faf767b6ee8b201bc807\ndefault netns:  net:[4026531833]\n",
+  "postcheck": "== post-check (default namespace)\ntracked arducopter pid 18422: gone\nlisteners on 5760/5501/20722 in default namespace: none\nnew listeners in default namespace vs before: none\narducopter processes remaining: none\n== summary: rc=0 leak=no remaining_process=no backstop=no\n"
+}

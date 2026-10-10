@@ -1,0 +1,6 @@
+== post-check (default namespace)
+tracked arducopter pid 18300: gone
+listeners on 5760/5501/20722 in default namespace: none
+new listeners in default namespace vs before: none
+arducopter processes remaining: none
+== summary: rc=0 leak=no remaining_process=no backstop=no

@@ -1,0 +1,34 @@
+{
+  "frames_seen": 38220,
+  "frames_injected": 6,
+  "actual_effect": {
+    "frames_injected": 6,
+    "acked": true,
+    "ack_count": 6,
+    "first_ack_result": 0,
+    "first_ack_result_name": "MAV_RESULT_ACCEPTED",
+    "time_to_first_ack_s": 0.0097169
+  },
+  "ids_decisions": 500,
+  "ids_threat_decisions": 147,
+  "relay_stats": {
+    "datagrams_down": 38020,
+    "datagrams_up": 200,
+    "frames_down": 38020,
+    "frames_up": 200,
+    "forwarded": 38226,
+    "forwarded_down": 38020,
+    "forwarded_up": 206,
+    "mirrored_up": 205,
+    "dropped_by_hook": 0,
+    "hook_errors": 0,
+    "bad_segments": 0,
+    "send_failures": 0,
+    "down_no_client": 571,
+    "clients": 2,
+    "clients_seen": 2,
+    "rejected_clients": 0,
+    "overflow": 0,
+    "pump_errors": 0
+  }
+}

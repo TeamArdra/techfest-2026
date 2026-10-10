@@ -1,0 +1,36 @@
+{
+  "frames_seen": 37434,
+  "frames_dropped": 623,
+  "actual_effect": {
+    "frames_dropped": 623,
+    "first_dropped_recv_ns": 48141097365500,
+    "last_dropped_recv_ns": 48152409044200,
+    "observed_duration_s": 11.3116787,
+    "by_msgid": {
+      "33": 567,
+      "24": 56
+    }
+  },
+  "ids_decisions": 500,
+  "ids_threat_decisions": 47,
+  "relay_stats": {
+    "datagrams_down": 37434,
+    "datagrams_up": 100,
+    "frames_down": 37434,
+    "frames_up": 100,
+    "forwarded": 36911,
+    "forwarded_down": 36811,
+    "forwarded_up": 100,
+    "mirrored_up": 0,
+    "dropped_by_hook": 623,
+    "hook_errors": 0,
+    "bad_segments": 0,
+    "send_failures": 0,
+    "down_no_client": 7,
+    "clients": 1,
+    "clients_seen": 1,
+    "rejected_clients": 0,
+    "overflow": 0,
+    "pump_errors": 0
+  }
+}

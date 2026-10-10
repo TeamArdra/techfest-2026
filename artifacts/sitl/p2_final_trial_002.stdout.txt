@@ -1,0 +1,32 @@
+{
+  "frames_seen": 33686,
+  "frames_modified": 1197,
+  "actual_effect": {
+    "max_lat_lon_delta_m": 190.956427659087,
+    "mean_lat_lon_delta_m": 95.51410885662595,
+    "position_residual_proxy_estimate_m": 95.51410885662595,
+    "frames_counted": 1197
+  },
+  "ids_decisions": 450,
+  "ids_threat_decisions": 1,
+  "relay_stats": {
+    "datagrams_down": 33686,
+    "datagrams_up": 90,
+    "frames_down": 33686,
+    "frames_up": 90,
+    "forwarded": 33776,
+    "forwarded_down": 33686,
+    "forwarded_up": 90,
+    "mirrored_up": 0,
+    "dropped_by_hook": 0,
+    "hook_errors": 0,
+    "bad_segments": 0,
+    "send_failures": 0,
+    "down_no_client": 6,
+    "clients": 1,
+    "clients_seen": 1,
+    "rejected_clients": 0,
+    "overflow": 0,
+    "pump_errors": 0
+  }
+}

@@ -1,0 +1,38 @@
+{"t_unix": 1791625820.943931, "event": "start", "argv": ["--stream", "six", "--profile", "flight", "--idle-s", "60.0", "--events", "/home/astryx/aegis_sitl_ap/logs/ap_benign_final_noml_001_20261010T095020Z/events.jsonl", "--tlog", "/home/astryx/aegis_sitl_ap/logs/ap_benign_final_noml_001_20261010T095020Z/downlink.tlog"], "stream": "six", "profile": "flight"}
+{"t_unix": 1791625821.754783, "event": "heartbeat_seen", "sysid": 1, "compid": 0}
+{"t_unix": 1791625821.755481, "event": "command", "command": 511, "params": [1, 500000]}
+{"t_unix": 1791625821.805761, "event": "command", "command": 511, "params": [24, 200000]}
+{"t_unix": 1791625821.856256, "event": "command", "command": 511, "params": [33, 200000]}
+{"t_unix": 1791625821.906721, "event": "command", "command": 511, "params": [30, 100000]}
+{"t_unix": 1791625821.957208, "event": "command", "command": 511, "params": [74, 200000]}
+{"t_unix": 1791625822.007702, "event": "phase", "name": "await_gps"}
+{"t_unix": 1791625831.014847, "event": "command", "command": 176, "params": [1, 4]}
+{"t_unix": 1791625832.015228, "event": "phase", "name": "arm"}
+{"t_unix": 1791625832.015352, "event": "command", "command": 400, "params": [1]}
+{"t_unix": 1791625836.018537, "event": "timeout", "what": "arm attempt 1", "timeout_s": 4.0}
+{"t_unix": 1791625836.018654, "event": "command", "command": 400, "params": [1]}
+{"t_unix": 1791625840.021931, "event": "timeout", "what": "arm attempt 2", "timeout_s": 4.0}
+{"t_unix": 1791625840.022099, "event": "command", "command": 400, "params": [1]}
+{"t_unix": 1791625844.025341, "event": "timeout", "what": "arm attempt 3", "timeout_s": 4.0}
+{"t_unix": 1791625844.025495, "event": "command", "command": 400, "params": [1]}
+{"t_unix": 1791625848.02864, "event": "timeout", "what": "arm attempt 4", "timeout_s": 4.0}
+{"t_unix": 1791625848.028751, "event": "command", "command": 400, "params": [1]}
+{"t_unix": 1791625852.032107, "event": "timeout", "what": "arm attempt 5", "timeout_s": 4.0}
+{"t_unix": 1791625852.032223, "event": "command", "command": 400, "params": [1]}
+{"t_unix": 1791625856.035782, "event": "timeout", "what": "arm attempt 6", "timeout_s": 4.0}
+{"t_unix": 1791625856.035885, "event": "command", "command": 400, "params": [1]}
+{"t_unix": 1791625860.039315, "event": "timeout", "what": "arm attempt 7", "timeout_s": 4.0}
+{"t_unix": 1791625860.039452, "event": "command", "command": 400, "params": [1]}
+{"t_unix": 1791625864.042334, "event": "timeout", "what": "arm attempt 8", "timeout_s": 4.0}
+{"t_unix": 1791625864.042512, "event": "command", "command": 400, "params": [1]}
+{"t_unix": 1791625864.843396, "event": "phase", "name": "takeoff"}
+{"t_unix": 1791625864.843508, "event": "command", "command": 22, "params": [0, 0, 0, 0, 0, 0, 15.0]}
+{"t_unix": 1791625874.451742, "event": "phase", "name": "square"}
+{"t_unix": 1791625874.451869, "event": "waypoint", "index": 0, "lat": -35.362811744412504, "lon": 149.1652298, "alt_m": 15.0}
+{"t_unix": 1791625882.458272, "event": "waypoint", "index": 1, "lat": -35.362811744412504, "lon": 149.16578057387812, "alt_m": 15.0}
+{"t_unix": 1791625890.66486, "event": "waypoint", "index": 2, "lat": -35.3632609, "lon": 149.16578057387812, "alt_m": 15.0}
+{"t_unix": 1791625898.871743, "event": "waypoint", "index": 3, "lat": -35.3632609, "lon": 149.1652298, "alt_m": 15.0}
+{"t_unix": 1791625907.077882, "event": "phase", "name": "rtl"}
+{"t_unix": 1791625907.077992, "event": "command", "command": 176, "params": [1, 6]}
+{"t_unix": 1791625944.905527, "event": "phase", "name": "landed", "armed": false, "alt_rel_m": -0.008}
+{"t_unix": 1791625949.905844, "event": "end", "frames": 3663, "bad_data": 4, "pipe_broken": false, "seconds": 129.0}

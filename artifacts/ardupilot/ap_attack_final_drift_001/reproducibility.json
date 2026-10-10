@@ -1,0 +1,33 @@
+{
+  "run": "artifacts\\ardupilot\\ap_attack_final_drift_001",
+  "environment": "SITL capture, REPLAY analysis",
+  "claim_class": "link-level detection (SITL); estimator and flight unaffected",
+  "attack_reapplication": {
+    "clean_frames": 3664,
+    "observed_frames_live": 3664,
+    "reapplied_frames": 3664,
+    "identical_frames": 3664,
+    "differing_frames": 0,
+    "differing_frame_distance_to_window_edge_s": [],
+    "frames_modified_live": 125,
+    "frames_modified_reapplied": 125,
+    "all_differences_within_0.25s_of_a_window_edge": true,
+    "byte_identical_everywhere": true
+  },
+  "verdict_rederivation": {
+    "live_decisions": 644,
+    "replay_decisions": 642,
+    "compared": 642,
+    "same_alert_verdict": 642,
+    "live_alerts": 12,
+    "replay_alerts": 12,
+    "first_alert_after_onset_live": {
+      "t": 59.4,
+      "type": "GPS_SPOOFING"
+    },
+    "first_alert_after_onset_replay": {
+      "t": 59.4,
+      "type": "GPS_SPOOFING"
+    }
+  }
+}

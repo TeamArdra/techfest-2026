@@ -1,0 +1,32 @@
+{
+  "frames_seen": 37429,
+  "frames_delayed": 3515,
+  "actual_effect": {
+    "frames_delayed": 3515,
+    "mean_delay_s": 0.69032921,
+    "max_delay_s": 0.69032921,
+    "min_delay_s": 0.69032921
+  },
+  "ids_decisions": 500,
+  "ids_threat_decisions": 5,
+  "relay_stats": {
+    "datagrams_down": 37429,
+    "datagrams_up": 100,
+    "frames_down": 37429,
+    "frames_up": 100,
+    "forwarded": 37529,
+    "forwarded_down": 37429,
+    "forwarded_up": 100,
+    "mirrored_up": 0,
+    "dropped_by_hook": 2523,
+    "hook_errors": 0,
+    "bad_segments": 0,
+    "send_failures": 0,
+    "down_no_client": 5,
+    "clients": 1,
+    "clients_seen": 1,
+    "rejected_clients": 0,
+    "overflow": 0,
+    "pump_errors": 0
+  }
+}

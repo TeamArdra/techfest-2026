@@ -1,0 +1,108 @@
+{
+  "trial_id": "p2l_final_trial_003",
+  "seed": 4001,
+  "trial_index": 2,
+  "provenance": {
+    "px4_git_describe": "v1.18.0-rc1-27-gc239c63807",
+    "aegisflight_git_commit": "eae85e6ecae4489a9fcd1e477af735f8780b8586",
+    "python_version": "3.13.15",
+    "pymavlink_version": "2.4.50"
+  },
+  "attack_type": "MAVLINK_ANOMALY",
+  "attack_mode": "downlink_hold_and_release_live",
+  "message_type": "ALL",
+  "target_system": 0,
+  "target_component": 0,
+  "injection_point": "downlink",
+  "claim_class": "link-level detection (SITL), hypothesis only",
+  "environment": "SITL",
+  "attack_action": "delayed",
+  "parameters": {
+    "onset_s": 24.103218327555847,
+    "duration_s": 7.209877890995891,
+    "delay_s": 0.47136459605496345,
+    "detector_profile": "configs/px4_sitl",
+    "model_choice": "px4"
+  },
+  "attack_start_utc": "2026-10-10T10:18:36.813196+00:00",
+  "attack_end_utc": "2026-10-10T10:20:15.503320+00:00",
+  "frames_seen": 37431,
+  "frames_modified": 0,
+  "frames_dropped": 0,
+  "frames_injected": 0,
+  "expected_effect": {
+    "feature": "interarrival_mean_ms / rate",
+    "detector": "protocol (jitter/rate)",
+    "predicted_detection": "n=10 live result (artifacts/sitl/p2l_n10_trial_*): 9/10 detected via a message-rate spike during backlog drain, not the originally hypothesised jitter mechanism -- see attacks_live_dos_replay.py module docstring"
+  },
+  "actual_effect": {
+    "frames_delayed": 2697,
+    "mean_delay_s": 0.4713645960000001,
+    "max_delay_s": 0.471364596,
+    "min_delay_s": 0.471364596
+  },
+  "frames_skipped_signed": 0,
+  "holdout_seeds": [],
+  "schema_id": "aegisflight.proxy.groundtruth",
+  "schema_version": "1.0.0",
+  "detector_decision": null,
+  "time_to_detection_s": null,
+  "full_provenance": {
+    "collected_utc": "2026-10-10T10:20:15.355631+00:00",
+    "aegisflight_commit": "eae85e6ecae4489a9fcd1e477af735f8780b8586",
+    "working_tree_dirty": false,
+    "dirty_paths_count": 0,
+    "python": "3.13.15",
+    "packages": {
+      "pymavlink": "2.4.50",
+      "numpy": "2.5.3",
+      "scikit-learn": "1.9.1",
+      "joblib": "1.6.0",
+      "scipy": "1.18.1"
+    },
+    "model_sha256": "3fe74cddf3689e169610ffd783b109b6539cc6c03629bd1e4bb8b1d3842939c4",
+    "configs_sha256": "f9f7de15a4127dab1260a32c9412a0a051d3b5b68530eced074ae87c2693cb23",
+    "command_line": "scripts/sitl/run_p2_delay_trial.py --seed 4001 --trial-index 2 --out artifacts/sitl/p2l_final_trial_003 --seconds 100",
+    "python_version": "3.13.15"
+  },
+  "ids_summary": {
+    "decisions": 500,
+    "threat_decisions": 5,
+    "source_stats": {
+      "datagrams_received": 37426,
+      "frames_received": 37426,
+      "bad_frames": 0,
+      "sig_valid": 0,
+      "sig_invalid": 0,
+      "unverified_frames": 438,
+      "ticks_emitted": 1000,
+      "late_ticks": 15,
+      "late_frames": 0,
+      "dropped_overflow": 0,
+      "dropped_overflow_bytes": 0,
+      "queue_high_water": 565,
+      "max_poll_gap_s": 0.0509867
+    },
+    "relay_stats": {
+      "datagrams_down": 37431,
+      "datagrams_up": 100,
+      "frames_down": 37431,
+      "frames_up": 100,
+      "forwarded": 37531,
+      "forwarded_down": 37431,
+      "forwarded_up": 100,
+      "mirrored_up": 0,
+      "dropped_by_hook": 1898,
+      "hook_errors": 0,
+      "bad_segments": 0,
+      "send_failures": 0,
+      "down_no_client": 3,
+      "clients": 1,
+      "clients_seen": 1,
+      "rejected_clients": 0,
+      "overflow": 0,
+      "pump_errors": 0
+    },
+    "frames_delayed": 2697
+  }
+}
