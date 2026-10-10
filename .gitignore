@@ -58,3 +58,9 @@ Thumbs.db
 
 .claude
 CLAUDE.md
+# Raw physical-flight-controller captures may contain the bench GPS position: local evidence only.
+data/hardware/raw/*.tlog
+
+# Raw ArduPilot SITL captures (tlogs) are local evidence; manifests/summaries ARE committed.
+data/ardupilot/raw/*.tlog
+artifacts/ardupilot/*/downlink.tlog
