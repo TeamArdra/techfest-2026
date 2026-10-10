@@ -1,0 +1,7 @@
+== ap_netns_run 20261010T061354Z run_dir=/home/astryx/aegis_sitl_ap/logs/ap_attack_drift_003_20261010T061352Z
+kernel:         6.18.40.1-microsoft-standard-WSL2
+binary sha256:  fdc6f68f84e1473597dff39b91b412d081d09ba03716892ebcc78d76aadeb247
+ardupilot HEAD: dbe792162d06cab66c3475fd5556bf7a120f119e
+defaults:       /home/astryx/ardupilot/Tools/autotest/default_params/copter.parm sha256 5e01345b45d1c6190b28bece5638bbdd4cf1cce35e05bbbf480ab24d2b51aa0e
+collector:      /mnt/d/Ardra/techfest-2026/aegisflight/scripts/ardupilot/ap_gcs_pipe.py sha256 41ff775144d9e35fd0f244af5f3f6ad1e64920e9a5e5faf767b6ee8b201bc807
+default netns:  net:[4026531833]

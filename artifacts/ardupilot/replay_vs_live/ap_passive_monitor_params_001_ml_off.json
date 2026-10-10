@@ -1,0 +1,93 @@
+{
+  "tlog": "data/ardupilot/raw/ap_passive_monitor_params_001.clean.tlog",
+  "config_dir": "configs (Stage-1 default)",
+  "ml_enabled": false,
+  "clock_offset_s_used_for_phases": -2.039316,
+  "decisions": 706,
+  "threat_decisions": 62,
+  "alert_decisions": 5,
+  "alert_rate_per_decision": 0.00708,
+  "by_phase": {
+    "boot": {
+      "decisions": 7,
+      "threat": 7,
+      "alerts": 1
+    },
+    "await_gps": {
+      "decisions": 46,
+      "threat": 42,
+      "alerts": 4
+    },
+    "arm": {
+      "decisions": 179,
+      "threat": 13,
+      "alerts": 0
+    },
+    "takeoff": {
+      "decisions": 62,
+      "threat": 0,
+      "alerts": 0
+    },
+    "square": {
+      "decisions": 176,
+      "threat": 0,
+      "alerts": 0
+    },
+    "rtl": {
+      "decisions": 206,
+      "threat": 0,
+      "alerts": 0
+    },
+    "landed": {
+      "decisions": 30,
+      "threat": 0,
+      "alerts": 0
+    }
+  },
+  "detector_ge_0.5": {
+    "protocol_rule": 46,
+    "physics_consistency": 17
+  },
+  "alert_types": {
+    "DOS": 3,
+    "TELEMETRY_MANIPULATION": 1,
+    "GPS_SPOOFING": 1
+  },
+  "alert_evidence_top": [
+    [
+      "GPS dropout 999.0s > 2.0s",
+      1
+    ],
+    [
+      "battery voltage rose 23.04 V (implausible)",
+      1
+    ],
+    [
+      "GNSS fix lost: fix_type=0, satellites=0 for 5 decisions",
+      1
+    ],
+    [
+      "GNSS fix lost: fix_type=0, satellites=0 for 12 decisions",
+      1
+    ],
+    [
+      "GNSS fix lost: fix_type=0, satellites=0 for 32 decisions",
+      1
+    ],
+    [
+      "position residual 30.0 m \u2265 hard 30 m",
+      1
+    ],
+    [
+      "implausible altitude rate 2920.4 m/s",
+      1
+    ]
+  ],
+  "vs_live": {
+    "live_decisions": 708,
+    "replay_decisions": 706,
+    "same_threat_verdict": 706,
+    "same_alert_verdict": 706,
+    "compared": 706
+  }
+}

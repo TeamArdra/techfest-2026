@@ -1,0 +1,192 @@
+{
+  "schema": "aegisflight.ardupilot_sitl_run/1",
+  "environment": "SITL (ArduCopter 4.7.1 in an isolated netns; pipe transport; wall-clock 1x)",
+  "attack": "NONE",
+  "claim_class": "none (benign false-alarm / cost reference)",
+  "stream_config": "six",
+  "profile": "flight",
+  "started_utc": "2026-10-10T05:51:59.604595+00:00",
+  "harness_exit_code": 0,
+  "ticks": 1401,
+  "link_span_s": 138.8,
+  "decisions_total": 701,
+  "decisions": 697,
+  "post_link_decisions": 4,
+  "threat_decisions": 569,
+  "alert_decisions": 41,
+  "alert_decisions_post_link": 0,
+  "false_alarm_rate_per_decision": 0.05882,
+  "by_phase": {
+    "boot": {
+      "decisions": 4,
+      "threat": 4,
+      "alerts": 1
+    },
+    "await_gps": {
+      "decisions": 50,
+      "threat": 47,
+      "alerts": 5
+    },
+    "arm": {
+      "decisions": 178,
+      "threat": 130,
+      "alerts": 9
+    },
+    "takeoff": {
+      "decisions": 48,
+      "threat": 36,
+      "alerts": 3
+    },
+    "square": {
+      "decisions": 176,
+      "threat": 157,
+      "alerts": 10
+    },
+    "rtl": {
+      "decisions": 215,
+      "threat": 169,
+      "alerts": 12
+    },
+    "landed": {
+      "decisions": 26,
+      "threat": 26,
+      "alerts": 1
+    },
+    "post_link": {
+      "decisions": 4,
+      "threat": 4,
+      "alerts": 0
+    }
+  },
+  "alert_types": {
+    "DOS": 38,
+    "TELEMETRY_MANIPULATION": 2,
+    "GPS_SPOOFING": 1
+  },
+  "message_coverage_pipeline": {
+    "HEARTBEAT": {
+      "count": 132,
+      "rate_hz": 0.951
+    },
+    "SYS_STATUS": {
+      "count": 254,
+      "rate_hz": 1.83
+    },
+    "GPS_RAW_INT": {
+      "count": 633,
+      "rate_hz": 4.561
+    },
+    "GLOBAL_POSITION_INT": {
+      "count": 634,
+      "rate_hz": 4.569
+    },
+    "ATTITUDE": {
+      "count": 1267,
+      "rate_hz": 9.13
+    },
+    "VFR_HUD": {
+      "count": 633,
+      "rate_hz": 4.561
+    }
+  },
+  "other_messages": {
+    "COMMAND_ACK": {
+      "count": 17,
+      "rate_hz": 0.122
+    },
+    "GPS_GLOBAL_ORIGIN": {
+      "count": 2,
+      "rate_hz": 0.014
+    },
+    "HOME_POSITION": {
+      "count": 2,
+      "rate_hz": 0.014
+    },
+    "PARAM_VALUE": {
+      "count": 37,
+      "rate_hz": 0.267
+    },
+    "STATUSTEXT": {
+      "count": 37,
+      "rate_hz": 0.267
+    },
+    "TIMESYNC": {
+      "count": 12,
+      "rate_hz": 0.086
+    }
+  },
+  "aggregate_msg_rate_hz": 26.37,
+  "link_bytes_per_s": 1045.0,
+  "decision_latency_ms": {
+    "mean": 10.3736,
+    "p50": 10.287,
+    "p95": 12.23,
+    "p99": 17.94,
+    "max": 29.584
+  },
+  "tick_close_to_emit_ms": {
+    "p50": 5.524,
+    "p95": 5.8223,
+    "p99": 6.1206,
+    "max": 12.14
+  },
+  "resources_ids_process": {
+    "cpu_pct_of_one_core_mean": 7.21,
+    "cpu_pct_of_one_core_max": 10.8,
+    "cpu_seconds_total": 10.2,
+    "wall_seconds": 141.4,
+    "rss_mb_max": 165.2,
+    "threads_max": 31,
+    "note": "Windows IDS process only (this script incl. pipeline, ML, SQLite); the WSL simulator is excluded"
+  },
+  "source_stats": {
+    "datagrams_received": 3660,
+    "frames_received": 3660,
+    "bad_frames": 0,
+    "sig_valid": 0,
+    "sig_invalid": 0,
+    "unverified_frames": 0,
+    "ticks_emitted": 1401,
+    "late_ticks": 0,
+    "late_frames": 0,
+    "dropped_overflow": 0,
+    "dropped_overflow_bytes": 0,
+    "queue_high_water": 18,
+    "max_poll_gap_s": 0.0663073
+  },
+  "pipe_stats": {
+    "frames_received": 3660,
+    "bytes_received": 145025,
+    "dropped_overflow": 0,
+    "dropped_overflow_bytes": 0,
+    "queue_high_water": 18,
+    "max_poll_gap_s": 0.0663073,
+    "eof": true,
+    "reader_running": false,
+    "last_error": null
+  },
+  "tap_stats": {
+    "frames_in": 3660,
+    "frames_out": 3660,
+    "hook_errors": 0,
+    "first_hook_error": null
+  },
+  "pipe_integrity": {
+    "checked": true,
+    "wsl_frames": 3660,
+    "windows_frames": 3660,
+    "identical_prefix_frames": 3660,
+    "identical": true,
+    "clock_offset_us_median": -2204995,
+    "clock_offset_us_spread": 2759756
+  },
+  "hash_chain": {
+    "ok": true,
+    "length": 41,
+    "detail": "chain intact"
+  },
+  "orphan_arducopter_after_run": "none",
+  "ml_enabled": true,
+  "config_dir": "configs (Stage-1 default)",
+  "decision_span_s": 140.0
+}

@@ -1,0 +1,172 @@
+{
+  "schema": "pixhawk_passive_probe/1",
+  "environment": "BENCH (physical flight controller on a desk, USB, disarmed, no props, no airframe)",
+  "claim_class": "none (stream description only; not detection evidence)",
+  "provenance": {
+    "git_commit": "9a6cd0274cd0a15ed52278cce0bd7df5713bfb68",
+    "python": "3.13.15",
+    "pymavlink": "2.4.50",
+    "pyserial": "3.5",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "command": "scripts/hardware/pixhawk_passive_probe.py --port COM5 --duration 180 --json artifacts/hardware/pixhawk6x_passive_probe_001.json --tlog data/hardware/raw/pixhawk6x_passive_001.tlog",
+    "unix_time_start": 1791610708.497629
+  },
+  "port": "COM5",
+  "baud_arg": 115200,
+  "duration_requested_s": 180.0,
+  "first_frame_s": 0.7548845,
+  "first_heartbeat_s": 0.7548845,
+  "stream_span_s": 179.001,
+  "frames": 198,
+  "frame_bytes": 3492,
+  "mean_frame_rate_hz": 1.11,
+  "mean_byte_rate_Bps": 19.5,
+  "mavlink_versions": {
+    "v1": 198
+  },
+  "signed_frames": 0,
+  "frames_without_envelope": 0,
+  "parser_stats": {
+    "datagrams_received": 198,
+    "frames_received": 198,
+    "bad_frames": 0,
+    "sig_valid": 0,
+    "sig_invalid": 0,
+    "unverified_frames": 0,
+    "ticks_emitted": 0,
+    "late_ticks": 0,
+    "late_frames": 0,
+    "dropped_overflow": 0,
+    "dropped_overflow_bytes": 0
+  },
+  "transport_stats": {
+    "connected": false,
+    "reader_running": false,
+    "reads": 396,
+    "bytes_received": 3492,
+    "frames_received": 198,
+    "garbage_bytes": 0,
+    "resync_events": 0,
+    "header_rejects": 0,
+    "crc_rejects": 0,
+    "unverifiable_rejects": 0,
+    "unverified_accepted": 0,
+    "unverifiable_ids": {},
+    "unverifiable_id_overflow": 0,
+    "crc_bytes_checked": 3096,
+    "partial_timeouts": 0,
+    "reader_faults": 0,
+    "dropped_overflow": 0,
+    "dropped_overflow_bytes": 0,
+    "queue_high_water": 1,
+    "max_poll_gap_s": 0.0441678,
+    "max_frames_per_read": 1,
+    "disconnects": 0,
+    "reconnects": 0,
+    "open_failures": 0,
+    "discarded_on_disconnect_bytes": 0,
+    "bytes_sent": 0,
+    "write_errors": 0,
+    "last_error": null
+  },
+  "passive_check": {
+    "bytes_sent": 0,
+    "write_errors": 0,
+    "passed": true
+  },
+  "pipeline_message_coverage": {
+    "HEARTBEAT": {
+      "seen": true,
+      "rate_hz": 1.006
+    },
+    "SYS_STATUS": {
+      "seen": false,
+      "rate_hz": null
+    },
+    "GPS_RAW_INT": {
+      "seen": false,
+      "rate_hz": null
+    },
+    "GLOBAL_POSITION_INT": {
+      "seen": false,
+      "rate_hz": null
+    },
+    "ATTITUDE": {
+      "seen": false,
+      "rate_hz": null
+    },
+    "VFR_HUD": {
+      "seen": false,
+      "rate_hz": null
+    }
+  },
+  "messages": {
+    "HEARTBEAT": {
+      "msgid": 0,
+      "count": 180,
+      "rate_hz": 1.006,
+      "interarrival_ms_median": 1000.0,
+      "interarrival_ms_p95": 1000.28,
+      "interarrival_ms_max": 1001.01
+    },
+    "TIMESYNC": {
+      "msgid": 111,
+      "count": 18,
+      "rate_hz": 0.101,
+      "interarrival_ms_median": 10002.89,
+      "interarrival_ms_p95": 10003.12,
+      "interarrival_ms_max": 10003.19
+    }
+  },
+  "sequence_accounting": {
+    "per_sysid_compid": {
+      "1/1": {
+        "frames": 198,
+        "inferred_lost": 0,
+        "non_forward_steps": 0,
+        "loss_ratio": 0.0
+      }
+    },
+    "per_sysid": {
+      "1": {
+        "frames": 198,
+        "inferred_lost": 0,
+        "non_forward_steps": 0,
+        "loss_ratio": 0.0
+      }
+    },
+    "whole_link": {
+      "frames": 198,
+      "inferred_lost": 0,
+      "non_forward_steps": 0,
+      "loss_ratio": 0.0
+    }
+  },
+  "stream_gaps_over_s": {
+    "threshold_s": 2.5,
+    "events": [],
+    "count": 0
+  },
+  "heartbeats": {
+    "1/1": [
+      {
+        "state": {
+          "autopilot": 3,
+          "base_mode": 81,
+          "custom_mode": 0,
+          "mavlink_version": 3,
+          "system_status": 3,
+          "type": 2,
+          "type_name": "QUADROTOR",
+          "autopilot_name": "ARDUPILOTMEGA",
+          "system_status_name": "STANDBY",
+          "armed": false
+        },
+        "count": 180
+      }
+    ]
+  },
+  "statustext": [],
+  "autopilot_version_message": null,
+  "tlog": "data/hardware/raw/pixhawk6x_passive_001.tlog"
+}

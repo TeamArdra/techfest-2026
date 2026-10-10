@@ -1,0 +1,228 @@
+{
+  "schema": "aegisflight.ardupilot_sitl_run/1",
+  "environment": "SITL (ArduCopter 4.7.1 in an isolated netns; pipe transport; wall-clock 1x)",
+  "attack": "NONE",
+  "claim_class": "none (benign false-alarm / cost reference)",
+  "stream_config": "groups",
+  "profile": "flight",
+  "started_utc": "2026-10-10T06:02:37.222325+00:00",
+  "harness_exit_code": 0,
+  "ticks": 1411,
+  "link_span_s": 139.7,
+  "decisions_total": 706,
+  "decisions": 702,
+  "post_link_decisions": 4,
+  "threat_decisions": 699,
+  "alert_decisions": 38,
+  "alert_decisions_post_link": 0,
+  "false_alarm_rate_per_decision": 0.05413,
+  "by_phase": {
+    "boot": {
+      "decisions": 2,
+      "threat": 2,
+      "alerts": 1
+    },
+    "await_gps": {
+      "decisions": 50,
+      "threat": 47,
+      "alerts": 5
+    },
+    "arm": {
+      "decisions": 179,
+      "threat": 179,
+      "alerts": 9
+    },
+    "takeoff": {
+      "decisions": 61,
+      "threat": 61,
+      "alerts": 3
+    },
+    "square": {
+      "decisions": 177,
+      "threat": 177,
+      "alerts": 9
+    },
+    "rtl": {
+      "decisions": 205,
+      "threat": 205,
+      "alerts": 10
+    },
+    "landed": {
+      "decisions": 28,
+      "threat": 28,
+      "alerts": 1
+    },
+    "post_link": {
+      "decisions": 4,
+      "threat": 4,
+      "alerts": 0
+    }
+  },
+  "alert_types": {
+    "DOS": 35,
+    "TELEMETRY_MANIPULATION": 2,
+    "GPS_SPOOFING": 1
+  },
+  "message_coverage_pipeline": {
+    "HEARTBEAT": {
+      "count": 132,
+      "rate_hz": 0.945
+    },
+    "SYS_STATUS": {
+      "count": 254,
+      "rate_hz": 1.818
+    },
+    "GPS_RAW_INT": {
+      "count": 254,
+      "rate_hz": 1.818
+    },
+    "GLOBAL_POSITION_INT": {
+      "count": 634,
+      "rate_hz": 4.538
+    },
+    "ATTITUDE": {
+      "count": 1267,
+      "rate_hz": 9.068
+    },
+    "VFR_HUD": {
+      "count": 633,
+      "rate_hz": 4.53
+    }
+  },
+  "other_messages": {
+    "AHRS2": {
+      "count": 1246,
+      "rate_hz": 8.918
+    },
+    "COMMAND_ACK": {
+      "count": 12,
+      "rate_hz": 0.086
+    },
+    "ESC_TELEMETRY_1_TO_4": {
+      "count": 1231,
+      "rate_hz": 8.81
+    },
+    "GPS_GLOBAL_ORIGIN": {
+      "count": 2,
+      "rate_hz": 0.014
+    },
+    "HOME_POSITION": {
+      "count": 2,
+      "rate_hz": 0.014
+    },
+    "LOCAL_POSITION_NED": {
+      "count": 437,
+      "rate_hz": 3.128
+    },
+    "MEMINFO": {
+      "count": 254,
+      "rate_hz": 1.818
+    },
+    "MISSION_CURRENT": {
+      "count": 254,
+      "rate_hz": 1.818
+    },
+    "NAV_CONTROLLER_OUTPUT": {
+      "count": 254,
+      "rate_hz": 1.818
+    },
+    "PARAM_VALUE": {
+      "count": 37,
+      "rate_hz": 0.265
+    },
+    "POSITION_TARGET_GLOBAL_INT": {
+      "count": 86,
+      "rate_hz": 0.616
+    },
+    "POWER_STATUS": {
+      "count": 254,
+      "rate_hz": 1.818
+    },
+    "SIMSTATE": {
+      "count": 1267,
+      "rate_hz": 9.068
+    },
+    "STATUSTEXT": {
+      "count": 37,
+      "rate_hz": 0.265
+    },
+    "TIMESYNC": {
+      "count": 12,
+      "rate_hz": 0.086
+    }
+  },
+  "aggregate_msg_rate_hz": 61.26,
+  "link_bytes_per_s": 2533.8,
+  "decision_latency_ms": {
+    "mean": 10.5182,
+    "p50": 10.457,
+    "p95": 12.74,
+    "p99": 18.168,
+    "max": 24.633
+  },
+  "tick_close_to_emit_ms": {
+    "p50": 5.6032,
+    "p95": 5.9266,
+    "p99": 6.4401,
+    "max": 38.87
+  },
+  "resources_ids_process": {
+    "cpu_pct_of_one_core_mean": 5.54,
+    "cpu_pct_of_one_core_max": 9.3,
+    "cpu_seconds_total": 7.91,
+    "wall_seconds": 142.6,
+    "rss_mb_max": 165.6,
+    "threads_max": 31,
+    "note": "Windows IDS process only (this script incl. pipeline, ML, SQLite); the WSL simulator is excluded"
+  },
+  "source_stats": {
+    "datagrams_received": 8559,
+    "frames_received": 8559,
+    "bad_frames": 0,
+    "sig_valid": 0,
+    "sig_invalid": 0,
+    "unverified_frames": 0,
+    "ticks_emitted": 1411,
+    "late_ticks": 0,
+    "late_frames": 0,
+    "dropped_overflow": 0,
+    "dropped_overflow_bytes": 0,
+    "queue_high_water": 19,
+    "max_poll_gap_s": 0.0823922
+  },
+  "pipe_stats": {
+    "frames_received": 8559,
+    "bytes_received": 354024,
+    "dropped_overflow": 0,
+    "dropped_overflow_bytes": 0,
+    "queue_high_water": 19,
+    "max_poll_gap_s": 0.0823922,
+    "eof": true,
+    "reader_running": false,
+    "last_error": null
+  },
+  "tap_stats": {
+    "frames_in": 8559,
+    "frames_out": 8559,
+    "hook_errors": 0,
+    "first_hook_error": null
+  },
+  "pipe_integrity": {
+    "checked": true,
+    "wsl_frames": 8559,
+    "windows_frames": 8559,
+    "identical_prefix_frames": 8559,
+    "identical": true,
+    "clock_offset_us_median": -1994716,
+    "clock_offset_us_spread": 2933640
+  },
+  "hash_chain": {
+    "ok": true,
+    "length": 38,
+    "detail": "chain intact"
+  },
+  "orphan_arducopter_after_run": "none",
+  "ml_enabled": true,
+  "config_dir": "configs (Stage-1 default)",
+  "decision_span_s": 141.0
+}

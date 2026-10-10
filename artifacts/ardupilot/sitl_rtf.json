@@ -1,0 +1,62 @@
+{
+  "schema": "aegisflight.sitl_rtf/1",
+  "environment": "REPLAY analysis of SITL captures",
+  "runs": [
+    {
+      "tlog": "data\\ardupilot\\raw\\ap_benign_six_001.clean.tlog",
+      "frames_used": 991,
+      "wall_span_s": 107.1,
+      "rtf_least_squares_slope": 0.9258
+    },
+    {
+      "tlog": "data\\ardupilot\\raw\\ap_benign_six_002.clean.tlog",
+      "frames_used": 991,
+      "wall_span_s": 108.0,
+      "rtf_least_squares_slope": 0.9167
+    },
+    {
+      "tlog": "data\\ardupilot\\raw\\ap_benign_six_003.clean.tlog",
+      "frames_used": 991,
+      "wall_span_s": 108.0,
+      "rtf_least_squares_slope": 0.9167
+    },
+    {
+      "tlog": "data\\ardupilot\\raw\\ap_benign_six_004.clean.tlog",
+      "frames_used": 991,
+      "wall_span_s": 108.0,
+      "rtf_least_squares_slope": 0.9167
+    },
+    {
+      "tlog": "data\\ardupilot\\raw\\ap_benign_groups_001.clean.tlog",
+      "frames_used": 991,
+      "wall_span_s": 108.0,
+      "rtf_least_squares_slope": 0.9167
+    },
+    {
+      "tlog": "data\\ardupilot\\raw\\ap_attack_drift_001.clean.tlog",
+      "frames_used": 991,
+      "wall_span_s": 107.4,
+      "rtf_least_squares_slope": 0.9219
+    },
+    {
+      "tlog": "data\\ardupilot\\raw\\ap_attack_drift_002.clean.tlog",
+      "frames_used": 991,
+      "wall_span_s": 107.5,
+      "rtf_least_squares_slope": 0.9216
+    },
+    {
+      "tlog": "data\\ardupilot\\raw\\ap_attack_drift_003.clean.tlog",
+      "frames_used": 991,
+      "wall_span_s": 107.3,
+      "rtf_least_squares_slope": 0.9251
+    },
+    {
+      "tlog": "data\\ardupilot\\raw\\ap_passive_monitor_params_001.clean.tlog",
+      "frames_used": 1003,
+      "wall_span_s": 109.3,
+      "rtf_least_squares_slope": 0.9167
+    }
+  ],
+  "min": 0.9167,
+  "max": 0.9258
+}

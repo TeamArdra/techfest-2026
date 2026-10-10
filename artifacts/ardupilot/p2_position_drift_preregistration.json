@@ -1,0 +1,90 @@
+{
+  "schema": "aegisflight.ardupilot_p2_preregistration/1",
+  "preregistered_utc": "2026-10-10T06:09:00.580983+00:00",
+  "written_before_any_attack_run": true,
+  "attack_artifacts_existing_at_signing": [],
+  "scenario_id": "ap_p2_position_drift_v1",
+  "environment": "SITL: ArduCopter 4.7.1 (dbe79216, binary sha256 fdc6f68f...) in an isolated network namespace, pipe transport, wall-clock 1x",
+  "claim_class": "link-level detection (SITL) ONLY",
+  "not_claimed": [
+    "estimator compromise (the simulator never receives a modified frame)",
+    "physical flight deviation (the simulated vehicle flies its commanded path regardless)",
+    "GPS spoofing of the vehicle, real RF, or any behaviour of a real vehicle or the physical Pixhawk",
+    "detection by the ML detector (it is OFF for every ArduPilot result; the Stage-1 model does not transfer)",
+    "a detection RATE (n=3 flights, one scenario, one airframe/world/host)"
+  ],
+  "attack": {
+    "spec": "position_drift:onset=5,duration=25,rate=5,bearing=90,airborne_m=12",
+    "mechanism": "In-path rewrite of downlink GLOBAL_POSITION_INT lat/lon (msgid 33, sysid 1/compid 1) with a closed-form eastward drift of 5 m/s starting 5 s after the attacker first sees relative_alt >= 12 m on that same downlink, lasting 25 s (125 m total); vx/vy/vz/alt/relative_alt/hdg stay truthful; MAVLink 2 CRC recomputed; every other frame byte-identical.",
+    "implementation": "aegisflight.proxy.attacks_live.PositionDriftAttack (reviewed, unchanged) wrapped by scripts/ardupilot/ap_attack.py (adds only the attacker-observable airborne gate)",
+    "injection_point": "downlink, simulator -> IDS (Windows side of the pipe)",
+    "attacker_knowledge": "only frames on the downlink; no simulator ground truth, no detector state"
+  },
+  "expected_observable_effect": {
+    "on_the_wire": "GLOBAL_POSITION_INT lat/lon diverge eastward from the truthful GPS_RAW_INT lat/lon and from the position implied by the (truthful) reported velocity, growing about 5 m per second to about 125 m",
+    "frames_modified_expected": "about 25 s x ~4.6 Hz = ~114; evaluation requires >= 80",
+    "hypothesis": "the physics-consistency detector's position-residual check (soft 12 m, hard 30 m in configs/detector.yaml) trips and fusion raises a GPS_SPOOFING alert within roughly 15 s of onset (descriptive; the pass/fail criteria below use the whole window)"
+  },
+  "config_dir": null,
+  "ml_enabled": false,
+  "model": "models/isoforest.joblib",
+  "config_note": "Stage-1 configs/ unchanged; ML detector disabled via --no-ml because the benign ArduPilot flights show it is the sole in-flight false-alarm source (see clean_baseline). No threshold was tuned and no ArduPilot profile exists.",
+  "clean_baseline": {
+    "source": "artifacts/ardupilot/BASELINE_SUMMARY.json (regenerate: scripts/ardupilot/make_ap_baseline_summary.py)",
+    "flights": 5,
+    "ml_off_in_flight_alert_decisions": 0,
+    "ml_off_in_flight_decisions": 2329,
+    "ml_off_ground_alert_decisions": 25,
+    "ml_off_ground_decisions": 1166,
+    "stage1_ml_on_in_flight_alert_decisions": 126,
+    "stage1_ml_on_in_flight_decisions": 2339,
+    "reading": "ML-off in-flight alerts are 0 over the benign flights; the only ML-off alerts are 5 per flight in the boot/await_gps start-up (no GPS lock, sentinel values), outside the scored window."
+  },
+  "criteria": {
+    "post_window_grace_s": 10.0,
+    "min_frames_modified": 80,
+    "expected_alert_types": [
+      "GPS_SPOOFING"
+    ],
+    "required_detector": "physics_consistency",
+    "max_pre_onset_false_alarms": 0,
+    "definitions": {
+      "D1": "at least one alert decision (is_alert) in [onset, window_end + post_window_grace_s] in the OBSERVED arm",
+      "D2": "the FIRST such alert has type GPS_SPOOFING",
+      "D3": "the first such alert lists physics_consistency among its contributing detectors",
+      "C1": "the CONTROL arm (same flight's clean frames replayed under the same config/model) has zero alert decisions in the same window",
+      "B1": "zero alert decisions in the observed arm's in-flight phases (takeoff/square/rtl/landed) before onset",
+      "verdict": "DETECTED iff D1, D2, D3, C1 and B1 all hold; MISSED if the run is valid and any fails; INVALID if a validity gate fails (reported, then replaced by a fresh run of the same spec)"
+    }
+  },
+  "trial_plan": {
+    "runs": [
+      "ap_attack_drift_001",
+      "ap_attack_drift_002",
+      "ap_attack_drift_003"
+    ],
+    "command": "scripts/ardupilot/run_ap_sitl_ids.py --name <run> --stream six --profile flight --no-ml --attack \"position_drift:onset=5,duration=25,rate=5,bearing=90,airborne_m=12\"  then  scripts/ardupilot/evaluate_ap_attack.py artifacts/ardupilot/<run> --prereg artifacts/ardupilot/p2_position_drift_preregistration.json --json artifacts/ardupilot/<run>/evaluation.json",
+    "rules": [
+      "all three runs are reported, hits and misses alike",
+      "no parameter, threshold or criterion changes after the first run",
+      "a run that fails a validity gate is reported INVALID and replaced once by a fresh run of the same spec"
+    ]
+  },
+  "code_sha256_at_signing": {
+    "scripts/ardupilot/ap_attack.py": "03ec895c0967e63dfbe4edc0e650749a50c329e4d75f634b29df14efb40f381f",
+    "scripts/ardupilot/evaluate_ap_attack.py": "7bda4c876696a3c85fd73822cf522e39750ab97da0c48bd9a72a0282ac0aad5e",
+    "scripts/ardupilot/replay_ap_tlog.py": "c4555af3fb75470a254723758dee54c49d0a59ddd747d9b4115cbc74ba40e822",
+    "scripts/ardupilot/run_ap_sitl_ids.py": "1f05ac6fd4e4dffe4975af13ba8937f51ae60b3226d8b6a40a60c72b4c8b85ac",
+    "scripts/ardupilot/ap_gcs_pipe.py": "41ff775144d9e35fd0f244af5f3f6ad1e64920e9a5e5faf767b6ee8b201bc807",
+    "scripts/ardupilot/ap_netns_run.sh": "7d1e3eb3ffb77f5ef902d83f7f68473ba7c023309aaddd95946cd2da9cf7b2f5",
+    "src/aegisflight/proxy/attacks_live.py": "34e7947fd11acd986eadd57f6aba7720a1fdd3c5af7f957e7891c6068a24758b",
+    "src/aegisflight/sources/frame_tap.py": "bf77abd4adaea8b40a05acf3ce08b7b2adb92cd26f2cb0f2ff7e7e681d5a25d6",
+    "src/aegisflight/sources/frame_pipe.py": "556045ece632232e08c1d9aa1b2536d2a3877b4993a7a56c5a1d05f7ca8e6424",
+    "src/aegisflight/detectors/physics.py": "31de685363c2c6599e90d97fcfd4776d52708ae6d679b6c7e8fe6d5db2d5ecef",
+    "src/aegisflight/detectors/protocol.py": "18e254ce72e5a5d0bc0a3f5d678c3acd327c488f9b64ed9c03c971e8ce8c6447",
+    "src/aegisflight/fusion/engine.py": "d73a55f84fc17883eda4a365fdf973b9062337b74fd22e4bbe9d037fe6fe9bba",
+    "configs/detector.yaml": "bc9a4d2618e5e5a0cdc251a35f22ad1cc928343894aa9a66c27ad28196f3cbfa",
+    "configs/simulation.yaml": "bab802fbf572dcd1e71aa3a87594967deb73f7fc2db94745f6e45014275489df"
+  },
+  "git_head": "9a6cd0274cd0a15ed52278cce0bd7df5713bfb68"
+}

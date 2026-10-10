@@ -1,0 +1,76 @@
+{
+  "schema": "aegisflight.replay_cost/1",
+  "utc": "2026-10-10T06:24:11.560814+00:00",
+  "tlog": "data/ardupilot/raw/ap_benign_six_001.clean.tlog",
+  "machine": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 141 Stepping 1, GenuineIntel",
+    "cpu_count_logical": 12,
+    "python": "3.13.15",
+    "numpy": "2.5.3",
+    "scikit-learn": "1.9.1",
+    "pymavlink": "2.4.50"
+  },
+  "variants": {
+    "ml_off": {
+      "runs": [
+        {
+          "decisions": 695,
+          "telemetry_seconds": 138.8,
+          "cpu_s": 0.141,
+          "wall_s": 0.148,
+          "cpu_s_per_telemetry_s": 0.00101,
+          "rss_mb": 64.4
+        },
+        {
+          "decisions": 695,
+          "telemetry_seconds": 138.8,
+          "cpu_s": 0.141,
+          "wall_s": 0.129,
+          "cpu_s_per_telemetry_s": 0.00101,
+          "rss_mb": 65.0
+        },
+        {
+          "decisions": 695,
+          "telemetry_seconds": 138.8,
+          "cpu_s": 0.109,
+          "wall_s": 0.123,
+          "cpu_s_per_telemetry_s": 0.00079,
+          "rss_mb": 65.0
+        }
+      ],
+      "median_cpu_s_per_telemetry_s": 0.00101,
+      "max_rss_mb": 65.0
+    },
+    "ml_on": {
+      "runs": [
+        {
+          "decisions": 695,
+          "telemetry_seconds": 138.8,
+          "cpu_s": 8.172,
+          "wall_s": 8.267,
+          "cpu_s_per_telemetry_s": 0.05888,
+          "rss_mb": 167.5
+        },
+        {
+          "decisions": 695,
+          "telemetry_seconds": 138.8,
+          "cpu_s": 6.953,
+          "wall_s": 6.984,
+          "cpu_s_per_telemetry_s": 0.05009,
+          "rss_mb": 168.5
+        },
+        {
+          "decisions": 695,
+          "telemetry_seconds": 138.8,
+          "cpu_s": 6.922,
+          "wall_s": 6.921,
+          "cpu_s_per_telemetry_s": 0.04987,
+          "rss_mb": 168.2
+        }
+      ],
+      "median_cpu_s_per_telemetry_s": 0.05009,
+      "max_rss_mb": 168.5
+    }
+  }
+}

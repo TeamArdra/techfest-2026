@@ -1,0 +1,535 @@
+{
+  "schema": "aegisflight.ardupilot_baseline_summary/1",
+  "environment": "SITL (live runs) + REPLAY (ML-off variant of the same bytes)",
+  "claim_class": "none (benign false-alarm / coverage / cost reference)",
+  "config": "Stage-1 configs/ unchanged (no ArduPilot profile)",
+  "runs": {
+    "ap_benign_groups_001": {
+      "stream_config": "groups",
+      "link_span_s": 139.7,
+      "decisions": 702,
+      "frames": 8559,
+      "pipe_identical": true,
+      "hash_chain_ok": true,
+      "orphan_after": "none",
+      "live_stage1_ml": {
+        "alert_decisions": 38,
+        "threat_decisions": 699,
+        "ground": {
+          "decisions": 231,
+          "alert_decisions": 15
+        },
+        "in_flight": {
+          "decisions": 471,
+          "alert_decisions": 23
+        },
+        "alert_types": {
+          "DOS": 35,
+          "TELEMETRY_MANIPULATION": 2,
+          "GPS_SPOOFING": 1
+        }
+      },
+      "replay_ml_off": {
+        "decisions": 700,
+        "alert_decisions": 5,
+        "ground": {
+          "decisions": 231,
+          "alert_decisions": 5
+        },
+        "in_flight": {
+          "decisions": 469,
+          "alert_decisions": 0
+        },
+        "alert_evidence": [
+          [
+            "GPS dropout 999.0s > 2.0s",
+            1
+          ],
+          [
+            "battery voltage rose 23.31 V (implausible)",
+            1
+          ],
+          [
+            "GNSS fix lost: fix_type=0, satellites=0 for 12 decisions",
+            1
+          ],
+          [
+            "GNSS fix lost: fix_type=0, satellites=0 for 32 decisions",
+            1
+          ],
+          [
+            "position residual 30.0 m \u2265 hard 30 m",
+            1
+          ],
+          [
+            "implausible altitude rate 2920.4 m/s",
+            1
+          ]
+        ]
+      },
+      "message_rates_hz": {
+        "HEARTBEAT": 0.945,
+        "SYS_STATUS": 1.818,
+        "GPS_RAW_INT": 1.818,
+        "GLOBAL_POSITION_INT": 4.538,
+        "ATTITUDE": 9.068,
+        "VFR_HUD": 4.53
+      },
+      "aggregate_msg_rate_hz": 61.26,
+      "link_bytes_per_s": 2533.8,
+      "other_message_types": 15,
+      "decision_latency_ms": {
+        "mean": 10.5182,
+        "p50": 10.457,
+        "p95": 12.74,
+        "p99": 18.168,
+        "max": 24.633
+      },
+      "tick_close_to_emit_ms": {
+        "p50": 5.6032,
+        "p95": 5.9266,
+        "p99": 6.4401,
+        "max": 38.87
+      },
+      "resources_ids_process_ml_on": {
+        "cpu_pct_of_one_core_mean": 5.54,
+        "cpu_pct_of_one_core_max": 9.3,
+        "cpu_seconds_total": 7.91,
+        "wall_seconds": 142.6,
+        "rss_mb_max": 165.6,
+        "threads_max": 31,
+        "note": "Windows IDS process only (this script incl. pipeline, ML, SQLite); the WSL simulator is excluded"
+      },
+      "late_ticks": 0,
+      "bad_frames": 0,
+      "unverified_frames": 0
+    },
+    "ap_benign_six_001": {
+      "stream_config": "six",
+      "link_span_s": 138.8,
+      "decisions": 697,
+      "frames": 3660,
+      "pipe_identical": true,
+      "hash_chain_ok": true,
+      "orphan_after": "none",
+      "live_stage1_ml": {
+        "alert_decisions": 41,
+        "threat_decisions": 569,
+        "ground": {
+          "decisions": 232,
+          "alert_decisions": 15
+        },
+        "in_flight": {
+          "decisions": 465,
+          "alert_decisions": 26
+        },
+        "alert_types": {
+          "DOS": 38,
+          "TELEMETRY_MANIPULATION": 2,
+          "GPS_SPOOFING": 1
+        }
+      },
+      "replay_ml_off": {
+        "decisions": 695,
+        "alert_decisions": 5,
+        "ground": {
+          "decisions": 232,
+          "alert_decisions": 5
+        },
+        "in_flight": {
+          "decisions": 463,
+          "alert_decisions": 0
+        },
+        "alert_evidence": [
+          [
+            "heartbeat stale 999.0s > 3.0s",
+            1
+          ],
+          [
+            "GPS dropout 999.0s > 2.0s",
+            1
+          ],
+          [
+            "battery voltage rose 23.25 V (implausible)",
+            1
+          ],
+          [
+            "GNSS fix lost: fix_type=0, satellites=0 for 12 decisions",
+            1
+          ],
+          [
+            "GNSS fix lost: fix_type=0, satellites=0 for 32 decisions",
+            1
+          ],
+          [
+            "position residual 30.0 m \u2265 hard 30 m",
+            1
+          ],
+          [
+            "implausible altitude rate 2920.4 m/s",
+            1
+          ]
+        ]
+      },
+      "message_rates_hz": {
+        "HEARTBEAT": 0.951,
+        "SYS_STATUS": 1.83,
+        "GPS_RAW_INT": 4.561,
+        "GLOBAL_POSITION_INT": 4.569,
+        "ATTITUDE": 9.13,
+        "VFR_HUD": 4.561
+      },
+      "aggregate_msg_rate_hz": 26.37,
+      "link_bytes_per_s": 1045.0,
+      "other_message_types": 6,
+      "decision_latency_ms": {
+        "mean": 10.3736,
+        "p50": 10.287,
+        "p95": 12.23,
+        "p99": 17.94,
+        "max": 29.584
+      },
+      "tick_close_to_emit_ms": {
+        "p50": 5.524,
+        "p95": 5.8223,
+        "p99": 6.1206,
+        "max": 12.14
+      },
+      "resources_ids_process_ml_on": {
+        "cpu_pct_of_one_core_mean": 7.21,
+        "cpu_pct_of_one_core_max": 10.8,
+        "cpu_seconds_total": 10.2,
+        "wall_seconds": 141.4,
+        "rss_mb_max": 165.2,
+        "threads_max": 31,
+        "note": "Windows IDS process only (this script incl. pipeline, ML, SQLite); the WSL simulator is excluded"
+      },
+      "late_ticks": 0,
+      "bad_frames": 0,
+      "unverified_frames": 0
+    },
+    "ap_benign_six_002": {
+      "stream_config": "six",
+      "link_span_s": 139.8,
+      "decisions": 702,
+      "frames": 3660,
+      "pipe_identical": true,
+      "hash_chain_ok": true,
+      "orphan_after": "none",
+      "live_stage1_ml": {
+        "alert_decisions": 41,
+        "threat_decisions": 611,
+        "ground": {
+          "decisions": 236,
+          "alert_decisions": 15
+        },
+        "in_flight": {
+          "decisions": 466,
+          "alert_decisions": 26
+        },
+        "alert_types": {
+          "DOS": 38,
+          "TELEMETRY_MANIPULATION": 2,
+          "GPS_SPOOFING": 1
+        }
+      },
+      "replay_ml_off": {
+        "decisions": 700,
+        "alert_decisions": 5,
+        "ground": {
+          "decisions": 236,
+          "alert_decisions": 5
+        },
+        "in_flight": {
+          "decisions": 464,
+          "alert_decisions": 0
+        },
+        "alert_evidence": [
+          [
+            "heartbeat stale 999.0s > 3.0s",
+            1
+          ],
+          [
+            "GPS dropout 999.0s > 2.0s",
+            1
+          ],
+          [
+            "battery voltage rose 23.04 V (implausible)",
+            1
+          ],
+          [
+            "GNSS fix lost: fix_type=0, satellites=0 for 12 decisions",
+            1
+          ],
+          [
+            "GNSS fix lost: fix_type=0, satellites=0 for 32 decisions",
+            1
+          ],
+          [
+            "position residual 30.0 m \u2265 hard 30 m",
+            1
+          ],
+          [
+            "implausible altitude rate 2920.4 m/s",
+            1
+          ]
+        ]
+      },
+      "message_rates_hz": {
+        "HEARTBEAT": 0.945,
+        "SYS_STATUS": 1.817,
+        "GPS_RAW_INT": 4.529,
+        "GLOBAL_POSITION_INT": 4.537,
+        "ATTITUDE": 9.066,
+        "VFR_HUD": 4.529
+      },
+      "aggregate_msg_rate_hz": 26.19,
+      "link_bytes_per_s": 1037.7,
+      "other_message_types": 6,
+      "decision_latency_ms": {
+        "mean": 10.7953,
+        "p50": 10.383,
+        "p95": 14.431,
+        "p99": 22.098,
+        "max": 54.412
+      },
+      "tick_close_to_emit_ms": {
+        "p50": 5.538,
+        "p95": 5.837,
+        "p99": 6.5931,
+        "max": 17.27
+      },
+      "resources_ids_process_ml_on": {
+        "cpu_pct_of_one_core_mean": 7.49,
+        "cpu_pct_of_one_core_max": 12.3,
+        "cpu_seconds_total": 10.66,
+        "wall_seconds": 142.5,
+        "rss_mb_max": 164.8,
+        "threads_max": 31,
+        "note": "Windows IDS process only (this script incl. pipeline, ML, SQLite); the WSL simulator is excluded"
+      },
+      "late_ticks": 0,
+      "bad_frames": 0,
+      "unverified_frames": 0
+    },
+    "ap_benign_six_003": {
+      "stream_config": "six",
+      "link_span_s": 139.7,
+      "decisions": 702,
+      "frames": 3660,
+      "pipe_identical": true,
+      "hash_chain_ok": true,
+      "orphan_after": "none",
+      "live_stage1_ml": {
+        "alert_decisions": 41,
+        "threat_decisions": 622,
+        "ground": {
+          "decisions": 234,
+          "alert_decisions": 15
+        },
+        "in_flight": {
+          "decisions": 468,
+          "alert_decisions": 26
+        },
+        "alert_types": {
+          "DOS": 38,
+          "TELEMETRY_MANIPULATION": 2,
+          "GPS_SPOOFING": 1
+        }
+      },
+      "replay_ml_off": {
+        "decisions": 700,
+        "alert_decisions": 5,
+        "ground": {
+          "decisions": 234,
+          "alert_decisions": 5
+        },
+        "in_flight": {
+          "decisions": 466,
+          "alert_decisions": 0
+        },
+        "alert_evidence": [
+          [
+            "heartbeat stale 999.0s > 3.0s",
+            1
+          ],
+          [
+            "GPS dropout 999.0s > 2.0s",
+            1
+          ],
+          [
+            "battery voltage rose 23.03 V (implausible)",
+            1
+          ],
+          [
+            "GNSS fix lost: fix_type=0, satellites=0 for 12 decisions",
+            1
+          ],
+          [
+            "GNSS fix lost: fix_type=0, satellites=0 for 32 decisions",
+            1
+          ],
+          [
+            "position residual 30.0 m \u2265 hard 30 m",
+            1
+          ],
+          [
+            "implausible altitude rate 2920.4 m/s",
+            1
+          ]
+        ]
+      },
+      "message_rates_hz": {
+        "HEARTBEAT": 0.945,
+        "SYS_STATUS": 1.818,
+        "GPS_RAW_INT": 4.53,
+        "GLOBAL_POSITION_INT": 4.537,
+        "ATTITUDE": 9.067,
+        "VFR_HUD": 4.53
+      },
+      "aggregate_msg_rate_hz": 26.19,
+      "link_bytes_per_s": 1037.8,
+      "other_message_types": 6,
+      "decision_latency_ms": {
+        "mean": 10.7682,
+        "p50": 10.361,
+        "p95": 14.392,
+        "p99": 22.167,
+        "max": 62.733
+      },
+      "tick_close_to_emit_ms": {
+        "p50": 5.538,
+        "p95": 5.8269,
+        "p99": 8.3519,
+        "max": 29.46
+      },
+      "resources_ids_process_ml_on": {
+        "cpu_pct_of_one_core_mean": 7.46,
+        "cpu_pct_of_one_core_max": 13.8,
+        "cpu_seconds_total": 10.62,
+        "wall_seconds": 142.4,
+        "rss_mb_max": 165.6,
+        "threads_max": 31,
+        "note": "Windows IDS process only (this script incl. pipeline, ML, SQLite); the WSL simulator is excluded"
+      },
+      "late_ticks": 0,
+      "bad_frames": 0,
+      "unverified_frames": 0
+    },
+    "ap_benign_six_004": {
+      "stream_config": "six",
+      "link_span_s": 139.7,
+      "decisions": 702,
+      "frames": 3660,
+      "pipe_identical": true,
+      "hash_chain_ok": true,
+      "orphan_after": "none",
+      "live_stage1_ml": {
+        "alert_decisions": 40,
+        "threat_decisions": 621,
+        "ground": {
+          "decisions": 233,
+          "alert_decisions": 15
+        },
+        "in_flight": {
+          "decisions": 469,
+          "alert_decisions": 25
+        },
+        "alert_types": {
+          "DOS": 38,
+          "TELEMETRY_MANIPULATION": 2,
+          "GPS_SPOOFING": 1
+        }
+      },
+      "replay_ml_off": {
+        "decisions": 700,
+        "alert_decisions": 5,
+        "ground": {
+          "decisions": 233,
+          "alert_decisions": 5
+        },
+        "in_flight": {
+          "decisions": 467,
+          "alert_decisions": 0
+        },
+        "alert_evidence": [
+          [
+            "heartbeat stale 999.0s > 3.0s",
+            1
+          ],
+          [
+            "GPS dropout 999.0s > 2.0s",
+            1
+          ],
+          [
+            "battery voltage rose 23.03 V (implausible)",
+            1
+          ],
+          [
+            "GNSS fix lost: fix_type=0, satellites=0 for 12 decisions",
+            1
+          ],
+          [
+            "GNSS fix lost: fix_type=0, satellites=0 for 32 decisions",
+            1
+          ],
+          [
+            "position residual 30.0 m \u2265 hard 30 m",
+            1
+          ],
+          [
+            "implausible altitude rate 2920.4 m/s",
+            1
+          ]
+        ]
+      },
+      "message_rates_hz": {
+        "HEARTBEAT": 0.945,
+        "SYS_STATUS": 1.818,
+        "GPS_RAW_INT": 4.53,
+        "GLOBAL_POSITION_INT": 4.537,
+        "ATTITUDE": 9.066,
+        "VFR_HUD": 4.53
+      },
+      "aggregate_msg_rate_hz": 26.19,
+      "link_bytes_per_s": 1037.8,
+      "other_message_types": 6,
+      "decision_latency_ms": {
+        "mean": 10.3587,
+        "p50": 10.348,
+        "p95": 12.135,
+        "p99": 16.744,
+        "max": 20.744
+      },
+      "tick_close_to_emit_ms": {
+        "p50": 5.5395,
+        "p95": 5.8215,
+        "p99": 6.0229,
+        "max": 32.15
+      },
+      "resources_ids_process_ml_on": {
+        "cpu_pct_of_one_core_mean": 5.47,
+        "cpu_pct_of_one_core_max": 9.3,
+        "cpu_seconds_total": 7.81,
+        "wall_seconds": 142.5,
+        "rss_mb_max": 165.6,
+        "threads_max": 31,
+        "note": "Windows IDS process only (this script incl. pipeline, ML, SQLite); the WSL simulator is excluded"
+      },
+      "late_ticks": 0,
+      "bad_frames": 0,
+      "unverified_frames": 0
+    }
+  },
+  "totals": {
+    "flights": 5,
+    "stage1_ml_on_live_ground_decisions": 1166,
+    "stage1_ml_on_live_ground_alert_decisions": 75,
+    "stage1_ml_on_live_in_flight_decisions": 2339,
+    "stage1_ml_on_live_in_flight_alert_decisions": 126,
+    "ml_off_replay_ground_decisions": 1166,
+    "ml_off_replay_ground_alert_decisions": 25,
+    "ml_off_replay_in_flight_decisions": 2329,
+    "ml_off_replay_in_flight_alert_decisions": 0
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "tlog": "data/ardupilot/raw/ap_benign_six_002.clean.tlog",
+  "config_dir": "configs (Stage-1 default)",
+  "ml_enabled": true,
+  "clock_offset_s_used_for_phases": -1.975558,
+  "decisions": 700,
+  "threat_decisions": 609,
+  "alert_decisions": 41,
+  "alert_rate_per_decision": 0.05857,
+  "by_phase": {
+    "boot": {
+      "decisions": 7,
+      "threat": 7,
+      "alerts": 1
+    },
+    "await_gps": {
+      "decisions": 50,
+      "threat": 47,
+      "alerts": 5
+    },
+    "arm": {
+      "decisions": 179,
+      "threat": 132,
+      "alerts": 9
+    },
+    "takeoff": {
+      "decisions": 48,
+      "threat": 40,
+      "alerts": 3
+    },
+    "square": {
+      "decisions": 177,
+      "threat": 164,
+      "alerts": 10
+    },
+    "rtl": {
+      "decisions": 205,
+      "threat": 193,
+      "alerts": 11
+    },
+    "landed": {
+      "decisions": 34,
+      "threat": 26,
+      "alerts": 2
+    }
+  },
+  "detector_ge_0.5": {
+    "protocol_rule": 46,
+    "physics_consistency": 19,
+    "ml_anomaly": 650
+  },
+  "alert_types": {
+    "DOS": 38,
+    "TELEMETRY_MANIPULATION": 2,
+    "GPS_SPOOFING": 1
+  },
+  "alert_evidence_top": [
+    [
+      "ML anomaly score 1.00 \u2265 0.62 (driver: interarrival_jitter_ms, z=+9.9)",
+      4
+    ],
+    [
+      "position residual 30.0 m \u2265 hard 30 m",
+      2
+    ],
+    [
+      "ML anomaly score 1.00 \u2265 0.62 (driver: interarrival_jitter_ms, z=+11.1)",
+      2
+    ],
+    [
+      "ML anomaly score 1.00 \u2265 0.62 (driver: interarrival_jitter_ms, z=+16.2)",
+      2
+    ],
+    [
+      "ML anomaly score 1.00 \u2265 0.62 (driver: interarrival_jitter_ms, z=+13.0)",
+      2
+    ],
+    [
+      "ML anomaly score 1.00 \u2265 0.62 (driver: interarrival_jitter_ms, z=+14.7)",
+      2
+    ],
+    [
+      "ML anomaly score 1.00 \u2265 0.62 (driver: interarrival_jitter_ms, z=+13.2)",
+      2
+    ],
+    [
+      "heartbeat stale 999.0s > 3.0s",
+      1
+    ],
+    [
+      "GPS dropout 999.0s > 2.0s",
+      1
+    ],
+    [
+      "battery voltage rose 23.04 V (implausible)",
+      1
+    ],
+    [
+      "GNSS fix lost: fix_type=0, satellites=0 for 12 decisions",
+      1
+    ],
+    [
+      "ML anomaly score 0.96 \u2265 0.62 (driver: interarrival_jitter_ms, z=+6.9)",
+      1
+    ]
+  ],
+  "vs_live": {
+    "live_decisions": 702,
+    "replay_decisions": 700,
+    "same_threat_verdict": 700,
+    "same_alert_verdict": 700,
+    "compared": 700
+  }
+}

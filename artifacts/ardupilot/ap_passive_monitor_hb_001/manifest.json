@@ -1,0 +1,61 @@
+{
+  "schema": "aegisflight.ardupilot_sitl_manifest/1",
+  "name": "ap_passive_monitor_hb_001",
+  "wsl_run_dir": "/home/astryx/aegis_sitl_ap/logs/ap_passive_monitor_hb_001_20261010T063835Z",
+  "distro": "Ubuntu-24.04",
+  "command": [
+    "D:\\Ardra\\techfest-2026\\aegisflight\\.venv\\Scripts\\python.exe",
+    "scripts/ardupilot/run_ap_sitl_ids.py",
+    "--name",
+    "ap_passive_monitor_hb_001",
+    "--harness",
+    "passive",
+    "--monitor-heartbeat",
+    "--stream",
+    "six",
+    "--profile",
+    "flight",
+    "--no-ml",
+    "--max-s",
+    "700"
+  ],
+  "fetched_from_wsl": [
+    "preflight.txt",
+    "postcheck.txt",
+    "events.jsonl",
+    "downlink.tlog",
+    "arducopter.log",
+    "ss_default_before.txt",
+    "ss_default_after.txt",
+    "monitor_events.jsonl"
+  ],
+  "clean_tlog": {
+    "path": "D:\\Ardra\\techfest-2026\\aegisflight\\data\\ardupilot\\raw\\ap_passive_monitor_hb_001.clean.tlog",
+    "sha256": "04913505f19a431f88e9001834a14671f4363d2e583cef35d8cb3a61e09e69d1"
+  },
+  "observed_tlog": {
+    "path": "D:\\Ardra\\techfest-2026\\aegisflight\\data\\ardupilot\\raw\\ap_passive_monitor_hb_001.observed.tlog",
+    "sha256": "04913505f19a431f88e9001834a14671f4363d2e583cef35d8cb3a61e09e69d1"
+  },
+  "attack": null,
+  "origin_ns": 35287885370900,
+  "provenance": {
+    "collected_utc": "2026-10-10T06:41:00.126421+00:00",
+    "aegisflight_commit": "9a6cd0274cd0a15ed52278cce0bd7df5713bfb68",
+    "working_tree_dirty": true,
+    "dirty_paths_count": 5,
+    "python": "3.13.15",
+    "packages": {
+      "pymavlink": "2.4.50",
+      "numpy": "2.5.3",
+      "scikit-learn": "1.9.1",
+      "joblib": "1.6.0",
+      "scipy": "1.18.1"
+    },
+    "model_sha256": "3fe74cddf3689e169610ffd783b109b6539cc6c03629bd1e4bb8b1d3842939c4",
+    "configs_sha256": "f9f7de15a4127dab1260a32c9412a0a051d3b5b68530eced074ae87c2693cb23",
+    "command_line": "scripts/ardupilot/run_ap_sitl_ids.py --name ap_passive_monitor_hb_001 --harness passive --monitor-heartbeat --stream six --profile flight --no-ml --max-s 700"
+  },
+  "preflight": "== ap_netns_run_passive 20261010T063836Z run_dir=/home/astryx/aegis_sitl_ap/logs/ap_passive_monitor_hb_001_20261010T063835Z\nkernel:         6.18.40.1-microsoft-standard-WSL2\nbinary sha256:  fdc6f68f84e1473597dff39b91b412d081d09ba03716892ebcc78d76aadeb247\nardupilot HEAD: dbe792162d06cab66c3475fd5556bf7a120f119e\ndefaults:       /home/astryx/ardupilot/Tools/autotest/default_params/copter.parm sha256 5e01345b45d1c6190b28bece5638bbdd4cf1cce35e05bbbf480ab24d2b51aa0e\nextra defaults: /mnt/d/Ardra/techfest-2026/aegisflight/scripts/ardupilot/sitl_defaults_monitor_port.parm sha256 2c39b8188ee78e91c079300e607d4dc47d74e98ed1b677b1b68a6ea0ce6cf1f8\ncollector:      /mnt/d/Ardra/techfest-2026/aegisflight/scripts/ardupilot/ap_gcs_pipe.py sha256 41ff775144d9e35fd0f244af5f3f6ad1e64920e9a5e5faf767b6ee8b201bc807\nmonitor:        /mnt/d/Ardra/techfest-2026/aegisflight/scripts/ardupilot/ap_passive_monitor_pipe.py sha256 3f996043a19ff588de27c47bfe8819108d9494a01ce7982591936b0970b2bd59\ndefault netns:  net:[4026531833]\n",
+  "postcheck": "== post-check (default namespace)\ntracked arducopter pid 16656: gone\nlisteners on the SITL ports in default namespace: none\nnew listeners in default namespace vs before: none\narducopter processes remaining: none\n== summary: rc=0 leak=no remaining_process=no backstop=no\n"
+}

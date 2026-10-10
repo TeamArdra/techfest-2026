@@ -1,0 +1,29 @@
+{
+  "tlog": "data/hardware/raw/pixhawk6x_passive_001.tlog",
+  "config_dir": "configs (Stage-1 default)",
+  "ml_enabled": false,
+  "clock_offset_s_used_for_phases": 0.0,
+  "decisions": 896,
+  "threat_decisions": 896,
+  "alert_decisions": 45,
+  "alert_rate_per_decision": 0.05022,
+  "by_phase": {
+    "boot": {
+      "decisions": 896,
+      "threat": 896,
+      "alerts": 45
+    }
+  },
+  "detector_ge_0.5": {
+    "protocol_rule": 896
+  },
+  "alert_types": {
+    "DOS": 45
+  },
+  "alert_evidence_top": [
+    [
+      "GPS dropout 999.0s > 2.0s",
+      45
+    ]
+  ]
+}

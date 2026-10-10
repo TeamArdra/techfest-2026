@@ -1,0 +1,3 @@
+{"t_unix": 1791614317.191517, "event": "connected", "port": 5762}
+{"t_unix": 1791614317.32286, "event": "first_frame", "msg": "STATUSTEXT"}
+{"t_unix": 1791614459.266718, "event": "end", "frames": 229, "bad_data": 0, "tx_frames": 130, "tx_bytes": 2730, "tx_message_types": ["HEARTBEAT"], "receive_only": false, "counts": {"STATUSTEXT": 38, "PARAM_VALUE": 40, "HEARTBEAT": 134, "TIMESYNC": 13, "GPS_GLOBAL_ORIGIN": 2, "HOME_POSITION": 2}}

@@ -1,0 +1,84 @@
+{
+  "schema": "aegisflight.ardupilot_p2_preregistration_addendum/1",
+  "addendum_utc": "2026-10-10T06:16:53.762571+00:00",
+  "applies_to": "artifacts/ardupilot/p2_position_drift_preregistration.json",
+  "evaluator_sha256_at_signing": "7bda4c876696a3c85fd73822cf522e39750ab97da0c48bd9a72a0282ac0aad5e",
+  "disclosure": "the orchestrator's end-of-run console summary (alert counts per phase) for the attack runs had been printed before the evaluator was fixed; the criteria and parameters were fixed before any run and were not changed afterwards.",
+  "changes": [
+    {
+      "n": 1,
+      "when": "2026-10-10T06:16:53.762571+00:00",
+      "what": "one key path, in the validity gate prereg_matches_run_spec; no criterion, threshold, window, parameter or verdict logic was touched",
+      "why": "scripts/ardupilot/evaluate_ap_attack.py raised KeyError: 'attack_spec' at first use (it looked the attack spec up at the top level of the pre-registration, which stores it at attack.spec). All three attack runs had already completed; no evaluation output of any kind existed when the fix was made (the evaluator crashed before writing anything)."
+    },
+    {
+      "n": 2,
+      "when": "2026-10-10T06:18:09.983033+00:00",
+      "what": "output label only: control_arm.alerts_whole_flight_inflight_phases renamed alerts_whole_flight_all_phases (+ a note). The value (5 in every run) counts ALL alerts in the clean replay, including the 5 start-up alerts, because phases are not labelled there; the old name wrongly implied in-flight.",
+      "why": "found while reading the first successful evaluation; no criterion, threshold, window, parameter or verdict changed, and the evaluation was re-run afterwards with identical verdicts",
+      "order_note": "the evaluation outputs were regenerated in the same step as the edit; no evaluation output from before this label change exists"
+    },
+    {
+      "n": 3,
+      "when": "2026-10-10T06:51:30.977570+00:00",
+      "file": "scripts/ardupilot/run_ap_sitl_ids.py",
+      "what": "added optional `--harness {standard,passive}` (default standard = the harness the P2 runs used), `--monitor-heartbeat` (passive only), and one extra fetched file name (`monitor_events.jsonl`). Default behaviour is unchanged; no metric, gate or output field of the standard path changed.",
+      "why": "deployment-preparation experiment on a parameter-configured, receive-only monitor port (docs/ONBOARD_DEPLOYMENT.md). It is separate from the registered P2 and is not scored by the pre-registration.",
+      "sha256_at_signing": "1f05ac6fd4e4dffe4975af13ba8937f51ae60b3226d8b6a40a60c72b4c8b85ac",
+      "sha256_now": "8395366d38358c5120eeac30602cd728cd4e9fe14ffd4feec4af3d67985a501e"
+    },
+    {
+      "n": 4,
+      "when": "2026-10-10T07:13:29.292392+00:00",
+      "what": "post-review hardening after independent code and security review (no criterion, threshold, window, parameter or attack logic touched; the detectors, fusion, configs, attack, collector and ap_netns_run.sh remain byte-identical to the registered versions; run_ap_sitl_ids.py, evaluate_ap_attack.py, frame_pipe.py and frame_tap.py changed and are listed below)",
+      "files": {
+        "scripts/ardupilot/evaluate_ap_attack.py": {
+          "sha256_at_signing": "7bda4c876696a3c85fd73822cf522e39750ab97da0c48bd9a72a0282ac0aad5e",
+          "sha256_now": "5c370261042422880807f34336f14611ae5ff3a9b4234cda155c72da78ab24a4"
+        },
+        "scripts/ardupilot/run_ap_sitl_ids.py": {
+          "sha256_at_signing": "1f05ac6fd4e4dffe4975af13ba8937f51ae60b3226d8b6a40a60c72b4c8b85ac",
+          "sha256_now": "fbcb60eb1b106c7c619643450310489d1beca2b4619fa07b013186af90129339"
+        },
+        "src/aegisflight/sources/frame_pipe.py": {
+          "sha256_at_signing": "556045ece632232e08c1d9aa1b2536d2a3877b4993a7a56c5a1d05f7ca8e6424",
+          "sha256_now": "8df2c7d4fc9d03e0782361339da7336620e1fe247827638207ab6ea6d79cdb29"
+        },
+        "src/aegisflight/sources/frame_tap.py": {
+          "sha256_at_signing": "bf77abd4adaea8b40a05acf3ce08b7b2adb92cd26f2cb0f2ff7e7e681d5a25d6",
+          "sha256_now": "53cc8b0597e916c49fd4b903eab58d7d92c7286aadac0bd5c6647e9e8638430c"
+        }
+      },
+      "evaluate_ap_attack.py": "added validity gates: pipe reader had no error, phase events present, attack window inside the link span; and an INVALID outcome when the control window or the pre-onset in-flight set is EMPTY (C1/B1 would otherwise pass by absence of data). Re-run on all three attack runs: verdicts, criteria results and first alerts unchanged (15 gates, all true); evaluation.json files regenerated from the hardened evaluator.",
+      "run_ap_sitl_ids.py": "--name allow-list + shlex.quote + tar member allow-list/size cap (security review); a wall-clock/producer-death watchdog so a run with no frames cannot hang (code review H1/H1b); the monitor mode (receive_only_monitor / monitor_transmits_heartbeat / harness) is recorded in summary.json; WSL follow-up calls no longer abort a finished run. Verified on a fresh full flight (3,660 frames, byte-identical, 0 in-flight alerts).",
+      "frame_pipe.py / frame_tap.py": "a v2 record shorter than its header is corrupt (was reachable as IndexError in the tap); a torn length header is an error not a clean EOF; error is recorded before eof; the tap parses headers inside its fail-open try and closes tlogs even if the inner close raises. 4 new tests."
+    }
+  ],
+  "evaluator_sha256_final": "5c370261042422880807f34336f14611ae5ff3a9b4234cda155c72da78ab24a4",
+  "diff_signed_to_final": "--- signed\n+++ final\n@@ -74,7 +74,7 @@\n         \"attack_hook_errors_zero\": summary[\"tap_stats\"][\"hook_errors\"] == 0,\n         \"attack_gate_opened\": bool(res.get(\"gate_opened\")),\n         \"attack_frames_modified_min\": res.get(\"frames_modified\", 0) >= crit[\"min_frames_modified\"],\n-        \"prereg_matches_run_spec\": pre[\"attack_spec\"] == att.get(\"spec\"),\n+        \"prereg_matches_run_spec\": pre[\"attack\"][\"spec\"] == att.get(\"spec\"),\n         \"prereg_config_matches_run\": pre[\"config_dir\"] == run_cfg,\n         \"prereg_ml_matches_run\": pre[\"ml_enabled\"] == summary[\"ml_enabled\"],\n     }\n@@ -127,8 +127,9 @@\n                          \"alert_types_in_window\": sorted({d[\"type\"] for d in obs_alerts}),\n                          \"pre_onset_inflight_decisions\": len(pre_onset), \"pre_onset_inflight_alerts\": len(pre_fa)},\n         \"control_arm\": {\"decisions_in_window\": len(ctrl_win), \"alert_decisions_in_window\": len(ctrl_alerts),\n-                        \"alerts_whole_flight_inflight_phases\": len(ctrl_inflight_fa),\n-                        \"note\": \"replay of this run's CLEAN frames; phases not labelled here\"},\n+                        \"alerts_whole_flight_all_phases\": len(ctrl_inflight_fa),\n+                        \"note\": \"replay of this run's CLEAN frames; phases are not labelled here, so the \"\n+                                \"whole-flight count includes the start-up (boot/await_gps) alerts\"},\n         \"realised_attack\": {\"frames_modified\": res.get(\"frames_modified\"), \"effect\": effect},\n         \"criteria_checks\": checks,\n         \"criteria_note\": \"D1-D3 and C1 decide the verdict; B1 is the baseline guard and must also hold\",\n",
+  "note_files_not_in_signed_set": [
+    "scripts/ardupilot/ap_netns_run_passive.sh",
+    "scripts/ardupilot/ap_passive_monitor_pipe.py",
+    "scripts/ardupilot/ap_param_probe.py",
+    "scripts/ardupilot/sitl_defaults_monitor_port.parm",
+    "scripts/ardupilot/measure_replay_cost.py",
+    "scripts/hardware/*"
+  ],
+  "unchanged_since_signing_and_used_by_the_three_attack_runs": {
+    "scripts/ardupilot/ap_attack.py": true,
+    "scripts/ardupilot/replay_ap_tlog.py": true,
+    "scripts/ardupilot/ap_gcs_pipe.py": true,
+    "scripts/ardupilot/ap_netns_run.sh": true,
+    "src/aegisflight/proxy/attacks_live.py": true,
+    "src/aegisflight/sources/frame_tap.py": true,
+    "src/aegisflight/sources/frame_pipe.py": true,
+    "src/aegisflight/detectors/physics.py": true,
+    "src/aegisflight/detectors/protocol.py": true,
+    "src/aegisflight/fusion/engine.py": true,
+    "configs/detector.yaml": true,
+    "configs/simulation.yaml": true
+  },
+  "note_evaluator_sha256_final": "kept current with the file; see changes[] for the history (the value after change 2 was 77624e10...)",
+  "terminology": "'pre-registered' / 'signed' mean: recorded and hashed with a self-written timestamp on an untracked file; there is no cryptographic signature",
+  "timestamp_caveat": "each changes[].when is the time the addendum entry was written, not the time of the edit; the edit preceded it"
+}

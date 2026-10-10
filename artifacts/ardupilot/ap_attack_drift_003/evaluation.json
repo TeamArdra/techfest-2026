@@ -1,0 +1,95 @@
+{
+  "run": "artifacts\\ardupilot\\ap_attack_drift_003",
+  "environment": "SITL (ArduCopter 4.7.1 in an isolated netns; pipe transport; wall-clock 1x)",
+  "attack": "position_drift (GLOBAL_POSITION_INT lat/lon, downlink)",
+  "claim_class": "link-level detection (SITL); estimator and flight unaffected",
+  "validity_gates": {
+    "harness_exit_code_0": true,
+    "pipe_integrity_identical": true,
+    "pipe_overflow_zero": true,
+    "pipe_reader_no_error": true,
+    "phase_events_present": true,
+    "window_inside_link": true,
+    "hash_chain_ok": true,
+    "no_orphan_simulator": true,
+    "no_default_netns_leak": true,
+    "attack_hook_errors_zero": true,
+    "attack_gate_opened": true,
+    "attack_frames_modified_min": true,
+    "prereg_matches_run_spec": true,
+    "prereg_config_matches_run": true,
+    "prereg_ml_matches_run": true
+  },
+  "window_decision_time": {
+    "gate_t_s": 56.078,
+    "onset_t_s": 61.078,
+    "end_t_s": 86.078
+  },
+  "attack_result": {
+    "gate_opened": true,
+    "gate_relative_alt_m": 12.234,
+    "gate_open_recv_ns": 33861396562900,
+    "frames_before_gate": 1497,
+    "frames_seen_by_attack": 2163,
+    "frames_modified": 116,
+    "frames_skipped_signed": 0,
+    "actual_effect": {
+      "max_lat_lon_delta_m": 124.54810037884036,
+      "mean_lat_lon_delta_m": 63.307169513702945,
+      "position_residual_proxy_estimate_m": 63.307169513702945,
+      "frames_counted": 116
+    }
+  },
+  "window_scored_t_s": [
+    61.078,
+    96.078
+  ],
+  "observed_arm": {
+    "decisions_in_window": 175,
+    "alert_decisions_in_window": 7,
+    "first_alert": {
+      "t": 63.8,
+      "type": "GPS_SPOOFING",
+      "score": 0.55,
+      "t_after_onset_s": 2.72,
+      "contributing_detectors": [
+        "physics_consistency"
+      ],
+      "evidence": [
+        "position residual 13.3 m > 12 m (reported track diverges from velocity)"
+      ],
+      "event_id": 6,
+      "hash": "d7a9628935ed14fd9c752aad1b4dcc9e0b42b4ba9b4e5cc8ac7176dc49d0627a"
+    },
+    "alert_types_in_window": [
+      "GPS_SPOOFING"
+    ],
+    "pre_onset_inflight_decisions": 66,
+    "pre_onset_inflight_alerts": 0
+  },
+  "control_arm": {
+    "decisions_in_window": 175,
+    "alert_decisions_in_window": 0,
+    "alerts_whole_flight_all_phases": 5,
+    "note": "replay of this run's CLEAN frames; phases are not labelled here, so the whole-flight count includes the start-up (boot/await_gps) alerts"
+  },
+  "realised_attack": {
+    "frames_modified": 116,
+    "effect": {
+      "max_lat_lon_delta_m": 124.54810037884036,
+      "mean_lat_lon_delta_m": 63.307169513702945,
+      "position_residual_proxy_estimate_m": 63.307169513702945,
+      "frames_counted": 116
+    }
+  },
+  "criteria_checks": {
+    "D1_alert_in_window": true,
+    "D2_alert_type_expected": true,
+    "D3_physics_detector_contributed": true,
+    "C1_control_arm_alert_free_in_window": true,
+    "B1_pre_onset_inflight_false_alarms_le": true
+  },
+  "criteria_note": "D1-D3 and C1 decide the verdict; B1 is the baseline guard and must also hold",
+  "verdict": "DETECTED",
+  "failed_criteria": []
+}

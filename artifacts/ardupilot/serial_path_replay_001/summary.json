@@ -1,0 +1,79 @@
+{
+  "schema": "aegisflight.serial_monitor_run/1",
+  "started_utc": "2026-10-10T06:28:28.270056+00:00",
+  "port": "socket://127.0.0.1:18761",
+  "baud": 115200,
+  "ml_enabled": false,
+  "config_dir": "configs (Stage-1 default)",
+  "wall_s": 160.0,
+  "cpu_s": 0.91,
+  "cpu_pct_of_one_core_mean": 0.57,
+  "rss_mb_max": 55.9,
+  "decisions": 801,
+  "threat_decisions": 196,
+  "alert_decisions": 14,
+  "alert_types": {
+    "DOS": 10,
+    "TELEMETRY_MANIPULATION": 2,
+    "GPS_SPOOFING": 2
+  },
+  "decision_latency_ms": {
+    "mean": 0.1687,
+    "p99": 0.281,
+    "max": 0.7001
+  },
+  "transport": {
+    "connected": false,
+    "reader_running": true,
+    "reads": 136291,
+    "bytes_received": 136291,
+    "frames_received": 3442,
+    "garbage_bytes": 0,
+    "resync_events": 0,
+    "header_rejects": 0,
+    "crc_rejects": 0,
+    "unverifiable_rejects": 0,
+    "unverified_accepted": 0,
+    "unverifiable_ids": {},
+    "unverifiable_id_overflow": 0,
+    "crc_bytes_checked": 129407,
+    "partial_timeouts": 0,
+    "reader_faults": 0,
+    "dropped_overflow": 0,
+    "dropped_overflow_bytes": 0,
+    "queue_high_water": 18,
+    "max_poll_gap_s": 0.0515901,
+    "max_frames_per_read": 1,
+    "disconnects": 2,
+    "reconnects": 1,
+    "open_failures": 8,
+    "discarded_on_disconnect_bytes": 0,
+    "bytes_sent": 0,
+    "write_errors": 0,
+    "last_error": "SerialException('Could not open port socket://127.0.0.1:18761: [WinError 10061] No connection could be made because the target machine actively refused it')"
+  },
+  "source": {
+    "datagrams_received": 3442,
+    "frames_received": 3442,
+    "bad_frames": 0,
+    "sig_valid": 0,
+    "sig_invalid": 0,
+    "unverified_frames": 0,
+    "ticks_emitted": 1601,
+    "late_ticks": 0,
+    "late_frames": 0,
+    "dropped_overflow": 0,
+    "dropped_overflow_bytes": 0,
+    "queue_high_water": 18,
+    "max_poll_gap_s": 0.0515901
+  },
+  "passive_check": {
+    "bytes_sent": 0,
+    "passed": true
+  },
+  "hash_chain": {
+    "ok": true,
+    "length": 14
+  },
+  "exit_code": 0
+}

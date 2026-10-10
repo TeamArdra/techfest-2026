@@ -1,0 +1,186 @@
+{
+  "schema": "aegisflight.ardupilot_sitl_run/1",
+  "environment": "SITL (ArduCopter 4.7.1 in an isolated netns; pipe transport; wall-clock 1x)",
+  "attack": "NONE",
+  "claim_class": "none (benign false-alarm / cost reference)",
+  "stream_config": "six",
+  "profile": "flight",
+  "started_utc": "2026-10-10T06:38:35.549270+00:00",
+  "harness_exit_code": 0,
+  "ticks": 1434,
+  "link_span_s": 141.5,
+  "decisions_total": 717,
+  "decisions": 711,
+  "post_link_decisions": 6,
+  "threat_decisions": 711,
+  "alert_decisions": 36,
+  "alert_decisions_post_link": 0,
+  "false_alarm_rate_per_decision": 0.05063,
+  "by_phase": {
+    "boot": {
+      "decisions": 4,
+      "threat": 4,
+      "alerts": 1
+    },
+    "await_gps": {
+      "decisions": 61,
+      "threat": 61,
+      "alerts": 3
+    },
+    "arm": {
+      "decisions": 179,
+      "threat": 179,
+      "alerts": 9
+    },
+    "takeoff": {
+      "decisions": 47,
+      "threat": 47,
+      "alerts": 2
+    },
+    "square": {
+      "decisions": 176,
+      "threat": 176,
+      "alerts": 9
+    },
+    "rtl": {
+      "decisions": 206,
+      "threat": 206,
+      "alerts": 10
+    },
+    "landed": {
+      "decisions": 38,
+      "threat": 38,
+      "alerts": 2
+    },
+    "post_link": {
+      "decisions": 6,
+      "threat": 6,
+      "alerts": 0
+    }
+  },
+  "alert_types": {
+    "DOS": 36
+  },
+  "message_coverage_pipeline": {
+    "HEARTBEAT": {
+      "count": 134,
+      "rate_hz": 0.947
+    },
+    "SYS_STATUS": {
+      "count": 0,
+      "rate_hz": 0.0
+    },
+    "GPS_RAW_INT": {
+      "count": 0,
+      "rate_hz": 0.0
+    },
+    "GLOBAL_POSITION_INT": {
+      "count": 0,
+      "rate_hz": 0.0
+    },
+    "ATTITUDE": {
+      "count": 0,
+      "rate_hz": 0.0
+    },
+    "VFR_HUD": {
+      "count": 0,
+      "rate_hz": 0.0
+    }
+  },
+  "other_messages": {
+    "GPS_GLOBAL_ORIGIN": {
+      "count": 2,
+      "rate_hz": 0.014
+    },
+    "HOME_POSITION": {
+      "count": 2,
+      "rate_hz": 0.014
+    },
+    "PARAM_VALUE": {
+      "count": 40,
+      "rate_hz": 0.283
+    },
+    "STATUSTEXT": {
+      "count": 38,
+      "rate_hz": 0.269
+    },
+    "TIMESYNC": {
+      "count": 13,
+      "rate_hz": 0.092
+    }
+  },
+  "aggregate_msg_rate_hz": 1.62,
+  "link_bytes_per_s": 44.7,
+  "decision_latency_ms": {
+    "mean": 0.1252,
+    "p50": 0.12,
+    "p95": 0.167,
+    "p99": 0.221,
+    "max": 0.586
+  },
+  "tick_close_to_emit_ms": {
+    "p50": 5.4198,
+    "p95": 5.701,
+    "p99": 5.9478,
+    "max": 11.35
+  },
+  "resources_ids_process": {
+    "cpu_pct_of_one_core_mean": 1.32,
+    "cpu_pct_of_one_core_max": 4.6,
+    "cpu_seconds_total": 1.95,
+    "wall_seconds": 144.2,
+    "rss_mb_max": 58.6,
+    "threads_max": 19,
+    "note": "Windows IDS process only (this script incl. pipeline, ML, SQLite); the WSL simulator is excluded"
+  },
+  "source_stats": {
+    "datagrams_received": 229,
+    "frames_received": 229,
+    "bad_frames": 0,
+    "sig_valid": 0,
+    "sig_invalid": 0,
+    "unverified_frames": 0,
+    "ticks_emitted": 1434,
+    "late_ticks": 0,
+    "late_frames": 0,
+    "dropped_overflow": 0,
+    "dropped_overflow_bytes": 0,
+    "queue_high_water": 17,
+    "max_poll_gap_s": 0.0567206
+  },
+  "pipe_stats": {
+    "frames_received": 229,
+    "bytes_received": 6320,
+    "dropped_overflow": 0,
+    "dropped_overflow_bytes": 0,
+    "queue_high_water": 17,
+    "max_poll_gap_s": 0.0567206,
+    "eof": true,
+    "reader_running": false,
+    "last_error": null
+  },
+  "tap_stats": {
+    "frames_in": 229,
+    "frames_out": 229,
+    "hook_errors": 0,
+    "first_hook_error": null
+  },
+  "pipe_integrity": {
+    "checked": true,
+    "wsl_frames": 229,
+    "windows_frames": 229,
+    "identical_prefix_frames": 229,
+    "identical": true,
+    "clock_offset_us_median": -1847716,
+    "clock_offset_us_spread": 2920625
+  },
+  "hash_chain": {
+    "ok": true,
+    "length": 36,
+    "detail": "chain intact"
+  },
+  "orphan_arducopter_after_run": "none",
+  "ml_enabled": false,
+  "config_dir": "configs (Stage-1 default)",
+  "decision_span_s": 143.2
+}

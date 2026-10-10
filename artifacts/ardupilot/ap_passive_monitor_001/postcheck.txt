@@ -1,0 +1,6 @@
+== post-check (default namespace)
+tracked arducopter pid 16079: gone
+listeners on the SITL ports in default namespace: none
+new listeners in default namespace vs before: none
+arducopter processes remaining: none
+== summary: rc=0 leak=no remaining_process=no backstop=no

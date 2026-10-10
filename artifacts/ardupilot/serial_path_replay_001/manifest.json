@@ -1,0 +1,25 @@
+{
+  "schema": "aegisflight.serial_path_replay_manifest/1",
+  "environment": "REPLAY of an ArduCopter SITL capture over a LOOPBACK VIRTUAL serial port (socket://, 127.0.0.1) -- NOT a serial device",
+  "claim_class": "none (software-path behaviour: startup, steady state, simulated cable pull, shutdown, cost)",
+  "recorded_utc": "2026-10-10T06:31:38.209346+00:00",
+  "commands": [
+    "scripts/hardware/virtual_serial_replay.py data/ardupilot/raw/ap_benign_six_002.clean.tlog --port 18761 --drop-at 70 --drop-for 8 --ready-file <f>",
+    "scripts/hardware/run_serial_ids.py --port socket://127.0.0.1:18761 --allow-url --out-dir artifacts/ardupilot/serial_path_replay_001 --seconds 160 --health-interval 10"
+  ],
+  "capture": {
+    "path": "data\\ardupilot\\raw\\ap_benign_six_002.clean.tlog",
+    "sha256": "c87abf04a36e3dfc42dae15c51deda6f164b44a14cc0bfb7838c6f02f945cfb2",
+    "origin_run": "artifacts/ardupilot/ap_benign_six_002"
+  },
+  "ml_enabled": false,
+  "config": "Stage-1 configs/ unchanged",
+  "git_head": "9a6cd0274cd0a15ed52278cce0bd7df5713bfb68",
+  "reading": {
+    "steady_state": "frames 3442, crc/header/garbage/bad 0, reader_faults 0, bytes_sent 0, hash chain intact",
+    "outage": "server closed the connection and the listener for 8 s at stream t=70 s; reconnected at stream t=78.5 s (218 frames of the capture fell inside the gap and were never sent)",
+    "alerts_t_73_to_77": "heartbeat-stale / GPS-dropout DOS alerts during the gap (detectors cannot tell host-side port loss from link loss)",
+    "alerts_t_78_6_to_78_8": "recovery transient: heading/course mismatch, 'sequence gap 218 > 30', position residual 29 m -- false alarms caused by the outage itself",
+    "alerts_after_t_142": "the replay stream had ended (capture length ~139 s) before the runner's 160 s deadline; silence alerts after that are an artefact of the run length, not of the link"
+  }
+}
