@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "PX4_SITL_INTEGRATION.md",
+                "file": "STAGE2_PROGRESS.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "PX4_SITL_INTEGRATION"
+              "title": "STAGE2_PROGRESS"
             }
           }
         ]
@@ -41,7 +41,9 @@
               "type": "file-explorer",
               "state": {
                 "sortOrder": "alphabetical",
-                "autoReveal": false
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
               },
               "icon": "lucide-folder-closed",
               "title": "Files"
@@ -185,8 +187,9 @@
   },
   "active": "89831f38cadecc26",
   "lastOpenFiles": [
-    "STAGE2_PROGRESS.md",
     "STAGE2_RUNBOOK.md",
+    "PX4_SITL_INTEGRATION.md",
+    "STAGE2_PROGRESS.md",
     "HANDOFF.md",
     "FRONTEND.md",
     "API.md",
@@ -209,7 +212,6 @@
     "installation.md",
     "technical_proposal.md",
     "REPORT_ALIGNMENT.md",
-    "REFERENCES.md",
-    "RECOVERY_PRIORITY.md"
+    "REFERENCES.md"
   ]
 }
