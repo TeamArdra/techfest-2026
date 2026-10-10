@@ -1,0 +1,17 @@
+# Extra SITL defaults for the PASSIVE-MONITOR experiment (scripts/ardupilot/ap_netns_run_passive.sh).
+# Layered on top of Tools/autotest/default_params/copter.parm (--defaults a,b): SITL only, never a real FC.
+# SERIAL1 plays the dedicated telemetry port a companion-computer monitor would sit on; its streams are
+# configured here, ONCE, as persistent parameters -- the monitor then only listens and never transmits.
+#
+# NAMES: ArduCopter 4.7.1 has NO SRn_* parameters (read back from the simulator: they do not exist; the source
+# says "SR0 through SR6 was here"). Per-channel stream rates are MAVn_* (n = the n-th MAVLink channel). Which n
+# belongs to SERIAL1 was not known in advance, so MAV1_* is left at its default (0) and MAV2_* is set here;
+# the experiment's result says whether that mapping is right.
+# The stream-group rates are the "groups" configuration of docs/ARDUPILOT_SITL.md.
+SERIAL1_PROTOCOL 2
+MAV2_RAW_SENS 0
+MAV2_EXT_STAT 2
+MAV2_POSITION 5
+MAV2_EXTRA1 10
+MAV2_EXTRA2 5
+MAV2_EXTRA3 0
