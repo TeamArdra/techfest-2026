@@ -163,6 +163,12 @@ parameter or verdict logic changed, and the evaluation was re-run afterwards wit
 before the evaluator was fixed, so the evaluator was not "blind" in the strict sense; the criteria and parameters were nonetheless fixed in advance and are unchanged. One collector
 bug (a keyword clash in `event(...)`) crashed the very first flight attempt before any data were produced; the rerun is the evidence. The passive-monitor run `ap_passive_monitor_params_001` is the **second execution**: a first complete execution (8,581 frames, `tx_frames 0`) was discarded after a lint-only edit of the monitor script so that the recorded script hash matches the final file; its result did not differ materially. That run's `summary.json` says `stream_config: six` although the monitor port was configured by `MAV2_*` parameters (the label refers to the unused driver option on SERIAL0).
 
+## 6b. Re-run of §6 on the final code (2026-10-10, commit `eae85e6`, clean working tree)
+Same pre-registration file, same spec, ML off, three fresh flights, new run names (`ap_attack_final_drift_00{1,2,3}`; §6 runs untouched). **3 of 3 `DETECTED`**, all validity gates passed; first `GPS_SPOOFING` alert +2.69 s after
+onset in each (`physics_consistency` only); control arm 0/175 in each window; B1 passed; clean->observed re-application byte-identical (3,664/3,664 frames x3); live verdicts re-derived on 642/642 decisions x3.
+Paired live benign controls, ML off (`ap_benign_final_noml_00{1,2}`, no attack): 0/592 and 0/592 in-flight decisions alerted; each flight again had the 5 start-up alerts of §3. Differences from §6: the code is the committed final tree (it includes the extractor link-gap fix `eae85e6`,
+which does not affect gap-free streams, and the post-review transport hardening that the §6 runs predate). Same limits as §6: n = 3, one scenario, the easy case, link-level only, not a rate. Regenerate: the §8 commands with the new names.
+
 ## 7. Regression gate (project process §4)
 * `pytest` (with `addopts` overridden to see the summary line): **541 passed, 3 skipped** (the same 3 PTY tests that cannot run on Windows) = 502 prior + 39 new.
 * `ruff check src tests scripts backend`: clean.

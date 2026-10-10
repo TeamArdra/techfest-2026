@@ -1100,3 +1100,13 @@ one export in `sources/__init__.py`, and new files; the pre-existing `docs/.obsi
   because of the directory name and was left for the owner to delete.
 - **Independent review (done):** `aegis-reviewer`, `ecc:python-reviewer`, `ecc:security-reviewer`. Fixed: transport short-record handling, runner no-clobber + bounded memory + exit codes, `--name` validation, a no-frames watchdog, evaluator vacuous-pass guards, doc overstatements (no-0.0.0.0 wording, "no heartbeat needed", B5 count, Ctrl-C, MAVLink-1 wording, RTF, ML z-range, stale counts). Accepted/open (low): collector and harness scripts are in the registered, hashed set and were deliberately not edited (no real-vehicle guard in `ap_gcs_pipe.py`; outer-shell signal trap; pid-reuse before SIGKILL in the post-check; `socket://` host not restricted when `--allow-url`; ML model path resolved from the CWD).
 - **Not run / open:** any physical replug, any parameter write to the board, ML retraining on ArduPilot, post-reconnect hold-down, target-computer measurements.
+
+## 2026-10-10 - Software closure (no hardware): reconnect fix, final-code re-runs, six-scenario status
+- **Fix (`eae85e6`)**: `features/extractor.py` skips the position-residual increment when consecutive fixes are > 2 s apart and the yaw-vs-course check while GPS is > 2 s stale (`_LINK_GAP_S`). Root cause of the serial-reconnect false-alert burst (run 001: heading 89 deg, residual 29 m).
+  Reproduced by 2 failing unit tests first (`tests/unit/test_extractor_link_gap.py`; 2 further guard tests prove drift and frozen-attitude are still caught). Re-run `serial_path_replay_002` (same capture/outage): 1 recovery alert (`sequence gap 218`, true loss) instead of 4. n = 1 outage, virtual port.
+  Not a frozen contract (no feature order, field, schema or threshold changed); Stage-1 benchmark **6535 / 4 / 16826 / 65, per-attack table identical**.
+- **ArduPilot §6 re-run on final code**: 3/3 `DETECTED`, benign ML-off 0/592 x2 (`docs/ARDUPILOT_SITL.md` §6b).
+- **PX4 smoke on final code** (18 trials, same seeds/indices 0-2, clean tree, PX4 tree clean afterwards, no leftover processes): drift, injection, drop, delay, replay v2, GNSS each **3/3** detected; summaries `artifacts/sitl/closure/`.
+- **Gate**: `pytest` **545 passed, 3 skipped** (3 PTY tests, run on Linux in the previous sprint); `ruff check src tests scripts backend` clean.
+- **Not run / open**: live SITL for telemetry-manipulation and direct MAVLink-anomaly (no harness exists; not invented); informed GCS impersonation without signing (documented gap); start-up alerts; ML on ArduPilot; any hardware.
+

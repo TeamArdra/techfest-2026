@@ -46,7 +46,7 @@ aegis benchmark             # -> artifacts/benchmarks/summary.md + artifacts/fig
 
 ## 5. Tests
 ```bash
-pytest                      # 44 tests (~2 min; integration/e2e run full sessions)
+pytest                      # 545 passed, 3 skipped (~1 min)
 pytest tests/unit -q        # fast subset
 ruff check src tests        # lint
 ```
