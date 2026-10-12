@@ -127,6 +127,8 @@ at t=60.8s and t=61.0s - 0.9-1.1s *after* the attack window closed, not during i
 ~29-30m > 12m threshold, agreed by the ML detector (z~+235). The lag is consistent with `pos_residual_m` being a
 running dead-reckoning sum (`features/extractor.py _position_residual`), not an instantaneous feature - it crosses
 threshold only once enough drift has accumulated, here near the end of a single 15.4s window.
+*[Corrected 2026-10-12: that explanation is wrong - the drift is detected at attack release only, with no detection
+during the drift. See the 2026-10-12 correction entry at the end of this file.]*
 10 independent trials (seed 1001, `trial_index` 0-9, fresh SITL boot each, per `docs/ATTACK_PROXY.md` Sec3's
 randomisation plan: onset/duration/drift_rate/bearing each drawn uniformly from the disclosed ranges) were run.
 `scripts/sitl/make_p2_summary.py` aggregates trial manifests into `artifacts/sitl/P2_summary.md` with no hand-typed
@@ -137,7 +139,9 @@ numbers; raw per-trial manifests: `artifacts/sitl/p2_trial_{001,003..011}.{manif
 pre-onset portion (1404 pooled benign decisions). Time-to-first-detection measured from attack end: mean 0.62s,
 median 0.56s, min 0.24s, max 1.11s** (measuring from attack *end* rather than *onset* because `pos_residual_m` is a
 running dead-reckoning sum - see the first trial's analysis above; detection requires the accumulated drift to cross
-the 12m physics threshold, which for these durations/rates happens near or after the window closes). Expected vs.
+the 12m physics threshold, which for these durations/rates happens near or after the window closes).
+*[Corrected 2026-10-12: detected at attack release only; no detection during the drift - see the correction entry at
+the end of this file.]* Expected vs.
 proxy-measured actual displacement agreed to within 0.03-0.06% in every trial checked (ground truth is self-consistent: measured
 from the proxy's own frame log, never from the detector). n=10 is the design's floor, not a statistically powered
 sample - reported as counts, not a rate with confidence intervals. **The working tree was dirty (8 uncommitted
@@ -1106,7 +1110,14 @@ one export in `sources/__init__.py`, and new files; the pre-existing `docs/.obsi
   Reproduced by 2 failing unit tests first (`tests/unit/test_extractor_link_gap.py`; 2 further guard tests prove drift and frozen-attitude are still caught). Re-run `serial_path_replay_002` (same capture/outage): 1 recovery alert (`sequence gap 218`, true loss) instead of 4. n = 1 outage, virtual port.
   Not a frozen contract (no feature order, field, schema or threshold changed); Stage-1 benchmark **6535 / 4 / 16826 / 65, per-attack table identical**.
 - **ArduPilot §6 re-run on final code**: 3/3 `DETECTED`, benign ML-off 0/592 x2 (`docs/ARDUPILOT_SITL.md` §6b).
-- **PX4 smoke on final code** (18 trials, same seeds/indices 0-2, clean tree, PX4 tree clean afterwards, no leftover processes): drift, injection, drop, delay, replay v2, GNSS each **3/3** detected; summaries `artifacts/sitl/closure/`.
+- **PX4 smoke on final code** (18 trials, same seeds/indices 0-2, clean tree, PX4 tree clean afterwards, no leftover processes): drift, injection, drop, delay, replay v2, GNSS each **3/3** detected (drift: at attack release only, no detection during the drift - see the 2026-10-12 correction below); summaries `artifacts/sitl/closure/`.
 - **Gate**: `pytest` **545 passed, 3 skipped** (3 PTY tests, run on Linux in the previous sprint); `ruff check src tests scripts backend` clean.
 - **Not run / open**: live SITL for telemetry-manipulation and direct MAVLink-anomaly (no harness exists; not invented); informed GCS impersonation without signing (documented gap); start-up alerts; ML on ArduPilot; any hardware.
+
+## 2026-10-12 - Correction: PX4 position drift is detected at attack release only  (docs only; env: SITL; claim: link-level detection)
+- **What was wrong**: the 2026-10-06 P2 entry explained the late PX4 drift detection as accumulated drift crossing the 12 m threshold near the end of the window, and later entries and `docs/VALIDATION_EVIDENCE.md` reported "GPS-drift 10/10" / "3/3" without the caveat. The final readiness audit (commit `1d38693`) re-read the committed decision files and found this does not hold.
+- **What the artifacts show** (`artifacts/sitl/p2_trial_*` and `p2_final_trial_*`, `.ids_decisions.jsonl` against each manifest's onset/duration): in all 13 trials (10 original + 3 final-code) there are **0 threat decisions during the drift** and 0 before onset; the first `GPS_SPOOFING` decision comes 0.24-1.11 s **after** the drift window closes (1-2 such decisions per trial), with a residual of 28.3-29.6 m at the first, whatever the drift rate (2.4-9.3 m/s) or duration (15-38 s).
+- **Why**: `pos_residual_m` sums the last 15 position-fix increments (`_RESID_WINDOW`, `features/extractor.py`). PX4 SITL sends `GLOBAL_POSITION_INT` at about 50 Hz (769 modified frames in 15.39 s, `p2_final_trial_001.manifest.json`), so the window spans about 0.3 s and these drifts add under 3 m against the 12 m threshold. What crosses it is the snap-back when the modification stops (one increment, clamped at 30 m).
+- **Correct statement**: PX4 SITL position drift is **detected at attack release only; no detection during the drift**. A drift that is never released is not shown to be detected. This applies to every "GPS-drift 10/10" and "3/3" mention above. The counts, the 0 pre-onset false alarms and the generated summaries are unchanged (`P2_summary.md` already says the decision fired "at or after the attack window closed").
+- **Not changed**: no code, config, threshold, model or artifact; nothing re-run. The ArduPilot drift result (+2.69 s after onset, 5 Hz stream) is a separate measurement. Fixing the rate dependence would be a detector/feature change and is out of scope for the software freeze.
 
