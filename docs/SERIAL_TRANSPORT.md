@@ -209,6 +209,30 @@ USB drops, radio loss before `read()` returned the bytes); there is deliberately
 - `close()` is idempotent, stops the reader within one read timeout (also while waiting to
   reconnect), closes the port and drains the queue. `start()` after `close()` is a no-op.
 
+## Raw-byte tap and the probe's `--raw` capture (diagnostics, opt-in)
+- `SerialMavlinkTransport(raw_tap=callable(stamp_ns, data))` receives exactly what each `read()`
+  that returned data delivered, in order, with the same stamp the framer path uses, before the
+  bytes are framed. Default `None`: behaviour unchanged. It runs on the reader thread, is never
+  called for empty reads, never writes to the port (`bytes_sent` stays 0), and the transport keeps
+  no copy (no buffer grows inside it).
+- A tap that raises never stops framing or the reader. The exception is counted in
+  `raw_tap_errors` and kept in `raw_tap_last_error` (`last_error` is not touched, it stays a link
+  error). After `raw_tap_max_consecutive_errors` (default 10) failures **in a row** the tap is
+  disabled (`raw_tap_disabled`): a permanently broken sink costs a bounded number of exceptions,
+  while a one-off failure does not switch recording off for good.
+- `scripts/hardware/pixhawk_passive_probe.py --raw PATH [--raw-max-bytes N]` records those bytes to
+  a NEW file (never overwritten: exit 2 before the port is opened), as records of `>Q` monotonic-ns
+  stamp, `>I` length, then the bytes (`read_raw_records()` parses them; format in the script's
+  docstring). Record boundaries are read boundaries. The size cap defaults to 16 MiB; at the cap
+  recording stops and `raw_capture.cap_hit` is set while the run continues. The JSON report gains
+  `raw_capture` (path, records, bytes, cap flag, sha256) and `transport_state_sampled`.
+  `connected` / `reader_running` in the report are now sampled just before the transport is
+  closed (they were previously read after `close()` and therefore always false).
+- What this is not: a capture makes the bytes of a silent or garbled link inspectable afterwards.
+  It does not identify the cause (baud, wiring, radio configuration, a non-MAVLink protocol and a
+  hardware fault all remain open), and no raw capture from physical hardware exists yet. Tests
+  (`tests/unit/test_serial_raw_tap.py`) use scripted fake ports only.
+
 ## Tests (`tests/unit/test_mavlink_serial.py`)
 - Pure framer tests: fragmentation, bursts, v1/v2/signed, garbage, false magic bytes, CRC and
   flag failures, unknown ids (refused by default, `extra_crc`, opt-in mode), random chunking

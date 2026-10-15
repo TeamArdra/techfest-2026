@@ -57,6 +57,21 @@ exception inside the reader (a framing bug, not a link event) takes the same pat
 ``connected`` False, ``reader_faults`` bumped, cause in ``last_error``; ``reader_running`` says
 whether the thread is still alive.
 
+Raw-byte tap (diagnostics, optional)
+------------------------------------
+``raw_tap=callable(stamp_ns, data)`` receives exactly what each ``read()`` that returned data
+delivered, in order, with the same stamp the framer path uses (``clock_ns()`` read right after the
+read returned), *before* the bytes are framed. It exists so that a link that yields no valid
+frame can still be inspected afterwards; it does not by itself say why a link is silent or
+garbled. It runs on the reader thread (so it must be quick and must not call back into the
+transport), is never called for empty reads, and the transport keeps nothing for it (no buffer).
+A tap that raises never stops framing or the reader: the exception is counted in
+``raw_tap_errors`` and kept in ``raw_tap_last_error`` (``last_error`` is left alone, it belongs to
+link errors). After ``raw_tap_max_consecutive_errors`` failures IN A ROW the tap is disabled
+(``raw_tap_disabled``) and no longer called, so a permanently broken sink (disk full, closed
+file) costs a bounded number of exceptions instead of one per read; a success resets the run.
+With ``raw_tap=None`` (default) behaviour is unchanged. The tap never writes to the port.
+
 Passive by default: no GCS heartbeat is sent. ``send()`` exists for a future relay upstream;
 heartbeats and signing are deliberately not implemented here.
 """
@@ -414,6 +429,8 @@ class SerialMavlinkTransport:
         allow_url: bool = False,
         clock_ns: Callable[[], int] = time.monotonic_ns,
         serial_factory: Callable[[], SerialLike] | None = None,
+        raw_tap: Callable[[int, bytes], None] | None = None,
+        raw_tap_max_consecutive_errors: int = 10,
     ) -> None:
         if baudrate < 1:
             raise ValueError("baudrate must be >= 1")
@@ -424,6 +441,8 @@ class SerialMavlinkTransport:
             raise ValueError("max_read_bytes, queue_size and max_queue_bytes must be >= 1")
         if max_read_bytes > MAX_READ_BYTES_LIMIT:
             raise ValueError(f"max_read_bytes must be <= {MAX_READ_BYTES_LIMIT}")
+        if raw_tap_max_consecutive_errors < 1:
+            raise ValueError("raw_tap_max_consecutive_errors must be >= 1")
         if serial_factory is None:
             _check_port(port, allow_url)
         self.port = port
@@ -435,6 +454,9 @@ class SerialMavlinkTransport:
         self._reconnect = reconnect
         self._reconnect_interval_s = reconnect_interval_s
         self._clock_ns = clock_ns
+        self._raw_tap = raw_tap
+        self._raw_tap_max_errors = raw_tap_max_consecutive_errors
+        self._raw_tap_error_run = 0
         self._framer = MavlinkStreamFramer(extra_crc=extra_crc,
                                            accept_unverified_ids=accept_unverified_ids)
         self._q: queue.Queue[tuple[int, bytes]] = queue.Queue(maxsize=queue_size)
@@ -466,6 +488,9 @@ class SerialMavlinkTransport:
         self.bytes_sent = 0
         self.write_errors = 0
         self.last_error: str | None = None
+        self.raw_tap_errors = 0  # tap calls that raised (a broken sink never stops framing)
+        self.raw_tap_disabled = False  # True once the tap failed raw_tap_max_consecutive_errors in a row
+        self.raw_tap_last_error: str | None = None  # kept apart from last_error (link errors)
 
     # -- framer counters, exposed under this transport ------------------------ #
 
@@ -531,6 +556,8 @@ class SerialMavlinkTransport:
             "discarded_on_disconnect_bytes": self.discarded_on_disconnect_bytes,
             "bytes_sent": self.bytes_sent, "write_errors": self.write_errors,
             "last_error": self.last_error,
+            "raw_tap_errors": self.raw_tap_errors, "raw_tap_disabled": self.raw_tap_disabled,
+            "raw_tap_last_error": self.raw_tap_last_error,
         }
 
     # -- lifecycle ---------------------------------------------------------- #
@@ -693,6 +720,19 @@ class SerialMavlinkTransport:
             with self._io_lock:
                 self._close_port()
 
+    def _call_raw_tap(self, stamp: int, data: bytes) -> None:
+        """Hand one read to the tap. Never raises: the tap is a diagnostic, not part of framing."""
+        try:
+            self._raw_tap(stamp, data)  # type: ignore[misc]  # not None: checked by the caller
+        except Exception as exc:  # noqa: BLE001 - any sink failure must leave framing untouched
+            self.raw_tap_errors += 1
+            self.raw_tap_last_error = repr(exc)
+            self._raw_tap_error_run += 1
+            if self._raw_tap_error_run >= self._raw_tap_max_errors:
+                self.raw_tap_disabled = True
+        else:
+            self._raw_tap_error_run = 0
+
     def _rx_step(self) -> bool:
         """One reader iteration; False ends the thread. Exceptions from the framing/queue
         code propagate to ``_rx_loop``'s fault handler (read failures are handled here)."""
@@ -716,6 +756,8 @@ class SerialMavlinkTransport:
             self.reads += 1
             self.bytes_received += len(data)
             self._last_rx_ns = stamp
+            if self._raw_tap is not None and not self.raw_tap_disabled:
+                self._call_raw_tap(stamp, data)
             self._emit(self._framer.feed(data), stamp)
         elif (self._framer.pending_bytes and self._last_rx_ns is not None
               and stamp - self._last_rx_ns >= self._partial_timeout_ns):

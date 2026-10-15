@@ -64,3 +64,7 @@ data/hardware/raw/*.tlog
 # Raw ArduPilot SITL captures (tlogs) are local evidence; manifests/summaries ARE committed.
 data/ardupilot/raw/*.tlog
 artifacts/ardupilot/*/downlink.tlog
+# Raw read-by-read captures from the probe (--raw): local evidence only, never committed.
+data/hardware/raw/*.rawbin
+
+AEGISFLIGHT_STAGE2_ENGINEERING_BRIEF.md

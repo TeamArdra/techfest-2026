@@ -19,20 +19,47 @@ through the same code offline. Raw captures may contain the bench GPS position: 
 
     .venv/Scripts/python.exe scripts/hardware/pixhawk_passive_probe.py --port COM5 --duration 120 \
         --json artifacts/hardware/pixhawk6x_probe_001.json --tlog data/hardware/raw/pixhawk6x_001.tlog
+
+Raw byte capture (``--raw PATH``, OFF by default)
+-------------------------------------------------
+``--tlog`` only holds frames that survived framing, so it is empty when no valid frame ever
+arrived. ``--raw`` additionally keeps exactly the bytes each ``read()`` returned, so a link that
+produced no frames can still be inspected afterwards. It makes the bytes inspectable; it does not
+identify why the link is silent or garbled. Same safety contract: receive only.
+
+File format (``pixhawk_raw_reads/1``; no file header, records back to back, big-endian)::
+
+    >Q  stamp_ns   time.monotonic_ns() read right after the read() returned (the same stamp the
+                   framer path uses; differences are meaningful, the origin is the host's
+                   monotonic clock -- the report's ``raw_capture.mono_ns_at_start`` and
+                   ``provenance.unix_time_start`` anchor it)
+    >I  length     number of data bytes (> 0)
+    ..  data       exactly the bytes that read() returned
+
+Record boundaries are the read boundaries (they depend on OS/driver buffering; they are not
+frame or message boundaries). Parse with :func:`read_raw_records`. The file is created
+exclusively (an existing file is never overwritten or appended to: exit 2 before the port is
+opened), flushed after every record, and capped by ``--raw-max-bytes`` (default 16 MiB, record
+headers included): once the next record would not fit, writing stops, ``raw_capture.cap_hit`` is
+set and the run continues. Raw captures hold whatever the link carries (possibly the bench GPS
+position): keep them local (``data/hardware/raw/*.rawbin`` is git-ignored).
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import platform
 import statistics
 import struct
 import subprocess
 import sys
+import threading
 import time
 from collections import Counter, defaultdict
 from pathlib import Path
+from typing import BinaryIO
 
 from aegisflight.sources.mavlink_live import LiveStats, MavlinkFrameParser
 from aegisflight.sources.mavlink_serial import SerialMavlinkTransport
@@ -47,6 +74,132 @@ MAV_TYPE = {0: "GENERIC", 1: "FIXED_WING", 2: "QUADROTOR", 10: "GROUND_ROVER", 1
             12: "SUBMARINE", 13: "HEXAROTOR", 14: "OCTOROTOR", 20: "VTOL_TILTROTOR", 21: "VTOL_RESERVED2",
             6: "GCS", 18: "ONBOARD_CONTROLLER", 27: "ADSB", 30: "GIMBAL", 31: "ODID"}
 MAV_MODE_FLAG_SAFETY_ARMED = 128
+
+
+RAW_FORMAT = "pixhawk_raw_reads/1"
+RAW_HEADER = struct.Struct(">QI")  # stamp_ns, length
+DEFAULT_RAW_MAX_BYTES = 16 * 1024 * 1024
+
+
+def read_raw_records(source: bytes | str | Path, *, allow_truncated_tail: bool = False
+                     ) -> list[tuple[int, bytes]]:
+    """Parse a ``--raw`` capture into ``[(stamp_ns, data), ...]`` (see the module docstring).
+
+    Raises ``ValueError`` on a truncated or zero-length record, unless ``allow_truncated_tail``
+    is set, in which case an incomplete LAST record (what a hard crash mid-write could leave) is
+    dropped.
+    """
+    blob = bytes(source) if isinstance(source, (bytes, bytearray)) else Path(source).read_bytes()
+    out: list[tuple[int, bytes]] = []
+    pos, n = 0, len(blob)
+    while pos < n:
+        if n - pos < RAW_HEADER.size:
+            if allow_truncated_tail:
+                break
+            raise ValueError(f"truncated record header at offset {pos}")
+        stamp, length = RAW_HEADER.unpack_from(blob, pos)
+        if length == 0:
+            raise ValueError(f"zero-length record at offset {pos}")
+        end = pos + RAW_HEADER.size + length
+        if end > n:
+            if allow_truncated_tail:
+                break
+            raise ValueError(f"truncated record body at offset {pos}")
+        out.append((stamp, blob[pos + RAW_HEADER.size:end]))
+        pos = end
+    return out
+
+
+class RawCapture:
+    """Append-only raw-read recorder; ``write(stamp_ns, data)`` is the transport's ``raw_tap``.
+
+    Created with exclusive-create (``"xb"``): an existing file raises ``FileExistsError`` and is
+    left untouched. Thread-safe (the transport calls ``write`` from its reader thread, the main
+    thread closes). Write errors propagate to the caller (the transport counts them and keeps
+    framing). After the cap is reached nothing more is written; only counters grow.
+    """
+
+    def __init__(self, path: str | Path, max_bytes: int = DEFAULT_RAW_MAX_BYTES) -> None:
+        if max_bytes < RAW_HEADER.size + 1:
+            raise ValueError(f"max_bytes must be >= {RAW_HEADER.size + 1}")
+        self.path = Path(path)
+        self.max_bytes = max_bytes
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self._fh: BinaryIO | None = open(self.path, "xb")  # noqa: SIM115 - closed in close()
+        self._lock = threading.Lock()
+        self.records = 0
+        self.file_bytes = 0  # bytes written to the file, headers included
+        self.data_bytes = 0  # raw link bytes recorded
+        self.cap_hit = False
+        self.reads_not_recorded = 0  # reads that arrived after the cap was reached
+        self.bytes_not_recorded = 0
+        self.sha256: str | None = None
+
+    @property
+    def closed(self) -> bool:
+        return self._fh is None
+
+    def write(self, stamp_ns: int, data: bytes) -> None:
+        with self._lock:
+            if self._fh is None:
+                return
+            if self.cap_hit or self.file_bytes + RAW_HEADER.size + len(data) > self.max_bytes:
+                self.cap_hit = True
+                self.reads_not_recorded += 1
+                self.bytes_not_recorded += len(data)
+                return
+            self._fh.write(RAW_HEADER.pack(stamp_ns, len(data)) + bytes(data))
+            self._fh.flush()  # a crash / Ctrl-C then loses at most the OS buffer, not this run
+            self.records += 1
+            self.file_bytes += RAW_HEADER.size + len(data)
+            self.data_bytes += len(data)
+
+    def close(self) -> None:
+        """Close the file and hash it (idempotent)."""
+        with self._lock:
+            fh, self._fh = self._fh, None
+        if fh is None:
+            return
+        try:
+            fh.close()
+        finally:
+            try:
+                h = hashlib.sha256()
+                with open(self.path, "rb") as rf:
+                    for chunk in iter(lambda: rf.read(1 << 20), b""):
+                        h.update(chunk)
+                self.sha256 = h.hexdigest()
+            except OSError:
+                self.sha256 = None
+
+    def report(self, *, mono_ns_at_start: int) -> dict:
+        return {
+            "path": str(self.path), "format": RAW_FORMAT, "records": self.records,
+            "file_bytes": self.file_bytes, "data_bytes": self.data_bytes,
+            "max_bytes": self.max_bytes, "cap_hit": self.cap_hit,
+            "reads_not_recorded": self.reads_not_recorded,
+            "bytes_not_recorded": self.bytes_not_recorded, "sha256": self.sha256,
+            "mono_ns_at_start": mono_ns_at_start,
+        }
+
+
+def _open_raw(args: argparse.Namespace) -> tuple[RawCapture | None, int | None]:
+    """(capture, None) on success or when --raw is off; (None, 2) after a refusal (message printed).
+    Runs before the serial port or --tlog is touched."""
+    path = getattr(args, "raw", None)
+    if not path:
+        return None, None
+    max_bytes = getattr(args, "raw_max_bytes", DEFAULT_RAW_MAX_BYTES)
+    if any(o and Path(o).resolve() == Path(path).resolve() for o in (args.tlog, args.json)):
+        print(f"FAIL: --raw {path} is the same path as --tlog/--json", file=sys.stderr)
+        return None, 2
+    try:
+        return RawCapture(path, max_bytes), None
+    except FileExistsError:
+        print(f"FAIL: refusing to overwrite existing raw capture {path}", file=sys.stderr)
+    except (OSError, ValueError) as exc:
+        print(f"FAIL: cannot create raw capture {path}: {exc}", file=sys.stderr)
+    return None, 2
 
 
 def _pct(v: list[float], q: float) -> float | None:
@@ -91,14 +244,25 @@ def run(args: argparse.Namespace) -> int:
     import pymavlink
     import serial
 
-    transport = SerialMavlinkTransport(args.port, baudrate=args.baud, reconnect=True,
-                                       reconnect_interval_s=args.reconnect_interval)
-    stats = LiveStats()
-    parser = MavlinkFrameParser(stats)
+    # --raw is validated and created BEFORE the serial port or --tlog is touched, so a refusal
+    # (existing file, bad size, path collision) leaves everything untouched.
+    raw, refused = _open_raw(args)
+    if refused is not None:
+        return refused
     tlog_fh = None
-    if args.tlog:
-        Path(args.tlog).parent.mkdir(parents=True, exist_ok=True)
-        tlog_fh = open(args.tlog, "wb")
+    try:
+        transport = SerialMavlinkTransport(args.port, baudrate=args.baud, reconnect=True,
+                                           reconnect_interval_s=args.reconnect_interval,
+                                           raw_tap=raw.write if raw is not None else None)
+        stats = LiveStats()
+        parser = MavlinkFrameParser(stats)
+        if args.tlog:
+            Path(args.tlog).parent.mkdir(parents=True, exist_ok=True)
+            tlog_fh = open(args.tlog, "wb")
+    except BaseException:
+        if raw is not None:
+            raw.close()
+        raise
     mono0 = time.monotonic_ns()
     wall0_us = time.time_ns() // 1000
 
@@ -120,11 +284,12 @@ def run(args: argparse.Namespace) -> int:
     gap_events: list[dict] = []
     last_frame_t: float | None = None
 
-    transport.start()
     t_start = time.monotonic()
     deadline = t_start + args.duration
     open_checked = False
+    pre_close_state: dict[str, bool] = {}
     try:
+        transport.start()
         while time.monotonic() < deadline:
             time.sleep(0.02)
             if not open_checked and time.monotonic() - t_start > 3.0:
@@ -178,12 +343,20 @@ def run(args: argparse.Namespace) -> int:
     except KeyboardInterrupt:
         print("interrupted: finalising report", file=sys.stderr)
     finally:
-        transport.close()
-        if tlog_fh is not None:
-            tlog_fh.close()
+        # Sample the live state BEFORE close(): afterwards connected/reader_running are always False.
+        pre = transport.stats
+        pre_close_state = {"connected": pre["connected"], "reader_running": pre["reader_running"]}
+        try:
+            transport.close()
+        finally:
+            if raw is not None:
+                raw.close()
+            if tlog_fh is not None:
+                tlog_fh.close()
 
     span = (last_frame_t - first_frame_s) if (first_frame_s is not None and last_frame_t is not None) else 0.0
-    t_stats = transport.stats
+    t_stats = transport.stats  # final counters (read after close); the two state flags are overridden:
+    t_stats.update(pre_close_state)  # connected / reader_running as they were when the run ended
     msgs = {}
     for name in sorted(per_msg_count, key=lambda n: per_msg_id[n]):
         ts = per_msg_t[name]
@@ -248,6 +421,9 @@ def run(args: argparse.Namespace) -> int:
         "frames_without_envelope": decode_none,
         "parser_stats": stats.as_dict(),
         "transport_stats": t_stats,
+        "transport_state_sampled": "connected/reader_running sampled just before transport.close(); "
+                                  "all other transport_stats are final values read after close",
+        "raw_capture": raw.report(mono_ns_at_start=mono0) if raw is not None else None,
         "passive_check": {"bytes_sent": t_stats["bytes_sent"], "write_errors": t_stats["write_errors"],
                           "passed": t_stats["bytes_sent"] == 0},
         "pipeline_message_coverage": coverage,
@@ -271,6 +447,10 @@ def run(args: argparse.Namespace) -> int:
         "bytes_received", "frames_received", "crc_rejects", "header_rejects", "unverifiable_rejects",
         "garbage_bytes", "resync_events", "partial_timeouts", "disconnects", "reconnects",
         "open_failures", "reader_faults", "dropped_overflow", "last_error")})
+    if raw is not None:
+        print("raw_capture:", {k: report["raw_capture"][k] for k in (
+            "path", "records", "data_bytes", "cap_hit", "sha256")},
+            "raw_tap_errors:", t_stats["raw_tap_errors"])
     return 0
 
 
@@ -282,6 +462,12 @@ def main() -> int:
     ap.add_argument("--duration", type=float, default=60.0, help="seconds to listen")
     ap.add_argument("--json", help="write the JSON report here")
     ap.add_argument("--tlog", help="write the raw frames as a .tlog here (git-ignored location)")
+    ap.add_argument("--raw", help="also record the exact bytes of every read() to this NEW file "
+                                  "(refuses to overwrite; format in the module docstring; "
+                                  "git-ignored location: data/hardware/raw/*.rawbin)")
+    ap.add_argument("--raw-max-bytes", type=int, default=DEFAULT_RAW_MAX_BYTES,
+                    help="size cap of the --raw file, headers included (default 16 MiB); at the cap "
+                         "recording stops, the report says so, the run continues")
     ap.add_argument("--reconnect-interval", type=float, default=1.0)
     ap.add_argument("--gap-report-s", type=float, default=2.5,
                     help="report silences longer than this (must exceed the 1 Hz heartbeat period; the "
