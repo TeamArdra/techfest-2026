@@ -46,6 +46,14 @@ class ProtocolDetector(Detector):
         # reports 999 s before the first heartbeat / GPS message) is not a liveness fault.
         # Once a message has been seen, staleness is judged exactly as before.
         self.startup_grace_s = float(p.get("startup_grace_s", 0.0))
+        # Never-seen GPS (additive; defaults reproduce the Stage-1 DOS / up-to-1.0 outcome):
+        # a stream that has NEVER delivered GLOBAL_POSITION_INT is incomplete telemetry (a
+        # misconfigured / partial link), which is not the same evidence as GPS lost after having
+        # been seen. These let a per-vehicle profile re-attribute it (``never_seen_gps_vote``,
+        # e.g. MAVLINK_ANOMALY) and cap its score (``never_seen_gps_max_score``). The cap is
+        # floored at 0.5 so the condition is always still reported -- never silently accepted.
+        self.never_seen_gps_vote = AttackType[str(p.get("never_seen_gps_vote", "DOS"))]
+        self.never_seen_gps_max = max(0.5, min(1.0, float(p.get("never_seen_gps_max_score", 1.0))))
         self._t0: float | None = None
 
     def process(self, frame: FeatureFrame) -> DetectorResult:
@@ -102,14 +110,39 @@ class ProtocolDetector(Detector):
         if self._t0 is None:
             self._t0 = frame.t
         in_grace = self.startup_grace_s > 0.0 and (frame.t - self._t0) < self.startup_grace_s
-        if frame.heartbeat_age_s > self.hb_timeout and not (in_grace and frame.heartbeat_age_s >= _NEVER_SEEN_S):
+        # "never received" is read from the explicit extractor flags when present; hand-built
+        # frames (flags None) fall back to the 999 s sentinel, as before.
+        hb_never = (
+            (not frame.heartbeat_seen)
+            if frame.heartbeat_seen is not None
+            else frame.heartbeat_age_s >= _NEVER_SEEN_S
+        )
+        gps_never = (
+            (not frame.gps_seen) if frame.gps_seen is not None else frame.gps_age_s >= _NEVER_SEEN_S
+        )
+        if frame.heartbeat_age_s > self.hb_timeout and not (in_grace and hb_never):
             s = ramp(frame.heartbeat_age_s, self.hb_timeout, self.hb_timeout * 2)
             bump(AttackType.DOS, max(0.6, s))
-            evidence.append(f"heartbeat stale {frame.heartbeat_age_s:.1f}s > {self.hb_timeout:.1f}s")
-        if frame.gps_age_s > self.gps_dropout and not (in_grace and frame.gps_age_s >= _NEVER_SEEN_S):
-            s = ramp(frame.gps_age_s, self.gps_dropout, self.gps_dropout * 3)
-            bump(AttackType.DOS, max(0.5, s))
-            evidence.append(f"GPS dropout {frame.gps_age_s:.1f}s > {self.gps_dropout:.1f}s")
+            if hb_never:
+                evidence.append(
+                    "heartbeat stale (never received: no HEARTBEAT since monitoring began) "
+                    f"> {self.hb_timeout:.1f}s"
+                )
+            else:
+                evidence.append(
+                    f"heartbeat stale {frame.heartbeat_age_s:.1f}s > {self.hb_timeout:.1f}s"
+                )
+        if frame.gps_age_s > self.gps_dropout and not (in_grace and gps_never):
+            s = max(0.5, ramp(frame.gps_age_s, self.gps_dropout, self.gps_dropout * 3))
+            if gps_never:
+                bump(self.never_seen_gps_vote, min(s, self.never_seen_gps_max))
+                evidence.append(
+                    "GPS dropout: never received (no GLOBAL_POSITION_INT since monitoring began;"
+                    f" incomplete telemetry, not a measured dropout) > {self.gps_dropout:.1f}s"
+                )
+            else:
+                bump(AttackType.DOS, s)
+                evidence.append(f"GPS dropout {frame.gps_age_s:.1f}s > {self.gps_dropout:.1f}s")
 
         # ---- GNSS fix loss (navigation-channel denial / jamming) ----
         snap = frame.snapshot

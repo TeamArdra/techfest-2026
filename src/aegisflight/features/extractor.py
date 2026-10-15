@@ -99,6 +99,12 @@ class FeatureFrame:
     # --- command ---
     cmd_rate_hz: float = 0.0
     commands_recent: list[CommandEvent] = field(default_factory=list)
+    # ADDITIVE: whether a HEARTBEAT / GLOBAL_POSITION_INT has EVER been received since the last
+    # reset. ``heartbeat_age_s`` / ``gps_age_s`` report the 999 s sentinel for "never seen", which a
+    # real outage longer than 999 s would also exceed; these flags remove that ambiguity. ``None``
+    # (hand-built frames) means unknown: readers fall back to the sentinel. NOT in ML_FEATURES.
+    heartbeat_seen: bool | None = None
+    gps_seen: bool | None = None
 
     @property
     def battery_v_rate_abs(self) -> float:
@@ -336,6 +342,8 @@ class FeatureExtractor:
             yaw_course_diff_deg=yaw_course,
             cmd_rate_hz=cmd_rate,
             commands_recent=recent,
+            heartbeat_seen=self._last_heartbeat_t > -1e8,
+            gps_seen=self._last_gps_t > -1e8,
         )
 
     # -- small numeric helpers --------------------------------------------- #

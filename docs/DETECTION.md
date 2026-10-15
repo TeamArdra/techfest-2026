@@ -29,6 +29,38 @@ detector score is their max); each casts a vote for the attack it implies:
 | Command provenance | command from sysid ∉ `expected_gcs_sysids`; sensitive cmd / burst | COMMAND_INJECTION |
 | Signing | `require_signing` and unsigned present | MAVLINK_ANOMALY |
 
+### Never-received vs lost-after-seen telemetry (protocol liveness rules)
+
+`FeatureExtractor` reports `heartbeat_age_s` / `gps_age_s` as a 999 s **sentinel** until the
+first HEARTBEAT / `GLOBAL_POSITION_INT` arrives. Two additive `FeatureFrame` fields
+(`heartbeat_seen`, `gps_seen`; `None` on hand-built frames, not in `ML_FEATURES`) now say
+explicitly whether the message was *ever* received, so a real outage longer than 999 s is no
+longer indistinguishable from "never seen".
+
+| Case | Score / vote (default) | Evidence |
+|---|---|---|
+| GPS never received (e.g. a heartbeat-only passive stream) | unchanged: DOS, 1.0 (still a threat; not silently accepted) | **changed text**: `GPS dropout: never received (no GLOBAL_POSITION_INT since monitoring began; incomplete telemetry, not a measured dropout) > 2.0s` |
+| Heartbeat never received | unchanged: DOS, >= 0.6 | **changed text**: `heartbeat stale (never received: no HEARTBEAT since monitoring began) > 3.0s` |
+| GPS / heartbeat lost after being received | unchanged | unchanged: `GPS dropout 2.4s > 2.0s`, `heartbeat stale 4.2s > 3.0s` |
+| Age below threshold (stale-but-recent) | unchanged: 0, no evidence | none |
+
+Both new texts keep the `GPS dropout` / `heartbeat stale` prefixes that downstream scripts match.
+`startup_grace_s` (default 0 = off) suppresses only the never-received case, for that many
+seconds after the first decision; afterwards absence is reported. A loss after valid data is
+never covered by it.
+
+Optional keys (default = Stage-1 outcome; `configs/detector.yaml` does not set them), for a
+per-vehicle profile that wants "no position stream" reported as incomplete telemetry rather
+than denial of service:
+`protocol.never_seen_gps_vote` (default `DOS`; e.g. `MAVLINK_ANOMALY`) and
+`protocol.never_seen_gps_max_score` (default 1.0; floored at 0.5 so the condition always still
+triggers). They affect only the never-received GPS case, never a measured dropout.
+
+Physics blind spot (reported, not changed): with no `GLOBAL_POSITION_INT`/`VFR_HUD`/`ATTITUDE`
+the physics-facing features (`pos_residual_m`, speed/altitude differences, `yaw_course_diff_deg`)
+stay at a neutral 0, so the cyber-physical detector is silent, not alarmed -- the protocol rule
+above is then the only signal that the cross-checks cannot run.
+
 ## Detector B — Cyber-physical consistency (`detectors/physics.py`)
 
 Cross-checks physically-coupled channels an attacker can't falsify all at once:
