@@ -1,0 +1,82 @@
+{
+  "schema": "aegisflight.serial_monitor_run/1",
+  "started_utc": "2026-10-14T18:29:45.025829+00:00",
+  "port": "COM7",
+  "baud": 115200,
+  "ml_enabled": false,
+  "config_dir": "configs (Stage-1 default)",
+  "wall_s": 60.0,
+  "cpu_s": 0.77,
+  "cpu_pct_of_one_core_mean": 1.28,
+  "rss_mb_max": 55.5,
+  "decisions": 301,
+  "threat_decisions": 297,
+  "alert_decisions": 16,
+  "alert_types": {
+    "DOS": 16
+  },
+  "decision_latency_ms": {
+    "mean": 0.1667,
+    "p99_last_100k": 0.3759,
+    "max": 0.7105
+  },
+  "transport": {
+    "connected": true,
+    "reader_running": true,
+    "reads": 2760,
+    "bytes_received": 46026,
+    "frames_received": 1620,
+    "garbage_bytes": 6,
+    "resync_events": 1,
+    "header_rejects": 0,
+    "crc_rejects": 0,
+    "unverifiable_rejects": 0,
+    "unverified_accepted": 0,
+    "unverifiable_ids": {},
+    "unverifiable_id_overflow": 0,
+    "crc_bytes_checked": 42780,
+    "partial_timeouts": 0,
+    "reader_faults": 0,
+    "dropped_overflow": 0,
+    "dropped_overflow_bytes": 0,
+    "queue_high_water": 7,
+    "max_poll_gap_s": 0.061514,
+    "max_frames_per_read": 2,
+    "disconnects": 0,
+    "reconnects": 0,
+    "open_failures": 0,
+    "discarded_on_disconnect_bytes": 0,
+    "bytes_sent": 0,
+    "write_errors": 0,
+    "last_error": null,
+    "raw_tap_errors": 0,
+    "raw_tap_disabled": false,
+    "raw_tap_last_error": null
+  },
+  "source": {
+    "datagrams_received": 1620,
+    "frames_received": 1620,
+    "bad_frames": 0,
+    "sig_valid": 0,
+    "sig_invalid": 0,
+    "unverified_frames": 0,
+    "ticks_emitted": 601,
+    "late_ticks": 0,
+    "late_frames": 0,
+    "dropped_overflow": 0,
+    "dropped_overflow_bytes": 0,
+    "queue_high_water": 7,
+    "max_poll_gap_s": 0.061514
+  },
+  "link_ever_delivered_frames": true,
+  "passive_check": {
+    "bytes_sent": 0,
+    "write_errors": 0,
+    "passed": true
+  },
+  "hash_chain": {
+    "ok": true,
+    "length": 16
+  },
+  "exit_code": 0
+}

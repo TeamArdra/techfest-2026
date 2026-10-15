@@ -1,0 +1,261 @@
+{
+  "schema": "pixhawk_passive_probe/1",
+  "environment": "BENCH (physical flight controller on a desk, USB, disarmed, no props, no airframe)",
+  "claim_class": "none (stream description only; not detection evidence)",
+  "provenance": {
+    "git_commit": "6b21d1fd30473e6696ea4be5146e7fd224e396d9",
+    "python": "3.13.15",
+    "pymavlink": "2.4.50",
+    "pyserial": "3.5",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "command": "scripts/hardware/pixhawk_passive_probe.py --port COM7 --baud 115200 --duration 60 --json artifacts/hardware/telemetry_radio_probe_007.json --tlog data/hardware/raw/telemetry_radio_007.tlog --raw data/hardware/raw/telemetry_radio_007.rawbin",
+    "unix_time_start": 1792002159.261056
+  },
+  "port": "COM7",
+  "baud_arg": 115200,
+  "duration_requested_s": 60.0,
+  "first_frame_s": 0.1572421,
+  "first_heartbeat_s": 0.2645456,
+  "stream_span_s": 59.767,
+  "frames": 1620,
+  "frame_bytes": 46020,
+  "mean_frame_rate_hz": 27.11,
+  "mean_byte_rate_Bps": 770.0,
+  "mavlink_versions": {
+    "v1": 1620
+  },
+  "signed_frames": 0,
+  "frames_without_envelope": 0,
+  "parser_stats": {
+    "datagrams_received": 1620,
+    "frames_received": 1620,
+    "bad_frames": 0,
+    "sig_valid": 0,
+    "sig_invalid": 0,
+    "unverified_frames": 0,
+    "ticks_emitted": 0,
+    "late_ticks": 0,
+    "late_frames": 0,
+    "dropped_overflow": 0,
+    "dropped_overflow_bytes": 0
+  },
+  "transport_stats": {
+    "connected": true,
+    "reader_running": true,
+    "reads": 2759,
+    "bytes_received": 46020,
+    "frames_received": 1620,
+    "garbage_bytes": 0,
+    "resync_events": 0,
+    "header_rejects": 0,
+    "crc_rejects": 0,
+    "unverifiable_rejects": 0,
+    "unverified_accepted": 0,
+    "unverifiable_ids": {},
+    "unverifiable_id_overflow": 0,
+    "crc_bytes_checked": 42780,
+    "partial_timeouts": 0,
+    "reader_faults": 0,
+    "dropped_overflow": 0,
+    "dropped_overflow_bytes": 0,
+    "queue_high_water": 4,
+    "max_poll_gap_s": 0.0420583,
+    "max_frames_per_read": 2,
+    "disconnects": 0,
+    "reconnects": 0,
+    "open_failures": 0,
+    "discarded_on_disconnect_bytes": 0,
+    "bytes_sent": 0,
+    "write_errors": 0,
+    "last_error": null,
+    "raw_tap_errors": 0,
+    "raw_tap_disabled": false,
+    "raw_tap_last_error": null
+  },
+  "transport_state_sampled": "connected/reader_running sampled just before transport.close(); all other transport_stats are final values read after close",
+  "raw_capture": {
+    "path": "data\\hardware\\raw\\telemetry_radio_007.rawbin",
+    "format": "pixhawk_raw_reads/1",
+    "records": 2759,
+    "file_bytes": 79128,
+    "data_bytes": 46020,
+    "max_bytes": 16777216,
+    "cap_hit": false,
+    "reads_not_recorded": 0,
+    "bytes_not_recorded": 0,
+    "sha256": "3420ff0c6c0b4b1e2d200fa00203241375e3710d274e09bff9c353f3e89a1c4d",
+    "mono_ns_at_start": 45998403995800
+  },
+  "passive_check": {
+    "bytes_sent": 0,
+    "write_errors": 0,
+    "passed": true
+  },
+  "pipeline_message_coverage": {
+    "HEARTBEAT": {
+      "seen": true,
+      "rate_hz": 1.004
+    },
+    "SYS_STATUS": {
+      "seen": true,
+      "rate_hz": 2.008
+    },
+    "GPS_RAW_INT": {
+      "seen": true,
+      "rate_hz": 2.008
+    },
+    "GLOBAL_POSITION_INT": {
+      "seen": true,
+      "rate_hz": 2.008
+    },
+    "ATTITUDE": {
+      "seen": true,
+      "rate_hz": 4.016
+    },
+    "VFR_HUD": {
+      "seen": true,
+      "rate_hz": 4.016
+    }
+  },
+  "messages": {
+    "HEARTBEAT": {
+      "msgid": 0,
+      "count": 60,
+      "rate_hz": 1.004,
+      "interarrival_ms_median": 998.54,
+      "interarrival_ms_p95": 1008.73,
+      "interarrival_ms_max": 1008.94
+    },
+    "SYS_STATUS": {
+      "msgid": 1,
+      "count": 120,
+      "rate_hz": 2.008,
+      "interarrival_ms_median": 504.11,
+      "interarrival_ms_p95": 504.58,
+      "interarrival_ms_max": 504.77
+    },
+    "GPS_RAW_INT": {
+      "msgid": 24,
+      "count": 120,
+      "rate_hz": 2.008,
+      "interarrival_ms_median": 504.17,
+      "interarrival_ms_p95": 504.57,
+      "interarrival_ms_max": 504.96
+    },
+    "ATTITUDE": {
+      "msgid": 30,
+      "count": 240,
+      "rate_hz": 4.016,
+      "interarrival_ms_median": 182.44,
+      "interarrival_ms_p95": 326.24,
+      "interarrival_ms_max": 326.47
+    },
+    "GLOBAL_POSITION_INT": {
+      "msgid": 33,
+      "count": 120,
+      "rate_hz": 2.008,
+      "interarrival_ms_median": 504.15,
+      "interarrival_ms_p95": 504.59,
+      "interarrival_ms_max": 504.78
+    },
+    "MISSION_CURRENT": {
+      "msgid": 42,
+      "count": 120,
+      "rate_hz": 2.008,
+      "interarrival_ms_median": 504.2,
+      "interarrival_ms_p95": 504.56,
+      "interarrival_ms_max": 505.47
+    },
+    "NAV_CONTROLLER_OUTPUT": {
+      "msgid": 62,
+      "count": 120,
+      "rate_hz": 2.008,
+      "interarrival_ms_median": 504.2,
+      "interarrival_ms_p95": 504.56,
+      "interarrival_ms_max": 505.47
+    },
+    "VFR_HUD": {
+      "msgid": 74,
+      "count": 240,
+      "rate_hz": 4.016,
+      "interarrival_ms_median": 183.47,
+      "interarrival_ms_p95": 325.23,
+      "interarrival_ms_max": 325.59
+    },
+    "POWER_STATUS": {
+      "msgid": 125,
+      "count": 120,
+      "rate_hz": 2.008,
+      "interarrival_ms_median": 504.1,
+      "interarrival_ms_p95": 504.53,
+      "interarrival_ms_max": 504.76
+    },
+    "MEMINFO": {
+      "msgid": 152,
+      "count": 120,
+      "rate_hz": 2.008,
+      "interarrival_ms_median": 504.1,
+      "interarrival_ms_p95": 504.53,
+      "interarrival_ms_max": 504.76
+    },
+    "AHRS2": {
+      "msgid": 178,
+      "count": 240,
+      "rate_hz": 4.016,
+      "interarrival_ms_median": 182.36,
+      "interarrival_ms_p95": 326.28,
+      "interarrival_ms_max": 326.59
+    }
+  },
+  "sequence_accounting": {
+    "per_sysid_compid": {
+      "1/1": {
+        "frames": 1620,
+        "inferred_lost": 0,
+        "non_forward_steps": 0,
+        "loss_ratio": 0.0
+      }
+    },
+    "per_sysid": {
+      "1": {
+        "frames": 1620,
+        "inferred_lost": 0,
+        "non_forward_steps": 0,
+        "loss_ratio": 0.0
+      }
+    },
+    "whole_link": {
+      "frames": 1620,
+      "inferred_lost": 0,
+      "non_forward_steps": 0,
+      "loss_ratio": 0.0
+    }
+  },
+  "stream_gaps_over_s": {
+    "threshold_s": 2.5,
+    "events": [],
+    "count": 0
+  },
+  "heartbeats": {
+    "1/1": [
+      {
+        "state": {
+          "autopilot": 3,
+          "base_mode": 81,
+          "custom_mode": 0,
+          "mavlink_version": 3,
+          "system_status": 3,
+          "type": 2,
+          "type_name": "QUADROTOR",
+          "autopilot_name": "ARDUPILOTMEGA",
+          "system_status_name": "STANDBY",
+          "armed": false
+        },
+        "count": 60
+      }
+    ]
+  },
+  "statustext": [],
+  "autopilot_version_message": null,
+  "tlog": "data/hardware/raw/telemetry_radio_007.tlog"
+}

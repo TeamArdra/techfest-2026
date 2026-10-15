@@ -1,0 +1,123 @@
+{
+  "schema": "pixhawk_passive_probe/1",
+  "environment": "BENCH (physical flight controller on a desk, USB, disarmed, no props, no airframe)",
+  "claim_class": "none (stream description only; not detection evidence)",
+  "provenance": {
+    "git_commit": "6b21d1fd30473e6696ea4be5146e7fd224e396d9",
+    "python": "3.13.15",
+    "pymavlink": "2.4.50",
+    "pyserial": "3.5",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "command": ".\\scripts\\hardware\\pixhawk_passive_probe.py --port COM7 --baud 57600 --duration 120 --json artifacts\\hardware\\telemetry_radio_probe_001.json --tlog data\\hardware\\raw\\telemetry_radio_001.tlog",
+    "unix_time_start": 1791831634.340894
+  },
+  "port": "COM7",
+  "baud_arg": 57600,
+  "duration_requested_s": 120.0,
+  "first_frame_s": null,
+  "first_heartbeat_s": null,
+  "stream_span_s": 0.0,
+  "frames": 0,
+  "frame_bytes": 0,
+  "mean_frame_rate_hz": null,
+  "mean_byte_rate_Bps": null,
+  "mavlink_versions": {},
+  "signed_frames": 0,
+  "frames_without_envelope": 0,
+  "parser_stats": {
+    "datagrams_received": 0,
+    "frames_received": 0,
+    "bad_frames": 0,
+    "sig_valid": 0,
+    "sig_invalid": 0,
+    "unverified_frames": 0,
+    "ticks_emitted": 0,
+    "late_ticks": 0,
+    "late_frames": 0,
+    "dropped_overflow": 0,
+    "dropped_overflow_bytes": 0
+  },
+  "transport_stats": {
+    "connected": false,
+    "reader_running": false,
+    "reads": 240,
+    "bytes_received": 964,
+    "frames_received": 0,
+    "garbage_bytes": 964,
+    "resync_events": 1,
+    "header_rejects": 2,
+    "crc_rejects": 1,
+    "unverifiable_rejects": 9,
+    "unverified_accepted": 0,
+    "unverifiable_ids": {
+      "8": 9
+    },
+    "unverifiable_id_overflow": 0,
+    "crc_bytes_checked": 37,
+    "partial_timeouts": 1,
+    "reader_faults": 0,
+    "dropped_overflow": 0,
+    "dropped_overflow_bytes": 0,
+    "queue_high_water": 0,
+    "max_poll_gap_s": 0.0524413,
+    "max_frames_per_read": 0,
+    "disconnects": 0,
+    "reconnects": 0,
+    "open_failures": 0,
+    "discarded_on_disconnect_bytes": 0,
+    "bytes_sent": 0,
+    "write_errors": 0,
+    "last_error": null
+  },
+  "passive_check": {
+    "bytes_sent": 0,
+    "write_errors": 0,
+    "passed": true
+  },
+  "pipeline_message_coverage": {
+    "HEARTBEAT": {
+      "seen": false,
+      "rate_hz": null
+    },
+    "SYS_STATUS": {
+      "seen": false,
+      "rate_hz": null
+    },
+    "GPS_RAW_INT": {
+      "seen": false,
+      "rate_hz": null
+    },
+    "GLOBAL_POSITION_INT": {
+      "seen": false,
+      "rate_hz": null
+    },
+    "ATTITUDE": {
+      "seen": false,
+      "rate_hz": null
+    },
+    "VFR_HUD": {
+      "seen": false,
+      "rate_hz": null
+    }
+  },
+  "messages": {},
+  "sequence_accounting": {
+    "per_sysid_compid": {},
+    "per_sysid": {},
+    "whole_link": {
+      "frames": 0,
+      "inferred_lost": 0,
+      "non_forward_steps": 0,
+      "loss_ratio": null
+    }
+  },
+  "stream_gaps_over_s": {
+    "threshold_s": 2.5,
+    "events": [],
+    "count": 0
+  },
+  "heartbeats": null,
+  "statustext": [],
+  "autopilot_version_message": null,
+  "tlog": "data\\hardware\\raw\\telemetry_radio_001.tlog"
+}
