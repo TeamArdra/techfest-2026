@@ -202,6 +202,9 @@ the dashboard says BENCH; every bench alert explained; the replay reproduces the
   *(Superseded 2026-10-15, P3.4: the evidence now reads "GNSS fix never acquired …" unless a valid fix was seen first; the
   xfail passes and is unmarked. The score, the `DOS` vote and the timing are unchanged; whether a never-acquired fix should score
   differently is still open.)*
+  *Decision record: the user's P3.4 brief (2026-10-15) set the requirement (distinguishable cases, no false "lost" claim, no
+  score/weight/threshold change); the exact wording and "valid fix seen since reset()" state were the implementer's choice
+  (aegis-lead with aegis-detection), reviewed ACCEPT-WITH-FIXES in the aegis-reviewer P3.4 review and committed at the user's request (5a35143). Scoring is undecided.*
   Once the POSITION stream is on, GLOBAL_POSITION_INT arrives even without a fix (S6) and the never-received rule clears. On
   this indoor bench, with no fix expected, the GNSS rule should then alert about every 4 s (`cooldown_s`). This is
   predicted from the code and tests, not yet observed (*observed afterwards: 6.8*). An indoor bench with no fix is not attack evidence.

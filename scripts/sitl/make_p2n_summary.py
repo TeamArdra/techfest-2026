@@ -16,7 +16,8 @@ Scoring definitions (fixed BEFORE any live GNSS trial was run; not tuned afterwa
                   (fix_type, satellites) -- an end-to-end check that the detector saw the bytes
                   the attack wrote (independent of the manifest's recorded deltas).
 * false alarm   = a threat decision (any type) at t < onset; the GNSS-rule-specific count
-                  ("GNSS fix lost" before onset) is reported separately.
+                  ("GNSS fix lost" before onset) is reported separately. Since P3.4 (2026-10-15)
+                  that count also includes "GNSS fix never acquired"; "detected" is unchanged.
 Integrity gates (a trial violating them is reported but NOT scored as evidence about the
 detector): relay ``hook_errors == 0``; ``frames_modified > 0``; the manifest's ``frames_modified``
 equals the frame-log's; exactly one distinct fix_type delta and one satellites delta written;
@@ -36,10 +37,19 @@ from pathlib import Path
 
 TAIL_S = 5.0
 _EV = re.compile(r"GNSS fix lost: fix_type=(\d+), satellites=(\d+)")
+# Since P3.4 the GNSS rule says "GNSS fix never acquired: ..." when no valid fix was seen since reset.
+# Pre-onset false alarms count BOTH wordings (any GNSS-rule firing before onset is a false alarm).
+# In-window detection deliberately stays "lost"-only: the attack degrades a fix that was valid, so a
+# "never acquired" firing means no valid fix preceded the window and cannot be attributed to the attack.
+_GNSS_ANY = re.compile(r"GNSS fix (?:lost|never acquired): ")
 
 
 def _gnss_ev(row: dict) -> list[str]:
     return [e for e in row["evidence"] if "GNSS fix lost" in e]
+
+
+def _gnss_any_ev(row: dict) -> list[str]:
+    return [e for e in row["evidence"] if _GNSS_ANY.search(e)]
 
 
 def load_trial(manifest_path: Path) -> dict:
@@ -53,7 +63,7 @@ def load_trial(manifest_path: Path) -> dict:
     win = [r for r in rows if onset <= r["t"] <= hi]
     det = [r for r in win if r["threat"] and _gnss_ev(r)]
     fa = [r for r in pre if r["threat"]]
-    fa_gnss = [r for r in pre if _gnss_ev(r)]
+    fa_gnss = [r for r in pre if _gnss_any_ev(r)]
     vals = [_EV.search(e) for r in det for e in _gnss_ev(r)]
     vals_ok = bool(vals) and all(
         v and (int(v.group(1)), int(v.group(2))) == (p["fix_type"], p["satellites_visible"]) for v in vals)

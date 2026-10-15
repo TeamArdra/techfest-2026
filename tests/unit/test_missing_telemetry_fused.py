@@ -253,8 +253,12 @@ def test_never_acquired_fix_alerts_like_a_loss_but_says_never_acquired():
     with the same DOS vote, score and severity as a loss.
 
     Decided (P3 wording): the evidence no longer claims a LOSS -- it says "GNSS fix never acquired
-    ... (no valid fix since monitoring began)", and never contains "lost". Still OPEN (not decided
-    here): whether a never-acquired fix should SCORE differently (denial evidence vs a coverage
+    ... (no valid fix since monitoring began)", and never contains "lost". Provenance: the USER's
+    P3.4 brief (2026-10-15) required never-acquired / lost / healthy to be distinguishable without
+    falsely claiming a lost fix and with no score/weight/threshold change; the exact string and the
+    "valid fix ever seen since reset()" state were chosen by the implementer (aegis-lead with
+    aegis-detection), reviewed ACCEPT-WITH-FIXES in aegis-reviewer's P3.4 review, and committed at the user's request
+    (5a35143). Still OPEN (decided by no one): whether a never-acquired fix should SCORE differently (denial evidence vs a coverage
     condition); the timing/attack_type/severity assertions below pin today's unchanged scoring."""
     run = _run(_fix_never_acquired, seconds=20.0)
     first = next(a for a in run.alerts)
