@@ -289,6 +289,102 @@ def test_hand_built_frame_without_flags_falls_back_to_the_sentinel():
     assert det.process(measured).evidence == ["GPS dropout 5.0s > 2.0s"]
 
 
+# ---- GNSS fix: never acquired vs lost after a valid fix (P3 wording) ------------------------ #
+
+GNSS_TICKS = DEFAULT_DETECTOR["protocol"]["gnss_loss_ticks"]
+
+
+def _raw(t: float, fix: int, sats: int) -> MessageEnvelope:
+    return _env(t, "GPS_RAW_INT", fix_type=fix, satellites_visible=sats, eph=100)
+
+
+def _gnss_ev(res) -> list[str]:
+    return [e for e in res.evidence if e.startswith("GNSS fix")]
+
+
+def _fix_stream(fix_at):
+    """Heartbeat + 5 Hz position (liveness quiet) + GPS_RAW_INT whose (fix, sats) is ``fix_at(t)``."""
+    def msgs(t):
+        return _hb_only(t) + [_gpi(t), _raw(t, *fix_at(t))]
+    return msgs
+
+
+def test_gnss_fix_never_acquired_says_so_and_never_claims_a_loss():
+    rows = _run(_fix_stream(lambda t: (0, 0)), seconds=5.0)
+    _, _, res = rows[GNSS_TICKS - 1]  # the rule's first firing decision
+    assert res.score == pytest.approx(0.7) and res.attack_votes == {AttackType.DOS: 0.7}
+    assert res.signals["gnss_bad_ticks"] == float(GNSS_TICKS)
+    assert _gnss_ev(res) == [f"GNSS fix never acquired: fix_type=0, satellites=0 for {GNSS_TICKS} "
+                             "decisions (no valid fix since monitoring began)"]
+    for _t, _, r in rows:
+        assert not any("lost" in e for e in r.evidence)
+
+
+def test_gnss_fix_lost_after_valid_fix_keeps_exact_wording_score_and_timing():
+    rows = _run(_fix_stream(lambda t: (3, 10) if t < 2.0 else (0, 0)), seconds=5.0)
+    fired = [(t, r) for t, _, r in rows if _gnss_ev(r)]
+    t0, res = fired[0]
+    assert t0 == pytest.approx(2.0 + (GNSS_TICKS - 1) * DECISION_DT)
+    assert res.score == pytest.approx(0.7) and res.attack_votes == {AttackType.DOS: 0.7}
+    assert _gnss_ev(res) == [f"GNSS fix lost: fix_type=0, satellites=0 for {GNSS_TICKS} decisions"]
+
+
+def test_gnss_fix_healthy_throughout_has_no_gnss_evidence():
+    for _t, _, res in _run(_fix_stream(lambda t: (3, 10)), seconds=5.0):
+        assert _gnss_ev(res) == [] and res.signals["gnss_bad_ticks"] == 0.0
+
+
+def test_gnss_fix_reacquired_after_never_then_lost_says_lost():
+    def fix_at(t):
+        if t < 2.0:
+            return (0, 0)  # never acquired (fires "never acquired")
+        return (3, 10) if t < 4.0 else (1, 3)  # valid fix, then lost
+
+    rows = _run(_fix_stream(fix_at), seconds=7.0)
+    assert any(_gnss_ev(r) and "never acquired" in _gnss_ev(r)[0] for t, _, r in rows if t < 2.0)
+    late = [r for t, _, r in rows if t >= 4.0 and _gnss_ev(r)]
+    assert late and all(_gnss_ev(r)[0].startswith("GNSS fix lost: fix_type=1, satellites=3") for r in late)
+
+
+@pytest.mark.parametrize("near_miss", [(3, 4), (2, 10)])  # sats-only short / fix-only short
+def test_gnss_near_miss_fix_does_not_count_as_ever_valid(near_miss):
+    # "valid" needs BOTH fix_type >= 3 AND satellites >= 5: a half-good fix is never acquired
+    rows = _run(_fix_stream(lambda t: near_miss if t < 2.0 else (0, 0)), seconds=4.0)
+    fired = [_gnss_ev(r) for t, _, r in rows if t >= 2.0 and _gnss_ev(r)]
+    assert fired and all(ev[0].startswith("GNSS fix never acquired") for ev in fired)
+    assert not any("lost" in e for _t, _, r in rows for e in r.evidence)
+
+
+def test_gnss_absent_fix_fields_do_not_count_as_ever_valid():
+    # no GPS_RAW_INT at all (snapshot fix/sats None) for 2 s, then a bad fix: never acquired
+    def msgs(t):
+        return _hb_only(t) + [_gpi(t)] + ([_raw(t, 0, 0)] if t >= 2.0 else [])
+
+    rows = _run(msgs, seconds=4.0)
+    assert all(_t >= 2.0 or r.signals["gnss_bad_ticks"] == 0.0 for _t, _, r in rows)
+    fired = [_gnss_ev(r) for t, _, r in rows if _gnss_ev(r)]
+    assert fired and all(ev[0].startswith("GNSS fix never acquired") for ev in fired)
+
+
+def test_gnss_valid_fix_memory_clears_on_reset():
+    ext, det = FeatureExtractor(), _proto()
+    for k in range(3):  # a valid fix is observed
+        t = k * DECISION_DT
+        ext.update(_raw(t, 3, 10))
+        det.process(ext.extract(t))
+    det.reset()
+    ext.reset()
+    res = None
+    for k in range(GNSS_TICKS):
+        t = k * DECISION_DT
+        ext.update(_hb(t))
+        ext.update(_gpi(t))
+        ext.update(_raw(t, 0, 0))
+        res = det.process(ext.extract(t))
+    assert res is not None and _gnss_ev(res)
+    assert _gnss_ev(res)[0].startswith("GNSS fix never acquired")
+
+
 def test_extractor_seen_flags_clear_on_reset():
     ext = FeatureExtractor()
     ext.update(_hb(0.0))

@@ -199,6 +199,9 @@ the dashboard says BENCH; every bench alert explained; the replay reproduces the
 * By default, never-received GPS is still a CRITICAL `DOS` alert, although its evidence text says "never received … not a
   measured dropout" (**pending policy P1**). GPS_RAW_INT does not count as GPS presence (**P2**). See `tests/unit/test_missing_telemetry_fused.py`.
 * A GNSS fix that was **never acquired** fires the same "GNSS fix lost" `DOS` rule as a lost fix (strict xfail; **P3**).
+  *(Superseded 2026-10-15, P3.4: the evidence now reads "GNSS fix never acquired …" unless a valid fix was seen first; the
+  xfail passes and is unmarked. The score, the `DOS` vote and the timing are unchanged; whether a never-acquired fix should score
+  differently is still open.)*
   Once the POSITION stream is on, GLOBAL_POSITION_INT arrives even without a fix (S6) and the never-received rule clears. On
   this indoor bench, with no fix expected, the GNSS rule should then alert about every 4 s (`cooldown_s`). This is
   predicted from the code and tests, not yet observed (*observed afterwards: 6.8*). An indoor bench with no fix is not attack evidence.
@@ -211,7 +214,8 @@ the dashboard says BENCH; every bench alert explained; the replay reproduces the
 * Hardware-free tests, 2026-10-14: `.venv/Scripts/python.exe -m pytest tests/unit/test_run_serial_ids.py tests/unit/test_missing_telemetry.py
   tests/unit/test_missing_telemetry_fused.py tests/unit/test_serial_raw_tap.py tests/unit/test_mavlink_serial.py
   tests/unit/test_mavlink_live.py backend/tests/test_api.py -p no:cacheprovider -o addopts="" -q` → **281 passed, 3 skipped**
-  (Windows PTY), **2 xfailed**.
+  (Windows PTY), **2 xfailed**. *(After P3.4, 2026-10-15: the full suite gives 604 passed, 3 skipped, 1 xfailed; the P1 floor
+  xfail remains.)*
 
 ### 6.6 Repository state and next task
 At this checkpoint `HEAD` is `6b21d1f`. The working tree holds the earlier sprints' uncommitted work (7 modified tracked
@@ -328,7 +332,9 @@ every 10 s) and `events.sqlite` (git-ignored, sha256 `8c24eba15247025b1bf5400344
 * **No GPS fix is not the same as missing GPS telemetry.** GPS telemetry arrived. After t = 0 there is no "never received"
   or GPS-dropout evidence, and the rule reports `fix_type` and `satellites` values, which only exist once GPS_RAW_INT has
   arrived. What is missing is the fix itself, as expected indoors. The rule still calls a fix that was never acquired "lost";
-  this is policy P3 (6.5), now observed on hardware rather than only predicted.
+  this is policy P3 (6.5), now observed on hardware rather than only predicted. *(Wording since P3.4, 2026-10-15: a re-run on
+  the current code would read "GNSS fix never acquired …" with the same score and timing; the alerts above are the historical
+  output of the earlier code and are left as recorded.)*
 * **Timestamps.** Decision time `t` counts from when the source's `stream()` began (`origin="start"`), on the host's monotonic
   clock. That is a few ms after `started_utc`; the `runs.started` row in the database (18:29:44.91Z) is earlier still.
   * In `events.sqlite`, `wall_time` is within 6.7 ms of `started_utc + t` across the 16 events.

@@ -355,9 +355,14 @@ def test_degraded_frames_trip_unchanged_protocol_gnss_rule():
     a = _attack()
     _learn(a)
     n = DEFAULT_DETECTOR["protocol"]["gnss_loss_ticks"] + 2
-    degraded = [a(ctx_for(gps_raw(seq=i), "down", recv_ns=6_000_000_000 + i))[0] for i in range(n)]
+    # A valid fix first, as in every live SITL trial: the rule reports a LOSS only after a valid
+    # fix was seen (a fix that was never acquired is worded differently).
+    k = 3
+    healthy = [gps_raw(seq=i) for i in range(k)]
+    degraded = [a(ctx_for(gps_raw(seq=k + i), "down", recv_ns=6_000_000_000 + i))[0]
+                for i in range(n)]
     assert all(decode(r).fix_type == PARAMS.fix_type for r in degraded)
-    results = _run_chain(degraded)
+    results = _run_chain(healthy + degraded)
     assert any("GNSS fix lost" in e for e in results[-1].evidence)
     assert results[-1].attack_votes.get("DOS", 0.0) > 0.0
 
@@ -365,7 +370,7 @@ def test_degraded_frames_trip_unchanged_protocol_gnss_rule():
 def test_unmodified_healthy_frames_do_not_trip_gnss_rule():
     healthy = [gps_raw(seq=i) for i in range(12)]
     results = _run_chain(healthy)
-    assert not any("GNSS fix lost" in e for r in results for e in r.evidence)
+    assert not any(e.startswith("GNSS fix") for r in results for e in r.evidence)  # lost or never acquired
 
 
 # --------------------------------------------------------------------------- #

@@ -247,26 +247,27 @@ def test_loss_of_a_previously_valid_fix_alerts_dos():
     assert not any(a.threat for a in run.assessments if a.t < 10.0)
 
 
-def test_never_acquired_fix_currently_alerts_like_a_loss():
-    """PENDING POLICY P3 -- pins CURRENT behaviour. A receiver that never had a 3D fix (fix 0 / 0
-    from t=0, position streams present) triggers the same DOS "GNSS fix lost" rule within about a
-    second."""
+def test_never_acquired_fix_alerts_like_a_loss_but_says_never_acquired():
+    """PENDING POLICY P3 (partly decided) -- pins CURRENT behaviour. A receiver that never had a 3D
+    fix (fix 0 / 0 from t=0, position streams present) triggers the GNSS rule within about a second
+    with the same DOS vote, score and severity as a loss.
+
+    Decided (P3 wording): the evidence no longer claims a LOSS -- it says "GNSS fix never acquired
+    ... (no valid fix since monitoring began)", and never contains "lost". Still OPEN (not decided
+    here): whether a never-acquired fix should SCORE differently (denial evidence vs a coverage
+    condition); the timing/attack_type/severity assertions below pin today's unchanged scoring."""
     run = _run(_fix_never_acquired, seconds=20.0)
     first = next(a for a in run.alerts)
     assert first.t <= 1.5
     assert first.attack_type is AttackType.DOS and first.severity is Severity.SUSPICIOUS
-    assert "GNSS fix lost" in _text(first)
+    assert "GNSS fix never acquired" in _text(first)
+    assert not any("lost" in _text(a) for a in run.assessments)
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "never-acquired and lost-after-valid GNSS fix produce IDENTICAL evidence ('GNSS fix lost: "
-    "fix_type=0, satellites=0 for 5 decisions'): the rule has no 'ever had a 3D fix' state, so it "
-    "claims a LOSS for a fix that was never acquired -- the same defect class already fixed for GPS "
-    "liveness (never received vs lost after seen). Needs the P3 decision for HOW they differ, but "
-    "not for WHETHER they must."))
 def test_never_acquired_fix_evidence_is_distinguishable_from_loss_after_valid_fix():
-    """XFAIL (strict). The two cases must be distinguishable in the persisted evidence; the exact
-    wording is deliberately not asserted (numbers are masked, only the wording is compared)."""
+    """GENUINE (was a strict xfail until the P3 wording fix). The two cases must be distinguishable
+    in the persisted evidence; the exact wording is deliberately not asserted (numbers are masked,
+    only the wording is compared)."""
     never = next(a for a in _run(_fix_never_acquired, seconds=20.0).alerts)
     lost = next(a for a in _run(_fix_lost_at_10s, seconds=20.0).alerts)
     assert _shape(_text(never)) != _shape(_text(lost))

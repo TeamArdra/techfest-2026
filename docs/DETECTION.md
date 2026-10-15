@@ -26,6 +26,7 @@ detector score is their max); each casts a vote for the attack it implies:
 | Rogue telemetry source | sysid ∉ expected & not a command source | MAVLINK_ANOMALY |
 | Heartbeat stale | `heartbeat_age > heartbeat_timeout_s` (3); the never-seen sentinel is ignored for `startup_grace_s` (0 = off) | DOS |
 | GPS dropout | `gps_age > gps_dropout_s` (2) | DOS |
+| GNSS fix loss | `fix_type < min_gnss_fix_type` (3) or `satellites < min_gnss_satellites` (5) for `≥ gnss_loss_ticks` (5) consecutive decisions → 0.7 | DOS |
 | Command provenance | command from sysid ∉ `expected_gcs_sysids`; sensitive cmd / burst | COMMAND_INJECTION |
 | Signing | `require_signing` and unsigned present | MAVLINK_ANOMALY |
 
@@ -43,8 +44,13 @@ longer indistinguishable from "never seen".
 | Heartbeat never received | unchanged: DOS, >= 0.6 | **changed text**: `heartbeat stale (never received: no HEARTBEAT since monitoring began) > 3.0s` |
 | GPS / heartbeat lost after being received | unchanged | unchanged: `GPS dropout 2.4s > 2.0s`, `heartbeat stale 4.2s > 3.0s` |
 | Age below threshold (stale-but-recent) | unchanged: 0, no evidence | none |
+| GNSS fix bad, a valid fix (fix ≥ 3 and sats ≥ 5) seen earlier since start/`reset()` | unchanged: DOS, 0.7 | unchanged: `GNSS fix lost: fix_type=0, satellites=0 for 5 decisions` (parsed by `scripts/sitl/make_p2n_summary.py`) |
+| GNSS fix bad, no valid fix ever seen (e.g. indoor bench, cold receiver) | unchanged: DOS, 0.7 | **changed text**: `GNSS fix never acquired: fix_type=0, satellites=0 for 5 decisions (no valid fix since monitoring began)` |
 
 Both new texts keep the `GPS dropout` / `heartbeat stale` prefixes that downstream scripts match.
+The never-acquired GNSS text deliberately does NOT contain "lost" (a loss-matching script will not
+count it); whether a never-acquired fix should also *score* differently is an open question,
+detector policy P3 (`docs/HARDWARE_BENCH_PIXHAWK6X.md` §6.5), not changed here.
 `startup_grace_s` (default 0 = off) suppresses only the never-received case, for that many
 seconds after the first decision; afterwards absence is reported. A loss after valid data is
 never covered by it.

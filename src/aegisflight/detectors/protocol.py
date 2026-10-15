@@ -41,6 +41,9 @@ class ProtocolDetector(Detector):
         self.min_sats = int(p.get("min_gnss_satellites", 5))
         self.gnss_loss_ticks = int(p.get("gnss_loss_ticks", 5))
         self._gnss_bad = 0
+        # Has a valid fix (the rule's own healthy condition) ever been observed? Wording only:
+        # a fix that was never acquired is not reported as "lost". Score/vote are identical.
+        self._gnss_ever_valid = False
         # Start-of-stream grace (additive, default 0 = Stage-1 behaviour): for this many
         # seconds after the first decision, the "never seen yet" sentinel (extractor
         # reports 999 s before the first heartbeat / GPS message) is not a liveness fault.
@@ -151,10 +154,16 @@ class ProtocolDetector(Detector):
             self._gnss_bad += 1
         else:
             self._gnss_bad = 0
+            if fix is not None and sats is not None:
+                self._gnss_ever_valid = True
         if self._gnss_bad >= self.gnss_loss_ticks:
             bump(AttackType.DOS, 0.7)
-            evidence.append(f"GNSS fix lost: fix_type={fix}, satellites={sats} "
-                            f"for {self._gnss_bad} decisions")
+            if self._gnss_ever_valid:  # exact text parsed by scripts/sitl/make_p2n_summary.py
+                evidence.append(f"GNSS fix lost: fix_type={fix}, satellites={sats} "
+                                f"for {self._gnss_bad} decisions")
+            else:
+                evidence.append(f"GNSS fix never acquired: fix_type={fix}, satellites={sats} "
+                                f"for {self._gnss_bad} decisions (no valid fix since monitoring began)")
         signals["gnss_bad_ticks"] = float(self._gnss_bad)
 
         # ---- command provenance (injection) ----
@@ -206,4 +215,5 @@ class ProtocolDetector(Detector):
 
     def reset(self) -> None:
         self._gnss_bad = 0
+        self._gnss_ever_valid = False
         self._t0 = None
