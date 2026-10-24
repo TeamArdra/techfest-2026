@@ -44,17 +44,27 @@ class ProtocolDetector(Detector):
         # Has a valid fix (the rule's own healthy condition) ever been observed? Wording only:
         # a fix that was never acquired is not reported as "lost". Score/vote are identical.
         self._gnss_ever_valid = False
-        # Start-of-stream grace (additive, default 0 = Stage-1 behaviour): for this many
-        # seconds after the first decision, the "never seen yet" sentinel (extractor
-        # reports 999 s before the first heartbeat / GPS message) is not a liveness fault.
-        # Once a message has been seen, staleness is judged exactly as before.
+        # Start-of-stream grace (default 0): for this many seconds after the first
+        # decision a NEVER-received heartbeat / position stream is not a liveness fault. It
+        # combines with the elapsed-time gate below as a maximum, not a sum: the later of the two
+        # decides. Once a message has been seen, staleness is judged on its measured age as before.
         self.startup_grace_s = float(p.get("startup_grace_s", 0.0))
-        # Never-seen GPS (additive; defaults reproduce the Stage-1 DOS / up-to-1.0 outcome):
-        # a stream that has NEVER delivered GLOBAL_POSITION_INT is incomplete telemetry (a
-        # misconfigured / partial link), which is not the same evidence as GPS lost after having
-        # been seen. These let a per-vehicle profile re-attribute it (``never_seen_gps_vote``,
-        # e.g. MAVLINK_ANOMALY) and cap its score (``never_seen_gps_max_score``). The cap is
-        # floored at 0.5 so the condition is always still reported -- never silently accepted.
+        # GPS position policy (user decision 2026-10-15, "Coverage, not attack"). Default False:
+        # a link that has NEVER delivered GLOBAL_POSITION_INT is a reported coverage condition
+        # (score 0, no vote, a "coverage: ..." evidence line), not scored as attack evidence (the IDS cannot
+        # tell why the stream is absent; see docs/DETECTION.md, security consequence). True: the
+        # profile declares position as required, and a never-received stream is the DOS-voting
+        # "GPS dropout: never received" fault, shaped by the two knobs below. GPS lost after
+        # having been seen is a DOS fault under either setting.
+        self.require_global_position = bool(p.get("require_global_position", False))
+        # Never-seen GPS knobs (apply only when require_global_position is True): re-attribute
+        # the vote (``never_seen_gps_vote``, e.g. MAVLINK_ANOMALY) and cap the score
+        # (``never_seen_gps_max_score``). The cap is floored at 0.5, which guarantees DETECTOR-level
+        # reporting (this detector triggers, score >= 0.5, evidence on the decision). It does NOT
+        # guarantee a fused threat / operator alert: 0.5 x the max-normalised protocol fusion weight
+        # (0.30/0.34) = 0.441 is below fusion.threat_threshold (0.45), so at the floor the
+        # assessment is threat=False WHEN PROTOCOL IS THE ONLY CONTRIBUTING DETECTOR. Under the
+        # noisy-OR a small ML (>= ~0.034) or physics (>= ~0.016) score lifts it past 0.45.
         self.never_seen_gps_vote = AttackType[str(p.get("never_seen_gps_vote", "DOS"))]
         self.never_seen_gps_max = max(0.5, min(1.0, float(p.get("never_seen_gps_max_score", 1.0))))
         self._t0: float | None = None
@@ -112,9 +122,13 @@ class ProtocolDetector(Detector):
         # ---- liveness (heartbeat / GPS dropout -> DoS/blackout) ----
         if self._t0 is None:
             self._t0 = frame.t
-        in_grace = self.startup_grace_s > 0.0 and (frame.t - self._t0) < self.startup_grace_s
+        elapsed = frame.t - self._t0
+        in_grace = self.startup_grace_s > 0.0 and elapsed < self.startup_grace_s
         # "never received" is read from the explicit extractor flags when present; hand-built
-        # frames (flags None) fall back to the 999 s sentinel, as before.
+        # frames (flags None) fall back to the 999 s sentinel, as before. For a NEVER-received
+        # stream the elapsed monitoring time decides WHEN it may be a fault (only once monitoring
+        # has run longer than the rule's own timeout); the SCORE still comes from the age ramp
+        # below, which is 1.0 for extractor frames (age = the 999 s sentinel).
         hb_never = (
             (not frame.heartbeat_seen)
             if frame.heartbeat_seen is not None
@@ -123,7 +137,12 @@ class ProtocolDetector(Detector):
         gps_never = (
             (not frame.gps_seen) if frame.gps_seen is not None else frame.gps_age_s >= _NEVER_SEEN_S
         )
-        if frame.heartbeat_age_s > self.hb_timeout and not (in_grace and hb_never):
+        hb_fault = (
+            elapsed > self.hb_timeout and not in_grace
+            if hb_never
+            else frame.heartbeat_age_s > self.hb_timeout
+        )
+        if hb_fault:
             s = ramp(frame.heartbeat_age_s, self.hb_timeout, self.hb_timeout * 2)
             bump(AttackType.DOS, max(0.6, s))
             if hb_never:
@@ -135,7 +154,23 @@ class ProtocolDetector(Detector):
                 evidence.append(
                     f"heartbeat stale {frame.heartbeat_age_s:.1f}s > {self.hb_timeout:.1f}s"
                 )
-        if frame.gps_age_s > self.gps_dropout and not (in_grace and gps_never):
+        coverage: str | None = None
+        if gps_never and not self.require_global_position:
+            # coverage condition: no vote, no score (exact substring matched by acceptance tests).
+            # Appended LAST (just before return), so it never heads an alert raised by another rule.
+            raw = {True: "GPS_RAW_INT present", False: "GPS_RAW_INT never received"}.get(
+                frame.gps_raw_seen, "GPS_RAW_INT presence unknown"
+            )
+            coverage = (
+                f"coverage: GLOBAL_POSITION_INT never received ({raw}); position-dependent checks "
+                "inactive; not attack evidence under this profile "
+                "(protocol.require_global_position=false)"
+            )
+        elif (
+            elapsed > self.gps_dropout and not in_grace
+            if gps_never
+            else frame.gps_age_s > self.gps_dropout
+        ):
             s = max(0.5, ramp(frame.gps_age_s, self.gps_dropout, self.gps_dropout * 3))
             if gps_never:
                 bump(self.never_seen_gps_vote, min(s, self.never_seen_gps_max))
@@ -203,6 +238,9 @@ class ProtocolDetector(Detector):
         if self.require_signing and frame.sig_invalid_count > 0:
             bump(AttackType.COMMAND_INJECTION, 0.95)
             evidence.append(f"{frame.sig_invalid_count} frame(s) failed MAVLink-2 signature verification")
+
+        if coverage is not None:  # score-0 coverage note: always the last protocol evidence item
+            evidence.append(coverage)
 
         return DetectorResult(
             detector=self.name,

@@ -103,8 +103,11 @@ class FeatureFrame:
     # reset. ``heartbeat_age_s`` / ``gps_age_s`` report the 999 s sentinel for "never seen", which a
     # real outage longer than 999 s would also exceed; these flags remove that ambiguity. ``None``
     # (hand-built frames) means unknown: readers fall back to the sentinel. NOT in ML_FEATURES.
+    # ``gps_seen`` is POSITION presence (GLOBAL_POSITION_INT); ``gps_raw_seen`` says whether any
+    # GPS_RAW_INT (raw receiver fix report) has been received -- reported, not position presence.
     heartbeat_seen: bool | None = None
     gps_seen: bool | None = None
+    gps_raw_seen: bool | None = None
 
     @property
     def battery_v_rate_abs(self) -> float:
@@ -144,6 +147,7 @@ class FeatureExtractor:
         self._unsigned = 0
         self._last_heartbeat_t = -1e9
         self._last_gps_t = -1e9
+        self._gps_raw_seen = False
         self._expected_msgs = 0.0  # for loss estimate
 
         # navigation bookkeeping
@@ -222,6 +226,7 @@ class FeatureExtractor:
             self.snapshot.battery_remaining = float(f["battery_remaining"])
             self._batt_hist.append((t, self.snapshot.battery_voltage))
         elif name == "GPS_RAW_INT":
+            self._gps_raw_seen = True
             self.snapshot.satellites = int(f.get("satellites_visible", 0))
             self.snapshot.gps_fix_type = int(f.get("fix_type", 0))
             self.snapshot.hdop = f.get("eph", 0) / 100.0
@@ -344,6 +349,7 @@ class FeatureExtractor:
             commands_recent=recent,
             heartbeat_seen=self._last_heartbeat_t > -1e8,
             gps_seen=self._last_gps_t > -1e8,
+            gps_raw_seen=self._gps_raw_seen,
         )
 
     # -- small numeric helpers --------------------------------------------- #

@@ -24,6 +24,12 @@ protocol:
   max_seq_gap: 30                   # per-source sequence jump => loss/DoS
   min_interarrival_ms: 0.4          # bursts faster than this are abnormal
   gps_dropout_s: 2.0                # GPS silence longer than this => stale
+  # GPS position policy (user decision 2026-10-15, "Coverage, not attack"). false: a link that has
+  # NEVER delivered GLOBAL_POSITION_INT is reported as a coverage condition (evidence only, no
+  # vote, score 0); true: position is required and never-received is a DOS-voting fault after
+  # gps_dropout_s of monitoring (never_seen_gps_* knobs apply only then). GPS lost after having
+  # been seen is a DOS fault either way. Stage-1 SIM streams always carry position: no effect.
+  require_global_position: false
   allowed_commands_in_flight:
     - MAV_CMD_NAV_WAYPOINT
     - MAV_CMD_DO_SET_MODE

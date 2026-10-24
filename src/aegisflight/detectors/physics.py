@@ -75,7 +75,13 @@ class PhysicsDetector(Detector):
         # ---- GPS speed vs VFR groundspeed (telemetry manipulation) ----
         sd = frame.gps_vfr_speed_diff_ms
         signals["gps_vfr_speed_diff_ms"] = sd
-        if sd > self.speed_cons:
+        # Gated on position presence (P1 follow-up, "Coverage, not attack"): if GLOBAL_POSITION_INT
+        # was NEVER received there is no GPS velocity, so ``sd`` is just the VFR groundspeed and a
+        # moving vehicle would turn the missing stream into TELEMETRY_MANIPULATION evidence.
+        # ``gps_seen`` None (hand-built frames) / True (extractor, Stage-1 SIM) behave as before.
+        # Only this rule is gated: the feature is unchanged (ML_FEATURES is frozen) and the ML
+        # detector still sees it. A stale GPS velocity after a loss is still compared (pre-existing).
+        if frame.gps_seen is not False and sd > self.speed_cons:
             s = ramp(sd, self.speed_cons, self.speed_cons * 3)
             bump(AttackType.TELEMETRY_MANIPULATION, max(0.5, s))
             evidence.append(f"GPS/VFR speed mismatch {sd:.1f} m/s > {self.speed_cons:.0f} m/s")

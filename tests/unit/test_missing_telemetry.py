@@ -5,11 +5,16 @@ The unchanged pipeline reported every decision as a DOS threat, "GPS dropout 999
 a never-seen sentinel presented as a measured dropout. These tests pin, with synthetic
 MessageEnvelopes (no hardware, no sockets):
 
-* the default score / attack vote for each case is unchanged (Stage-1 behaviour);
-* the evidence now says which case it is (``never received`` vs a measured age);
+* the evidence says which case it is (``never received`` vs a measured age);
 * a loss after valid data keeps alerting exactly as before, including after > 999 s;
-* ``startup_grace_s`` honours only the never-seen sentinel and ends at a defined time;
-* the additive ``never_seen_gps_*`` keys re-attribute / cap only the never-seen GPS case.
+* DECIDED (user decision 2026-10-15, "Coverage, not attack"): with the default
+  ``protocol.require_global_position: false`` a never-received GLOBAL_POSITION_INT is a reported
+  coverage condition (score 0, no vote, a ``coverage: ...`` evidence line), not a threat;
+  ``require_global_position: true`` restores the DOS outcome and the ``never_seen_gps_*`` knobs;
+* DECIDED (same date): a NEVER-received heartbeat / required position stream is judged on elapsed
+  monitoring time, so the first decision does not fire merely because nothing has arrived yet;
+* ``startup_grace_s`` (an optional key, default 0) honours only the never-seen case, combines with
+  the elapsed-time gate as a maximum (the later of the two decides), and ends at a defined time.
 """
 
 from __future__ import annotations
@@ -23,7 +28,11 @@ from aegisflight.core.enums import AttackType
 from aegisflight.core.geo import EARTH_RADIUS_M
 from aegisflight.core.types import MessageEnvelope, TelemetrySnapshot
 from aegisflight.detectors import PhysicsDetector, ProtocolDetector
-from aegisflight.features.extractor import ML_FEATURES, FeatureExtractor, FeatureFrame
+from aegisflight.features.extractor import ML_FEATURES, CommandEvent, FeatureExtractor, FeatureFrame
+
+COVERAGE = "coverage: GLOBAL_POSITION_INT never received"
+HB_TIMEOUT = DEFAULT_DETECTOR["protocol"]["heartbeat_timeout_s"]
+GPS_DROPOUT = DEFAULT_DETECTOR["protocol"]["gps_dropout_s"]
 
 LAT0, LON0 = -35.363261, 149.165230
 M_PER_DEG = math.radians(1.0) * EARTH_RADIUS_M
@@ -86,28 +95,46 @@ def _hb_att_no_position(t):
     return _hb_only(t) + [_att(t)]
 
 
+def _vfr(t: float, groundspeed: float) -> MessageEnvelope:
+    return _env(t, "VFR_HUD", groundspeed=groundspeed, heading=90, throttle=50, alt=600.0, climb=0.0)
+
+
 # ---- (a) never received ------------------------------------------------------------------- #
 
-def test_heartbeat_only_stream_default_outcome_unchanged_but_evidence_is_honest():
+def test_heartbeat_only_stream_default_is_a_coverage_condition_not_a_threat():
+    """DECIDED P1 (user decision 2026-10-15, "Coverage, not attack"). Was: DOS 1.0 every decision."""
     rows = _run(_hb_only)
     for _t, frame, res in rows:
         assert frame.heartbeat_seen is True and frame.gps_seen is False
-        # Stage-1 outcome preserved: DOS, saturated score, triggered
-        assert res.score == 1.0 and res.triggered
-        assert res.attack_votes == {AttackType.DOS: 1.0}
-        # ...but it no longer claims a 999 s measured dropout
+        assert frame.gps_raw_seen is False
+        assert res.score == 0.0 and not res.triggered and res.attack_votes == {}
+        assert len(res.evidence) == 1
+        ev = res.evidence[0]
+        assert ev.startswith(COVERAGE) and "GPS_RAW_INT never received" in ev
+        assert "GPS dropout" not in ev and "lost" not in ev and "999" not in ev
+        assert "inactive" in ev and "not attack evidence" in ev
+
+
+def test_heartbeat_only_stream_with_require_global_position_reproduces_the_old_dos_outcome():
+    """DECIDED P1 opt-in: today's outcome, after the elapsed-time startup gate (``gps_dropout_s``)."""
+    rows = _run(_hb_only, require_global_position=True)
+    for t, _frame, res in rows:
+        if t <= GPS_DROPOUT:
+            assert res.score == 0.0 and res.evidence == [] and res.attack_votes == {}, t
+            continue
+        assert res.score == 1.0 and res.triggered and res.attack_votes == {AttackType.DOS: 1.0}
         assert len(res.evidence) == 1
         ev = res.evidence[0]
         assert ev.startswith("GPS dropout: never received")
-        assert "999" not in ev and "not a measured dropout" in ev
+        assert "999" not in ev and "not a measured dropout" in ev and COVERAGE not in ev
 
 
 def test_heartbeat_plus_attitude_without_position_is_the_same_never_received_case():
     rows = _run(_hb_att_no_position)
     _, frame, res = _at(rows, 10.0)
     assert frame.snapshot.yaw is not None and frame.gps_seen is False
-    assert res.score == 1.0 and res.attack_votes == {AttackType.DOS: 1.0}
-    assert res.evidence[0].startswith("GPS dropout: never received")
+    assert res.score == 0.0 and res.attack_votes == {}  # DECIDED P1: coverage, not attack
+    assert res.evidence[0].startswith(COVERAGE)
     # physics-facing features stay at the neutral 0 (the physics detector is blind, not alarmed)
     assert frame.pos_residual_m == 0.0 and frame.yaw_course_diff_deg == 0.0
     assert frame.gps_vfr_speed_diff_ms == 0.0 and frame.gps_baro_alt_diff_m == 0.0
@@ -119,22 +146,51 @@ def test_no_heartbeat_at_all_is_still_a_dos_style_liveness_fault():
     rows = _run(lambda t: [])
     _, frame, res = _at(rows, 5.0)
     assert frame.heartbeat_seen is False and frame.gps_seen is False
-    assert res.score == 1.0 and res.attack_votes == {AttackType.DOS: 1.0}
+    assert res.score == 1.0 and res.attack_votes == {AttackType.DOS: 1.0}  # heartbeat only
     assert any(e.startswith("heartbeat stale (never received") for e in res.evidence)
-    assert any(e.startswith("GPS dropout: never received") for e in res.evidence)
+    assert any(e.startswith(COVERAGE) for e in res.evidence)  # DECIDED P1: position is coverage
+    assert not any(e.startswith("GPS dropout") for e in res.evidence)
+
+
+def test_never_received_heartbeat_is_judged_on_elapsed_monitoring_time():
+    """DECIDED (e): t=0 is quiet; "no heartbeat for > heartbeat_timeout_s since monitoring began"
+    still fires (heartbeat stays DOS by default: it is MAVLink-mandatory)."""
+    rows = _run(lambda t: [], seconds=6.0)
+    for t, _, res in rows:
+        hb = [e for e in res.evidence if e.startswith("heartbeat stale")]
+        if t <= HB_TIMEOUT:
+            assert hb == [] and res.score == 0.0 and res.attack_votes == {}, t
+        else:
+            assert hb and res.score == 1.0 and res.attack_votes == {AttackType.DOS: 1.0}, t
+    first = next(t for t, _, r in rows if r.score > 0)
+    assert first == pytest.approx(HB_TIMEOUT + DECISION_DT)
+
+
+def test_elapsed_gate_starts_at_the_first_decision_not_at_t0_of_the_clock():
+    ext, det = FeatureExtractor(), _proto()
+    res = [det.process(ext.extract(t)) for t in (100.0, 102.0, 103.0, 103.2)]
+    assert [r.score for r in res] == [0.0, 0.0, 0.0, 1.0]
+
+
+def test_heartbeat_arriving_before_the_timeout_never_fires():
+    rows = _run(lambda t: [_hb(t)] if t >= 2.0 and _every(t, 1.0) else [], seconds=8.0)
+    assert all(not any(e.startswith("heartbeat") for e in r.evidence) for _t, _, r in rows)
 
 
 # ---- startup grace: only the never-seen sentinel, bounded ---------------------------------- #
 
-def test_startup_grace_covers_only_never_seen_and_expires():
-    rows = _run(_hb_only, seconds=5.0, startup_grace_s=1.4)
-    for t in (0.0, 0.2, 1.0, 1.2):
-        _, _, res = _at(rows, t)
-        assert res.score == 0.0 and res.evidence == [] and res.attack_votes == {}
-    for t in (1.4, 1.6, 3.0, 5.0):  # after the window, absence IS reported (not silently accepted)
-        _, _, res = _at(rows, t)
-        assert res.score == 1.0 and res.attack_votes == {AttackType.DOS: 1.0}
-        assert res.evidence[0].startswith("GPS dropout: never received")
+@pytest.mark.parametrize(("grace", "first_fire"), [(1.4, 2.2), (3.0, 3.0)])
+def test_startup_grace_covers_only_never_seen_and_expires(grace, first_fire):
+    # require_global_position: the never-seen position stream is a fault in this profile. The
+    # elapsed gate (> gps_dropout_s) and the grace combine as a maximum, not a sum: the later of
+    # the two decides when the fault may first fire.
+    rows = _run(_hb_only, seconds=5.0, startup_grace_s=grace, require_global_position=True)
+    for t, _, res in rows:
+        if t < first_fire - 1e-9:
+            assert res.score == 0.0 and res.evidence == [] and res.attack_votes == {}, t
+        else:  # after the window, absence IS reported (not silently accepted)
+            assert res.score == 1.0 and res.attack_votes == {AttackType.DOS: 1.0}, t
+            assert res.evidence[0].startswith("GPS dropout: never received")
 
 
 def test_startup_grace_does_not_shield_a_loss_after_valid_data():
@@ -154,20 +210,25 @@ def test_gps_arriving_during_grace_clears_the_condition():
     def msgs(t):
         return _hb_only(t) + ([_gpi(t)] if t >= 0.6 else [])
 
-    rows = _run(msgs, seconds=5.0, startup_grace_s=1.4)
+    rows = _run(msgs, seconds=5.0, startup_grace_s=1.4, require_global_position=True)
     for t in (0.0, 0.4, 2.0, 5.0):
         assert _at(rows, t)[2].evidence == []
+    default = _run(msgs, seconds=5.0, startup_grace_s=1.4)  # coverage line only until it arrives
+    assert all(r.score == 0.0 for _t, _, r in default)
+    assert _at(default, 0.4)[2].evidence[0].startswith(COVERAGE)
+    assert _at(default, 0.6)[2].evidence == [] and _at(default, 5.0)[2].evidence == []
 
 
 # ---- (b) received then lost ---------------------------------------------------------------- #
 
-def test_gps_lost_after_valid_data_alerts_exactly_as_before():
+@pytest.mark.parametrize("require", [False, True])
+def test_gps_lost_after_valid_data_alerts_exactly_as_before(require):
     lost_at = 6.0
 
     def msgs(t):
         return _hb_only(t) + [_att(t)] + ([_gpi(t)] if t < lost_at else [])
 
-    rows = _run(msgs)
+    rows = _run(msgs, require_global_position=require)
     assert _at(rows, 7.8)[2].evidence == []  # age 1.8 s: below threshold
     _, frame, res = _at(rows, 8.2)  # last GPS at t=5.8 -> age 2.4 s
     assert frame.gps_seen is True
@@ -242,11 +303,79 @@ def test_gps_spoofing_evidence_is_still_detected_when_position_is_present():
     assert flagged
 
 
+# ---- physics: the GPS/VFR speed check needs a position stream (P1 follow-up, 2026-10-20) ------ #
+
+SPEED_EV = "GPS/VFR speed mismatch"
+
+
+def _speed_frame(t: float, gps_seen: bool | None) -> FeatureFrame:
+    # VFR groundspeed 10 m/s and no GPS velocity: the extractor's speed difference is then 10 m/s
+    return FeatureFrame(t=t, snapshot=TelemetrySnapshot(t=t), gps_vfr_speed_diff_ms=10.0,
+                        gps_seen=gps_seen)
+
+
+def test_speed_check_is_inactive_when_position_was_never_received():
+    """Never-received GLOBAL_POSITION_INT has no GPS velocity to compare: no evidence, no vote."""
+    phys = PhysicsDetector(DEFAULT_DETECTOR["physics"])
+    for k in range(5):  # well past the soft-trigger hysteresis
+        res = phys.process(_speed_frame(k * DECISION_DT, gps_seen=False))
+        assert res.score == 0.0 and res.attack_votes == {} and res.evidence == []
+        assert res.signals["gps_vfr_speed_diff_ms"] == 10.0  # the signal is still recorded
+
+
+@pytest.mark.parametrize("gps_seen", [None, True])
+def test_speed_check_fires_as_before_when_position_seen_or_unknown(gps_seen):
+    """``True`` (extractor, position received) and ``None`` (hand-built frame) keep the Stage-1 rule."""
+    phys = PhysicsDetector(DEFAULT_DETECTOR["physics"])
+    res = [phys.process(_speed_frame(k * DECISION_DT, gps_seen=gps_seen)) for k in range(3)]
+    for r in res:
+        assert r.attack_votes == {AttackType.TELEMETRY_MANIPULATION: 0.5}
+        assert r.evidence == [f"{SPEED_EV} 10.0 m/s > 5 m/s"]
+    assert res[0].score == pytest.approx(0.5 * 0.35)  # first soft tick damped by hysteresis
+    assert res[-1].score == 0.5 and res[-1].triggered
+
+
+def test_moving_vehicle_without_position_keeps_the_ml_feature_but_physics_is_silent():
+    """HEARTBEAT + ATTITUDE + VFR_HUD at 10 m/s, no GLOBAL_POSITION_INT. The ML feature
+    ``gps_vfr_speed_diff_ms`` is unchanged (ML_FEATURES is frozen: it still equals the VFR
+    groundspeed); only the physics RULE on it is gated."""
+    ext, phys = FeatureExtractor(), PhysicsDetector(DEFAULT_DETECTOR["physics"])
+    for k in range(25):
+        t = round(k * DECISION_DT, 6)
+        for m in _hb_att_no_position(t) + [_vfr(t, 10.0)]:
+            ext.update(m)
+        frame = ext.extract(t)
+        res = phys.process(frame)
+        assert frame.gps_seen is False
+        assert frame.gps_vfr_speed_diff_ms == pytest.approx(10.0)
+        assert frame.to_vector()[ML_FEATURES.index("gps_vfr_speed_diff_ms")] == pytest.approx(10.0)
+        assert res.score == 0.0 and res.evidence == [] and res.attack_votes == {}
+
+
+# ---- coverage line placement ------------------------------------------------------------------ #
+
+def test_coverage_line_is_the_last_protocol_evidence_item():
+    """The score-0 coverage line comes after every rule's evidence (command provenance, signing), so
+    it is never the headline of an alert raised by another rule; it adds no vote."""
+    det = _proto(require_signing=True)
+    cmd = CommandEvent(recv_time=1.0, sysid=77, compid=1, command=400)  # ARM_DISARM, unexpected source
+    frame = FeatureFrame(t=1.0, snapshot=TelemetrySnapshot(t=1.0), heartbeat_age_s=0.5,
+                         gps_age_s=999.0, sources={(1, 1): 5}, n_sources=1, commands_recent=[cmd],
+                         signed_ratio=0.0, heartbeat_seen=True, gps_seen=False, gps_raw_seen=False)
+    res = det.process(frame)
+    i_cmd = next(i for i, e in enumerate(res.evidence) if "unexpected source" in e)
+    i_sig = next(i for i, e in enumerate(res.evidence) if e.startswith("unsigned messages"))
+    assert i_cmd < i_sig < len(res.evidence) - 1
+    assert res.evidence[-1].startswith(COVERAGE)
+    assert sum(e.startswith(COVERAGE) for e in res.evidence) == 1
+    assert res.attack_votes == {AttackType.COMMAND_INJECTION: 0.9, AttackType.MAVLINK_ANOMALY: 0.5}
+
+
 # ---- additive never-seen GPS knobs ---------------------------------------------------------- #
 
 def test_never_seen_gps_knobs_reattribute_and_cap_only_the_never_seen_case():
     rows = _run(_hb_only, seconds=5.0, never_seen_gps_vote="MAVLINK_ANOMALY",
-                never_seen_gps_max_score=0.5)
+                never_seen_gps_max_score=0.5, require_global_position=True)
     _, _, res = _at(rows, 3.0)
     assert res.score == 0.5 and res.triggered  # still reported, not silenced
     assert res.attack_votes == {AttackType.MAVLINK_ANOMALY: 0.5}
@@ -261,13 +390,26 @@ def test_never_seen_gps_knobs_reattribute_and_cap_only_the_never_seen_case():
     assert res2.score == 1.0 and res2.attack_votes == {AttackType.DOS: 1.0}
 
 
-def test_never_seen_gps_cap_is_floored_so_the_condition_cannot_be_silenced():
-    det = _proto(never_seen_gps_max_score=0.0)
+def _never_gps_frame(t: float, **kw) -> FeatureFrame:
+    return FeatureFrame(t=t, snapshot=TelemetrySnapshot(t=t), heartbeat_age_s=0.5,
+                        gps_age_s=999.0, sources={(1, 1): 5}, n_sources=1, **kw)
+
+
+def test_never_seen_gps_cap_is_floored_so_the_detector_still_reports_it():
+    # the floor guarantees DETECTOR-level evidence + score 0.5, not a fused alert
+    det = _proto(never_seen_gps_max_score=0.0, require_global_position=True)
     assert det.never_seen_gps_max == 0.5
-    frame = FeatureFrame(t=1.0, snapshot=TelemetrySnapshot(t=1.0), heartbeat_age_s=0.5,
-                         gps_age_s=999.0, gps_seen=False, sources={(1, 1): 5}, n_sources=1)
-    res = det.process(frame)
+    det.process(_never_gps_frame(0.0, gps_seen=False))  # first decision: elapsed 0
+    res = det.process(_never_gps_frame(3.0, gps_seen=False))
     assert res.triggered and res.score == 0.5
+    assert res.evidence[0].startswith("GPS dropout: never received")
+
+
+def test_never_seen_gps_knobs_are_inert_without_require_global_position():
+    det = _proto(never_seen_gps_vote="MAVLINK_ANOMALY", never_seen_gps_max_score=0.6)
+    det.process(_never_gps_frame(0.0, gps_seen=False))
+    res = det.process(_never_gps_frame(3.0, gps_seen=False))
+    assert res.score == 0.0 and res.attack_votes == {} and res.evidence[0].startswith(COVERAGE)
 
 
 def test_defaults_keep_stage1_never_seen_policy():
@@ -275,18 +417,59 @@ def test_defaults_keep_stage1_never_seen_policy():
     assert det.never_seen_gps_vote is AttackType.DOS
     assert det.never_seen_gps_max == 1.0
     assert det.startup_grace_s == 0.0
+    assert det.require_global_position is False  # DECIDED P1 default (2026-10-15)
 
 
 def test_hand_built_frame_without_flags_falls_back_to_the_sentinel():
     det = _proto()
-    sentinel = FeatureFrame(t=1.0, snapshot=TelemetrySnapshot(t=1.0), heartbeat_age_s=0.5,
-                            gps_age_s=999.0, sources={(1, 1): 5}, n_sources=1)
-    assert sentinel.gps_seen is None
+    sentinel = _never_gps_frame(1.0)
+    assert sentinel.gps_seen is None and sentinel.gps_raw_seen is None
     res = det.process(sentinel)
-    assert res.score == 1.0 and res.evidence[0].startswith("GPS dropout: never received")
+    assert res.score == 0.0 and res.evidence[0].startswith(COVERAGE)
+    assert "GPS_RAW_INT presence unknown" in res.evidence[0]
     measured = FeatureFrame(t=1.0, snapshot=TelemetrySnapshot(t=1.0), heartbeat_age_s=0.5,
                             gps_age_s=5.0, sources={(1, 1): 5}, n_sources=1)
     assert det.process(measured).evidence == ["GPS dropout 5.0s > 2.0s"]
+    req = _proto(require_global_position=True)
+    req.process(_never_gps_frame(0.0))
+    res = req.process(_never_gps_frame(3.0))
+    assert res.score == 1.0 and res.evidence[0].startswith("GPS dropout: never received")
+
+
+# ---- DECIDED P2: GPS presence matrix (user decision 2026-10-15, "Coverage, not attack") ------ #
+
+def _presence(raw: bool, gpi: bool, **over):
+    def msgs(t):
+        return _hb_only(t) + ([_gpi(t)] if gpi else []) + ([_raw(t, 3, 10)] if raw else [])
+    return _run(msgs, seconds=5.0, **over)
+
+
+@pytest.mark.parametrize(("raw", "raw_text"), [
+    (True, "GPS_RAW_INT present"),
+    (False, "GPS_RAW_INT never received"),
+])
+def test_presence_without_global_position_is_coverage_only(raw, raw_text):
+    for _t, frame, res in _presence(raw, False):
+        assert frame.gps_seen is False and frame.gps_raw_seen is raw
+        assert res.score == 0.0 and res.attack_votes == {} and not res.triggered
+        assert len(res.evidence) == 1 and res.evidence[0].startswith(COVERAGE)
+        assert raw_text in res.evidence[0]
+        assert "GPS dropout" not in res.evidence[0] and "lost" not in res.evidence[0]
+
+
+@pytest.mark.parametrize("raw", [True, False])
+def test_presence_with_global_position_is_quiet(raw):
+    for _t, frame, res in _presence(raw, True):
+        assert frame.gps_seen is True and frame.gps_raw_seen is raw
+        assert res.score == 0.0 and res.evidence == [] and res.attack_votes == {}
+
+
+def test_gps_raw_int_does_not_satisfy_a_declared_position_requirement():
+    rows = _presence(True, False, require_global_position=True)
+    _, frame, res = _at(rows, 3.0)
+    assert frame.gps_raw_seen is True and frame.gps_seen is False
+    assert res.score == 1.0 and res.attack_votes == {AttackType.DOS: 1.0}
+    assert res.evidence[0].startswith("GPS dropout: never received")
 
 
 # ---- GNSS fix: never acquired vs lost after a valid fix (P3 wording) ------------------------ #
@@ -396,3 +579,14 @@ def test_extractor_seen_flags_clear_on_reset():
     assert f.heartbeat_seen is False and f.gps_seen is False
     assert f.gps_age_s == 999.0 and f.heartbeat_age_s == 999.0
     assert "heartbeat_seen" not in ML_FEATURES and "gps_seen" not in ML_FEATURES
+
+
+def test_extractor_gps_raw_seen_flag_sets_and_clears_on_reset():
+    ext = FeatureExtractor()
+    assert ext.extract(0.0).gps_raw_seen is False
+    ext.update(_raw(0.0, 3, 10))
+    f = ext.extract(1.0)
+    assert f.gps_raw_seen is True and f.gps_seen is False  # raw fix is not position presence
+    ext.reset()
+    assert ext.extract(1.0).gps_raw_seen is False
+    assert "gps_raw_seen" not in ML_FEATURES

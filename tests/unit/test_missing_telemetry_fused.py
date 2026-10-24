@@ -9,19 +9,20 @@ because that is what the runner persists. No hardware, no sockets, no production
 Three kinds of test live here; the kind is stated in each docstring.
 
 * ``GENUINE``  -- an expectation that follows from existing code/docs or from the "never received
-  vs lost after being seen must be distinguishable" principle already adopted. Passes today.
-* ``PENDING POLICY Pn`` -- pins the CURRENT fused outcome of a case whose *correct* outcome is an
-  undecided policy question. It documents what the pipeline does today; it is NOT a statement that
-  the outcome is right. When the policy is decided, change these tests deliberately.
-    P1  minimum persisted visibility / classification of a never-observed GPS stream
-        (alert? attack class? a WATCH-level coverage condition?) -- depends on whether the profile
-        can say GPS is expected, which no profile can today;
-    P2  does ``GPS_RAW_INT`` count as GPS presence for the liveness rule (today only
-        ``GLOBAL_POSITION_INT`` does)?
-    P3  is a fix that was never acquired denial evidence at all, or a coverage condition?
-* ``xfail(strict=True)`` -- an expectation that currently FAILS. Strict, so the suite stays green
-  today and goes red (XPASS) the moment the behaviour is fixed, prompting removal of the marker.
-  ``pytest --runxfail`` shows the real failures.
+  vs lost after being seen must be distinguishable" principle already adopted.
+* ``DECIDED Pn`` -- the outcome of a policy question the USER has decided. P1 and P2 were decided
+  on 2026-10-15 ("Coverage, not attack"):
+    P1  a link that has NEVER delivered GLOBAL_POSITION_INT is, by default, a reported coverage
+        condition (protocol score 0, no vote, a ``coverage: GLOBAL_POSITION_INT never received``
+        evidence line in every assessment), not a threat or an alert. A profile that declares
+        position as required (``protocol.require_global_position: true``) restores the DOS
+        outcome and the ``never_seen_gps_*`` knobs. A NEVER-received stream is judged on elapsed
+        monitoring time, so the first decision does not fire merely because nothing arrived yet.
+        Loss after a stream was seen is unchanged (DOS).
+    P2  ``GPS_RAW_INT`` is reported as present/absent in the coverage line (``gps_raw_seen``) but
+        is NOT position presence: it does not satisfy ``require_global_position``.
+* ``PENDING POLICY P3`` -- pins the CURRENT fused outcome of a still-undecided question: is a fix
+  that was never acquired denial evidence at all, or a coverage condition? (scoring still OPEN)
 
 Stage-1 numbers used below are derived from the loaded config, never hard-coded.
 """
@@ -48,6 +49,8 @@ COOLDOWN_S = _CFG.detector["fusion"]["cooldown_s"]
 GPS_DROPOUT_S = _CFG.detector["protocol"]["gps_dropout_s"]
 PROTO = DetectorName.PROTOCOL.value
 NEVER_GPS_TEXT = "GPS dropout: never received"
+COVERAGE_TEXT = "coverage: GLOBAL_POSITION_INT never received"
+HB_TIMEOUT_S = _CFG.detector["protocol"]["heartbeat_timeout_s"]
 
 
 # --------------------------------------------------------------------------- #
@@ -70,10 +73,11 @@ class _Link:
 
 
 def _stream(link: _Link, k: int, t: float, *, hb: bool = True, sys_status: bool = True,
-            gpi: bool = True, raw: tuple[int, int] | None = (3, 10), att: bool = True
-            ) -> list[MessageEnvelope]:
+            gpi: bool = True, raw: tuple[int, int] | None = (3, 10), att: bool = True,
+            groundspeed: float = 0.0) -> list[MessageEnvelope]:
     """Messages of tick ``k``. HEARTBEAT/SYS_STATUS/GPS_RAW_INT 1 Hz, GLOBAL_POSITION_INT 5 Hz,
-    ATTITUDE/VFR_HUD 10 Hz; a stationary vehicle. ``raw`` = (fix_type, satellites) or None."""
+    ATTITUDE/VFR_HUD 10 Hz; a stationary vehicle (GPS velocity 0). ``raw`` = (fix_type, satellites)
+    or None. ``groundspeed`` is the VFR_HUD groundspeed only (default 0 = consistent)."""
     out: list[MessageEnvelope] = []
     if k % TICK_HZ == 0:
         if hb:
@@ -89,7 +93,7 @@ def _stream(link: _Link, k: int, t: float, *, hb: bool = True, sys_status: bool 
     if att:
         out.append(link.env(t, "ATTITUDE", 30, roll=0.0, pitch=0.0, yaw=0.5, rollspeed=0.0,
                             pitchspeed=0.0, yawspeed=0.0))
-        out.append(link.env(t, "VFR_HUD", 74, groundspeed=0.0, heading=28, throttle=0,
+        out.append(link.env(t, "VFR_HUD", 74, groundspeed=groundspeed, heading=28, throttle=0,
                             alt=900.0, climb=0.0))
     return out
 
@@ -179,29 +183,72 @@ def test_control_healthy_link_is_quiet_at_fused_level():
 
 def test_heartbeat_only_flags_and_evidence_reach_the_assessment():
     """GENUINE. Heartbeat seen, GPS never seen; every decision's evidence says "never received"
-    (not a measured age); the physics detector is blind (score 0), not alarmed."""
+    (not a measured age) -- under the default profile as the P1 coverage line; the physics
+    detector is blind (score 0), not alarmed."""
     run = _run(_hb_only)
     for a, frame in run.decisions:
         assert frame.heartbeat_seen is True and frame.gps_seen is False
-        assert NEVER_GPS_TEXT in _text(a)
+        assert frame.gps_raw_seen is False
+        assert COVERAGE_TEXT in _text(a)
         assert a.detector_scores[DetectorName.PHYSICS.value] == 0.0
 
 
-def test_heartbeat_only_default_is_currently_a_critical_dos_attack():
-    """PENDING POLICY P1 -- pins CURRENT behaviour, not a statement that it is right.
-
-    With defaults a link that never sends GLOBAL_POSITION_INT is a CRITICAL ``DOS`` threat on
-    every decision; the evidence text says "incomplete telemetry, not a measured dropout" while
-    ``attack_type``/``severity`` say attack. Which of the two should change is the P1 decision."""
+def test_heartbeat_only_default_is_a_coverage_condition_not_a_threat():
+    """DECIDED P1 (user decision 2026-10-15, "Coverage, not attack"). Was: CRITICAL DOS alert on the
+    first decision. Default profile: not a threat, not an alert, NORMAL/BENIGN; the condition is
+    still visible in every assessment's evidence and is never worded as a dropout or a loss."""
     run = _run(_hb_only)
     for a in run.assessments:
-        assert a.threat is True
-        assert a.attack_type is AttackType.DOS
+        assert a.threat is False and a.is_alert is False
+        assert a.severity is Severity.NORMAL and a.attack_type is AttackType.BENIGN
+        assert a.detector_scores[PROTO] == 0.0 and a.threat_score == 0.0
+        text = _text(a)
+        assert COVERAGE_TEXT in text and "GPS_RAW_INT never received" in text
+        assert "GPS dropout" not in text and "lost" not in text
+    assert run.alerts == []
+
+
+def test_heartbeat_only_with_require_global_position_is_a_critical_dos_attack():
+    """DECIDED P1 opt-in (user decision 2026-10-15). ``require_global_position: true`` reproduces the
+    old CRITICAL DOS outcome, except at startup: a never-received stream is judged on elapsed
+    monitoring time, so the first alert is the first decision with elapsed > ``gps_dropout_s``."""
+    run = _run(_hb_only, require_global_position=True)
+    for a in run.assessments:
+        if a.t <= GPS_DROPOUT_S:
+            assert a.threat is False and NEVER_GPS_TEXT not in _text(a)
+            continue
+        assert a.threat is True and a.attack_type is AttackType.DOS
         assert a.severity is Severity.CRITICAL
         assert a.threat_score == pytest.approx(W_PROTO, abs=1e-3)  # protocol score 1.0 * w'
+        assert NEVER_GPS_TEXT in _text(a) and COVERAGE_TEXT not in _text(a)
     alerts = run.alerts
-    assert alerts and alerts[0].t == 0.0  # an alert on the very first decision
+    first_after_gate = min(a.t for a in run.assessments if a.t > GPS_DROPOUT_S)
+    assert alerts and alerts[0].t == pytest.approx(first_after_gate)
     assert all(b.t - a.t >= COOLDOWN_S - 1e-6 for a, b in zip(alerts, alerts[1:], strict=False))
+
+
+# --------------------------------------------------------------------------- #
+# 1b. startup: a NEVER-received heartbeat is judged on elapsed monitoring time
+# --------------------------------------------------------------------------- #
+
+
+def test_no_heartbeat_alerts_only_after_the_timeout_has_elapsed():
+    """DECIDED (user decision 2026-10-15). Full telemetry but no HEARTBEAT ever: nothing at t=0;
+    the first fused alert is the first decision with elapsed > ``heartbeat_timeout_s`` -- still a
+    DOS alert (HEARTBEAT is MAVLink-mandatory; that policy is unchanged)."""
+    run = _run(lambda link, k, t: _stream(link, k, t, hb=False), seconds=10.0)
+    assert not any(a.threat for a in run.assessments if a.t <= HB_TIMEOUT_S)
+    first = run.alerts[0]
+    assert first.t == pytest.approx(min(a.t for a in run.assessments if a.t > HB_TIMEOUT_S))
+    assert first.attack_type is AttackType.DOS and first.threat is True
+    assert "heartbeat stale (never received" in _text(first)
+
+
+def test_heartbeat_arriving_after_start_but_before_the_timeout_never_alerts():
+    """DECIDED (same). A heartbeat first seen at 1 s is not a fault at t=0."""
+    run = _run(lambda link, k, t: _stream(link, k, t, hb=t >= 1.0), seconds=10.0)
+    assert not any(a.threat or a.is_alert for a in run.assessments)
+    assert not any("heartbeat" in _text(a) for a in run.assessments)
 
 
 # --------------------------------------------------------------------------- #
@@ -210,24 +257,33 @@ def test_heartbeat_only_default_is_currently_a_critical_dos_attack():
 
 
 def test_gps_raw_only_pipeline_holds_a_healthy_fix_yet_reports_gps_never_seen():
-    """GENUINE (a fact about the current code, not a policy). The extractor ingests the healthy
-    GPS_RAW_INT (fix 3D, 10 satellites) into its snapshot, while ``gps_seen`` -- the flag the
-    liveness rule reads -- stays False because only GLOBAL_POSITION_INT sets it. Two parts of the
-    same pipeline disagree about whether GPS is present; P2 decides which one is right."""
+    """GENUINE. The extractor ingests the healthy GPS_RAW_INT (fix 3D, 10 satellites) into its
+    snapshot and sets ``gps_raw_seen``; ``gps_seen`` (POSITION presence: GLOBAL_POSITION_INT ever
+    received) stays False. Decided P2: these are two different facts, both reported."""
     run = _run(_gps_raw_only)
     snap = run.pipe.extractor.snapshot
     assert snap.gps_fix_type == 3 and snap.satellites == 10
     assert all(frame.gps_seen is False for _, frame in run.decisions)
+    assert all(frame.gps_raw_seen is True for _, frame in run.decisions)
 
 
-def test_gps_raw_only_is_currently_a_critical_dos_attack():
-    """PENDING POLICY P2 -- pins CURRENT behaviour. A link that delivers a healthy GPS fix via
-    GPS_RAW_INT but no position is CRITICAL ``DOS`` on every decision."""
+def test_gps_raw_only_is_a_coverage_condition_that_names_gps_raw_int_present():
+    """DECIDED P2 (user decision 2026-10-15, "Coverage, not attack"). Was: CRITICAL DOS on every
+    decision. Default: no threat, no alert; the coverage line says GPS_RAW_INT is present."""
     run = _run(_gps_raw_only)
     for a in run.assessments:
-        assert a.threat is True and a.attack_type is AttackType.DOS
-        assert a.severity is Severity.CRITICAL
-        assert NEVER_GPS_TEXT in _text(a)
+        assert a.threat is False and a.is_alert is False and a.severity is Severity.NORMAL
+        assert COVERAGE_TEXT in _text(a) and "GPS_RAW_INT present" in _text(a)
+        assert "GPS dropout" not in _text(a)
+
+
+def test_gps_raw_int_does_not_satisfy_a_declared_position_requirement():
+    """DECIDED P2 (same). With ``require_global_position: true`` a healthy GPS_RAW_INT does not count
+    as position presence: CRITICAL DOS after the elapsed-time gate."""
+    run = _run(_gps_raw_only, require_global_position=True)
+    after = [a for a in run.assessments if a.t > GPS_DROPOUT_S]
+    assert after and all(a.threat and a.attack_type is AttackType.DOS for a in after)
+    assert all(a.severity is Severity.CRITICAL and NEVER_GPS_TEXT in _text(a) for a in after)
 
 
 # --------------------------------------------------------------------------- #
@@ -321,6 +377,9 @@ def test_never_seen_gps_knobs_do_not_change_a_genuine_dropout():
     base = key(_dropout_run())
     knobs = key(_dropout_run(never_seen_gps_vote="MAVLINK_ANOMALY", never_seen_gps_max_score=0.5))
     assert knobs == base
+    required = key(_dropout_run(require_global_position=True, never_seen_gps_vote="MAVLINK_ANOMALY",
+                                never_seen_gps_max_score=0.5))
+    assert required == base  # P1 decision: loss after a stream was seen is unchanged
 
 
 # --------------------------------------------------------------------------- #
@@ -328,18 +387,28 @@ def test_never_seen_gps_knobs_do_not_change_a_genuine_dropout():
 # --------------------------------------------------------------------------- #
 
 
-def test_cap_at_the_floor_is_not_a_threat_and_not_an_alert():
-    """PENDING POLICY P1 -- pins CURRENT behaviour at the final-assessment level.
+# The ``never_seen_gps_*`` knobs apply only when the profile declares position as required
+# (DECIDED P1). Every test below sets ``require_global_position=True`` and asserts on decisions
+# after the elapsed-time gate (elapsed > gps_dropout_s); before it the stream is not yet judged.
 
-    ``never_seen_gps_max_score`` is floored at 0.5, but 0.5 * w' (~0.441) is BELOW the fusion
-    ``threat_threshold`` (0.45): the assessment is ``threat=False``, severity NORMAL, never an alert
-    (the serial runner persists only alerts). The condition is still visible INSIDE each assessment
-    (evidence text, protocol detector score 0.5), just in nothing the runner writes out. A cap of 0.0
-    is clamped to the same 0.5."""
+
+def _after_gate(run: Run) -> list[ThreatAssessment]:
+    after = [a for a in run.assessments if a.t > GPS_DROPOUT_S]
+    assert after
+    return after
+
+
+def test_cap_at_the_floor_is_not_a_threat_and_not_an_alert():
+    """GENUINE (arithmetic of the current fusion; P1 decided 2026-10-15 under
+    ``require_global_position: true``). ``never_seen_gps_max_score`` is floored at 0.5, but
+    0.5 * w' (~0.441) is BELOW the fusion ``threat_threshold`` (0.45): the assessment is
+    ``threat=False``, severity NORMAL, never an alert. The condition is visible INSIDE each
+    assessment (evidence text, protocol detector score 0.5). A cap of 0.0 is clamped to 0.5."""
     assert 0.5 * W_PROTO < THREAT_THRESHOLD  # the arithmetic that makes the floor sub-threshold
     for cap in (0.5, 0.0):
-        run = _run(_hb_only, never_seen_gps_vote="MAVLINK_ANOMALY", never_seen_gps_max_score=cap)
-        for a in run.assessments:
+        run = _run(_hb_only, require_global_position=True, never_seen_gps_vote="MAVLINK_ANOMALY",
+                   never_seen_gps_max_score=cap)
+        for a in _after_gate(run):
             assert a.threat is False and a.is_alert is False and a.severity is Severity.NORMAL
             assert a.threat_score == pytest.approx(0.5 * W_PROTO, abs=1e-3)
             assert a.detector_scores[PROTO] == pytest.approx(0.5)
@@ -347,37 +416,90 @@ def test_cap_at_the_floor_is_not_a_threat_and_not_an_alert():
         assert run.alerts == []
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "docs/DETECTION.md and detectors/protocol.py say the cap is 'floored at 0.5 so the condition "
-    "always still triggers' / 'is always still reported -- never silently accepted'. At the floor "
-    "the fused assessment is neither a threat nor an alert, so nothing the runner persists records "
-    "it. 'Triggers/reported' is ambiguous (detector bump vs operator-visible alert): the P1 decision "
-    "must pick the minimum persisted visibility, then either the floor or the docs change."))
-def test_documented_floor_guarantee_holds_at_the_final_assessment():
-    """XFAIL (strict). The documented 'never silently accepted' guarantee, read as 'a never-seen GPS
-    stream is a threat or an alert for every legal cap value'. The interpretation is the open
-    question P1, which is exactly why this is xfail and not a hard failure."""
-    run = _run(_hb_only, never_seen_gps_vote="MAVLINK_ANOMALY", never_seen_gps_max_score=0.0)
-    assert any(a.threat or a.is_alert for a in run.assessments)
+def test_floor_guarantees_detector_level_evidence_not_a_fused_alert():
+    """GENUINE (replaces the strict xfail ``test_documented_floor_guarantee_holds_at_the_final_
+    assessment``; decided reading 2026-10-15). The 0.5 floor guarantees DETECTOR-level reporting:
+    with ``require_global_position: true`` and cap 0.0 the protocol detector scores 0.5 and the
+    never-received evidence is in every assessment after the elapsed-time gate. It does NOT
+    guarantee a fused threat or an operator alert: 0.5 * w' < threat_threshold, so ``threat`` is
+    False and nothing is alerted. Stated plainly so no doc claims otherwise."""
+    run = _run(_hb_only, require_global_position=True, never_seen_gps_max_score=0.0)
+    for a in _after_gate(run):
+        assert a.detector_scores[PROTO] == pytest.approx(0.5)
+        assert NEVER_GPS_TEXT in _text(a)
+        assert a.threat is False and a.is_alert is False
+    assert run.alerts == []
 
 
 def test_cap_above_the_fused_threshold_is_a_suspicious_alert():
     """GENUINE (arithmetic of the current fusion). Cap 0.6 -> fused 0.6 * w' (~0.529): a threat,
-    SUSPICIOUS, labelled MAVLINK_ANOMALY, alerting on the first decision."""
+    SUSPICIOUS, labelled MAVLINK_ANOMALY, alerting on the first decision after the gate."""
     assert 0.6 * W_PROTO >= THREAT_THRESHOLD
-    run = _run(_hb_only, never_seen_gps_vote="MAVLINK_ANOMALY", never_seen_gps_max_score=0.6)
-    for a in run.assessments:
+    run = _run(_hb_only, require_global_position=True, never_seen_gps_vote="MAVLINK_ANOMALY",
+               never_seen_gps_max_score=0.6)
+    after = _after_gate(run)
+    for a in after:
         assert a.threat is True and a.severity is Severity.SUSPICIOUS
         assert a.attack_type is AttackType.MAVLINK_ANOMALY
         assert a.threat_score == pytest.approx(0.6 * W_PROTO, abs=1e-3)
-    assert run.alerts and run.alerts[0].t == 0.0
+    assert run.alerts and run.alerts[0].t == after[0].t
 
 
 def test_vote_change_without_a_cap_only_relabels():
     """GENUINE. ``never_seen_gps_vote`` alone changes the label, not the severity: still a CRITICAL
     alert. Re-attributing the vote does not make a never-seen GPS stream any less of a threat."""
-    run = _run(_hb_only, never_seen_gps_vote="MAVLINK_ANOMALY")
-    for a in run.assessments:
+    run = _run(_hb_only, require_global_position=True, never_seen_gps_vote="MAVLINK_ANOMALY")
+    after = _after_gate(run)
+    for a in after:
         assert a.threat is True and a.severity is Severity.CRITICAL
         assert a.attack_type is AttackType.MAVLINK_ANOMALY
-    assert run.alerts and run.alerts[0].t == 0.0
+    assert run.alerts and run.alerts[0].t == after[0].t
+
+
+# --------------------------------------------------------------------------- #
+# 6. no position stream: absence must not become physics attack evidence (P1 follow-up)
+# --------------------------------------------------------------------------- #
+
+
+SPEED_EV = "GPS/VFR speed mismatch"
+
+
+def _moving_no_position(link: _Link, k: int, t: float) -> list[MessageEnvelope]:
+    # HEARTBEAT + ATTITUDE + VFR_HUD at 10 m/s; no GLOBAL_POSITION_INT, no GPS_RAW_INT
+    return _stream(link, k, t, sys_status=False, gpi=False, raw=None, groundspeed=10.0)
+
+
+def test_moving_vehicle_without_position_is_coverage_not_telemetry_manipulation():
+    """DECIDED P1 follow-up (2026-10-20; the user's "Coverage, not attack" decision applied to the
+    physics detector). Was: TELEMETRY_MANIPULATION alerts from the GPS/VFR speed check, which
+    compared VFR groundspeed against a GPS velocity that was never received (read as 0). Now the
+    rule is gated on position presence; the ML feature itself is unchanged."""
+    run = _run(_moving_no_position, seconds=20.0)
+    for a, frame in run.decisions:
+        assert frame.gps_seen is False and frame.gps_vfr_speed_diff_ms == pytest.approx(10.0)
+        assert a.detector_scores[DetectorName.PHYSICS.value] == 0.0
+        assert a.threat is False and a.attack_type is not AttackType.TELEMETRY_MANIPULATION
+        assert SPEED_EV not in _text(a)
+        assert COVERAGE_TEXT in _text(a)
+    assert run.alerts == []
+
+
+def test_speed_mismatch_with_position_present_is_still_detected():
+    """GENUINE (control for the gate). GLOBAL_POSITION_INT flowing (stationary, vx = vy = 0) while
+    VFR_HUD reports 10 m/s: the GPS/VFR speed check still fires and fuses into a
+    TELEMETRY_MANIPULATION alert."""
+    run = _run(lambda link, k, t: _stream(link, k, t, groundspeed=10.0), seconds=10.0)
+    assert all(frame.gps_seen is True for _, frame in run.decisions)
+    alerts = [a for a in run.alerts if a.attack_type is AttackType.TELEMETRY_MANIPULATION]
+    assert alerts and SPEED_EV in _text(alerts[0])
+    assert COVERAGE_TEXT not in _text(alerts[0])
+
+
+def test_gnss_alert_on_a_position_less_link_leads_with_the_gnss_evidence():
+    """GENUINE (presentation). The score-0 coverage line is the LAST protocol evidence item, so an
+    alert raised by another rule does not show it as its headline (the dashboard incident list and
+    the CLI show evidence[0]). Scoring of the never-acquired fix is P3 (open) and is not asserted."""
+    run = _run(lambda link, k, t: _stream(link, k, t, gpi=False, raw=(0, 0)), seconds=10.0)
+    first = run.alerts[0]
+    assert first.evidence[0].startswith("GNSS fix never acquired")
+    assert first.evidence[-1].startswith(COVERAGE_TEXT)

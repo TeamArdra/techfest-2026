@@ -26,23 +26,33 @@ def _proto(**over) -> ProtocolDetector:
     return ProtocolDetector({**DEFAULT_DETECTOR["protocol"], **over})
 
 
-def test_startup_grace_default_keeps_stage1_behaviour():
-    det = _proto()
+def test_startup_grace_default_is_off_and_never_seen_is_judged_on_elapsed_time():
+    # Updated 2026-10-15 (user decision "Coverage, not attack"): previously the t=0 sentinel frame
+    # itself fired heartbeat-stale + GPS-dropout. Now a never-received stream is judged on elapsed
+    # monitoring time, and never-received position is a coverage line unless the profile requires it.
+    det = _proto(require_global_position=True)
     assert det.startup_grace_s == 0.0
-    r = det.process(_frame(t=0.0, heartbeat_age_s=999.0, gps_age_s=999.0))
-    assert any("heartbeat stale" in e for e in r.evidence)
-    assert any("GPS dropout" in e for e in r.evidence)
+    r0 = det.process(_frame(t=0.0, heartbeat_age_s=999.0, gps_age_s=999.0))
+    assert not r0.evidence and r0.score == 0.0
+    r1 = det.process(_frame(t=3.2, heartbeat_age_s=999.0, gps_age_s=999.0))
+    assert any("heartbeat stale" in e for e in r1.evidence)
+    assert any("GPS dropout" in e for e in r1.evidence)
+    default = _proto().process(_frame(t=0.0, heartbeat_age_s=999.0, gps_age_s=999.0))
+    assert default.score == 0.0 and default.evidence[0].startswith("coverage: GLOBAL_POSITION_INT")
 
 
 def test_startup_grace_suppresses_only_never_seen_sentinel():
-    det = _proto(startup_grace_s=1.4)
+    det = _proto(startup_grace_s=4.0, require_global_position=True)
     r0 = det.process(_frame(t=0.0, heartbeat_age_s=999.0, gps_age_s=999.0))
     assert not r0.evidence  # never seen yet, still inside the grace window
     # a heartbeat that WAS seen and then went stale is judged as before, even inside the grace
     r1 = det.process(_frame(t=0.4, heartbeat_age_s=5.0))
     assert any("heartbeat stale" in e for e in r1.evidence)
+    # past the elapsed-time gates but inside the grace: still quiet (gate and grace combine as a
+    # maximum, not a sum: the later of the two decides)
+    assert not det.process(_frame(t=3.2, heartbeat_age_s=999.0, gps_age_s=999.0)).evidence
     # after the grace the sentinel is a real fault
-    r2 = det.process(_frame(t=1.6, heartbeat_age_s=999.0, gps_age_s=999.0))
+    r2 = det.process(_frame(t=4.2, heartbeat_age_s=999.0, gps_age_s=999.0))
     assert any("heartbeat stale" in e for e in r2.evidence)
     assert any("GPS dropout" in e for e in r2.evidence)
 
