@@ -182,6 +182,16 @@ Missing:
 * **(c) Backend:** there is no source selection, `sim: true` is hard-coded, `/api/events` serves the simulator's in-memory deque rather than the runner's `events.sqlite`, and the attack endpoints are simulator-only. `LiveMavlinkSource.stream()` blocks, so it cannot run inline on the event loop.
 * **(d) Frontend:** the header and footer hard-code "Simulation" / "does not connect to a real UAV", the `sim` flag is never read, there is no SITL/BENCH/REPLAY label, and the attack buttons are always enabled.
 
+*Re-audited 2026-10-16 (read-only, source inspection; nothing run against the dashboard):* (c) and (d) are unchanged.
+`backend/engine.py` builds only `SimulatedTelemetrySource`; `/health` and `/` return a hard-coded `"sim": True`; `/api/events`
+reads the engine's own store (default `artifacts/aegisflight_live.sqlite`), never a runner's `events.sqlite`; the frontend lists
+"Live UDP / serial MAVLink source" under *planned*. **The dashboard is simulation-only: physical telemetry and the runner's persisted
+events are not surfaced in it, and no source label distinguishes SIM / SITL / BENCH.** For (b), the runner now writes
+`telemetry_coverage` (heartbeat / GLOBAL_POSITION_INT / GPS_RAW_INT ever seen, decisions without position) to `summary.json` and
+every `health.jsonl` line (tested on `socket://`, not on hardware); tlog saving, `decisions.jsonl` and a `BENCH` tag are still
+missing. Smallest next task for the operator interface: step 4 below (read-only `--follow <run-dir>` backend mode with a
+`source` field), then step 5. Not attempted here: it spans backend + frontend and is a new feature, not a narrow fix.*
+
 Proposed sequence (additive; SIM stays the default; only one process touches hardware):
 1. The 6.3 diagnostic.
 2. The authorised `SR1_*` change and its pass/fail capture.
@@ -198,6 +208,16 @@ the dashboard says BENCH; every bench alert explained; the replay reproduces the
 ### 6.5 Known detector-policy and evidence limitations
 * By default, never-received GPS is still a CRITICAL `DOS` alert, although its evidence text says "never received … not a
   measured dropout" (**pending policy P1**). GPS_RAW_INT does not count as GPS presence (**P2**). See `tests/unit/test_missing_telemetry_fused.py`.
+  *(Decided 2026-10-15, user decision "Coverage, not attack"; implemented, not yet committed; Stage-1 regression: §6.9. **P1:** with the
+  new default `protocol.require_global_position: false`, a link that has never delivered GLOBAL_POSITION_INT is a coverage
+  condition -- protocol score 0, no vote, not a threat or alert -- reported in every assessment as "coverage: GLOBAL_POSITION_INT
+  never received (...)"; `true` restores the DOS outcome and the `never_seen_gps_*` knobs. A never-received heartbeat / required
+  position stream is now judged on elapsed monitoring time, so the monitor-start alert at t=0 no longer occurs; no heartbeat for
+  > 3 s since monitoring began is still a DOS alert. Loss after a stream was seen is unchanged. **P2:** GPS_RAW_INT presence is
+  reported (`FeatureFrame.gps_raw_seen`, named in the coverage line) but is still not position presence and does not satisfy
+  `require_global_position`. The 0.5 never-seen floor guarantees detector-level evidence, not a fused alert. P3 scoring stays
+  open. No live bench re-run against this change; offline REPLAY of captures 005/007: `artifacts/hardware/replay_p1p2_{005,007}/`
+  and §6.9.)*
 * A GNSS fix that was **never acquired** fires the same "GNSS fix lost" `DOS` rule as a lost fix (strict xfail; **P3**).
   *(Superseded 2026-10-15, P3.4: the evidence now reads "GNSS fix never acquired …" unless a valid fix was seen first; the
   xfail passes and is unmarked. The score, the `DOS` vote and the timing are unchanged; whether a never-acquired fix should score
@@ -208,7 +228,11 @@ the dashboard says BENCH; every bench alert explained; the replay reproduces the
   Once the POSITION stream is on, GLOBAL_POSITION_INT arrives even without a fix (S6) and the never-received rule clears. On
   this indoor bench, with no fix expected, the GNSS rule should then alert about every 4 s (`cooldown_s`). This is
   predicted from the code and tests, not yet observed (*observed afterwards: 6.8*). An indoor bench with no fix is not attack evidence.
+  *(Correction 2026-10-20: capture 007 shows `fix_type` 0 = `GPS_FIX_TYPE_NO_GPS` ("No GPS connected"), not 1 = `NO_FIX`; see
+  §6.9. The board reported **no GPS receiver**, so "no fix indoors" is an unverified explanation. The rule treats 0 and 1 alike.)*
 * The documented "never silently accepted" floor for never-seen GPS does not hold at the fused level (strict xfail).
+  *(Superseded 2026-10-15/16, P1: the docs now say the floor guarantees detector-level evidence, not a fused alert; the xfail
+  is replaced by `test_floor_guarantees_detector_level_evidence_not_a_fused_alert`.)*
 * On ArduCopter the GPS-vs-baro altitude check compares two views of one AHRS altitude (S6), so physics silence on the
   bench says nothing about detector correctness.
 * ML is off for ArduPilot, and the integrity detector reports `UNKNOWN` (no verifier). Nothing in this section is detection
@@ -218,7 +242,8 @@ the dashboard says BENCH; every bench alert explained; the replay reproduces the
   tests/unit/test_missing_telemetry_fused.py tests/unit/test_serial_raw_tap.py tests/unit/test_mavlink_serial.py
   tests/unit/test_mavlink_live.py backend/tests/test_api.py -p no:cacheprovider -o addopts="" -q` → **281 passed, 3 skipped**
   (Windows PTY), **2 xfailed**. *(After P3.4, 2026-10-15: the full suite gives 604 passed, 3 skipped, 1 xfailed; the P1 floor
-  xfail remains.)*
+  xfail remains.)* *(After P1/P2, 2026-10-16, uncommitted tree: 663 passed, 3 skipped, 0 xfailed.)* *(2026-10-20, closure
+  sprint tree: 688 passed, 3 skipped, 0 xfailed; §6.9.)*
 
 ### 6.6 Repository state and next task
 At this checkpoint `HEAD` is `6b21d1f`. The working tree holds the earlier sprints' uncommitted work (7 modified tracked
@@ -323,6 +348,8 @@ every 10 s) and `events.sqlite` (git-ignored, sha256 `8c24eba15247025b1bf5400344
   * The "> 3.0s" is the configured timeout, not a measured wait.
   * Score: protocol 1.0, fused **0.8824**, CRITICAL.
   * This is a monitor-start artefact (pending policy P1), not a link failure and not an attack.
+    *(P1 decided 2026-10-15, §6.5: never-received streams are now judged on elapsed monitoring time, so the current code would
+    not raise this t = 0 alert; the alert above is the historical artifact's.)*
 * **#2 to #16, t = 1.4 s and then every 4.0–4.2 s: recurring no-fix alerts.** The evidence reads "GNSS fix lost: fix_type=0,
   satellites=0 for N decisions", with N running from 5 to 286 and never resetting.
   * Rule: fix type below 3 or fewer than 5 satellites for at least 5 consecutive decisions (`configs/detector.yaml`
@@ -334,7 +361,10 @@ every 10 s) and `events.sqlite` (git-ignored, sha256 `8c24eba15247025b1bf5400344
   * The persisted telemetry snapshot reads `satellites 0, lat/lon 0.0, battery_voltage 0.0, flight_mode STABILIZE, armed false`.
 * **No GPS fix is not the same as missing GPS telemetry.** GPS telemetry arrived. After t = 0 there is no "never received"
   or GPS-dropout evidence, and the rule reports `fix_type` and `satellites` values, which only exist once GPS_RAW_INT has
-  arrived. What is missing is the fix itself, as expected indoors. The rule still calls a fix that was never acquired "lost";
+  arrived. What is missing is the fix itself, as expected indoors *(correction 2026-10-20: the capture-007 GPS_RAW_INT frames
+  report `fix_type` 0 = `GPS_FIX_TYPE_NO_GPS` and the SYS_STATUS GPS sensor bits are clear, i.e. the board reported no GPS
+  receiver, not a receiver without a fix; "as expected indoors" is unverified. This run saved no input bytes; its snapshot,
+  `fix_type=0, satellites=0`, is consistent. See §6.9)*. The rule still calls a fix that was never acquired "lost";
   this is policy P3 (6.5), now observed on hardware rather than only predicted. *(Wording since P3.4, 2026-10-15: a re-run on
   the current code would read "GNSS fix never acquired …" with the same score and timing; the alerts above are the historical
   output of the earlier code and are left as recorded.)*
@@ -357,4 +387,158 @@ every 10 s) and `events.sqlite` (git-ignored, sha256 `8c24eba15247025b1bf5400344
 * Whether a ground station was connected over USB during the run is not recorded (6.7).
 * On this indoor bench, 297 of 301 decisions were threats. By inference these are almost all from the GNSS rule: the first
   decision or two came from the never-received rules, and non-alert decisions are not persisted. A judge-facing demo
-  therefore needs the P1/P3 policy decisions first.
+  therefore needs the P1/P3 policy decisions first. *(2026-10-16: P1/P2 were decided 2026-10-15 (§6.5); P3 wording is fixed, P3 scoring is
+  still open, so an indoor no-fix bench still alerts every ~4 s on "GNSS fix never acquired".)* *(2026-10-20: on this board
+  the condition is "no GPS receiver reported" (`fix_type` 0), which the GNSS rule does not distinguish from "no fix"; §6.9.)*
+
+### 6.9 Telemetry closure sprint (2026-10-20): GNSS fact, status, supervised validation procedure
+**Environment of everything in this section: offline only.** No serial port was opened, the board was not touched, and no
+parameter or radio setting was read or changed.
+
+**GNSS fact from capture 007 (offline, `data/hardware/raw/telemetry_radio_007.tlog`, sha256 `0a701331…e17a`; pymavlink
+one-off, cross-checked by two agents):** all 120 `GPS_RAW_INT` frames have `fix_type` 0, which is MAVLink `GPS_FIX_TYPE_NO_GPS`
+("No GPS connected"; `NO_FIX`, "GPS is connected", is 1). They also have `satellites_visible` 0, `eph` 65535 and
+`time_usec` 0. All 120 `GLOBAL_POSITION_INT` frames have lat = lon = 0. All 120 `SYS_STATUS` frames have the GPS sensor bit
+clear in *present*, *enabled* and *health*. **So the board reported no GPS receiver.** Earlier text calling this "no fix
+indoors" was an unverified explanation; it is corrected where it appears. Whether a GNSS module was attached or configured
+(`GPS_TYPE`) was not recorded. Two consequences:
+* `gps_seen` = True on this link means the position *message* arrives, not that a position exists (S6).
+* The GNSS rule treats `fix_type` 0 and 1 alike, so the "GNSS fix never acquired" alerts in replay 007 come from a missing
+  receiver. The receiver was not jammed or unable to see the sky.
+
+**Sprint changes (uncommitted, on `83f07c1` + the P1/P2 tree):**
+* `detectors/physics.py`: the GPS/VFR speed rule is skipped when `GLOBAL_POSITION_INT` was never received
+  (`gps_seen is False`). Before this, a moving vehicle on a position-less link raised `TELEMETRY_MANIPULATION`, which
+  contradicted "Coverage, not attack".
+* `detectors/protocol.py`: the coverage line is now the last protocol evidence item, so it never heads another rule's
+  alert.
+* Docs and comments corrected; tests added (`docs/DETECTION.md`, `docs/THREAT_MODEL.md`, `docs/VALIDATION_EVIDENCE.md`).
+* Runner: docstring corrected, and `telemetry_coverage` is now also printed on the console.
+
+No threshold, config default or fusion weight changed. The one behaviour change is the speed-rule gate, which
+removes that rule's `TELEMETRY_MANIPULATION` vote/score only when `gps_seen` is False.
+
+**Fresh results, 2026-10-20** (`SIM` / `REPLAY`; scratch outputs, not committed; `src`+`configs` diff sha256 `708192a0…0ad6`):
+* Full suite `pytest -p no:cacheprovider`: **688 passed, 3 skipped (Windows PTY), 0 failed, 0 xfailed**.
+* `ruff check src tests scripts backend`: clean (scratch log `ruff_20261020.txt`; re-run by aegis-reviewer).
+* Reference hashes for this tree: `git diff HEAD -- src configs | sha256sum` = `708192a0…0ad6` (used throughout this
+  section), and `git diff HEAD -- src configs scripts | sha256sum` = `cd109aae…71f6` (the step-5 recipe below).
+* Stage-1 `aegis benchmark --out <scratch> --no-figures`: **6535 / 4 / 16826 / 65**, non-timing `results.csv` identical.
+* Replays 005/007 (`replay_ap_tlog.py --no-ml`): byte-identical to `artifacts/hardware/replay_p1p2_{005,007}/replay_noml.json`.
+* The speed gate changes 0 of 194,628 ALFA replay decisions.
+* Loopback dry run of the runner: below.
+
+**Verdicts (lead):**
+* Telemetry core: **READY FOR SUPERVISED PHYSICAL VALIDATION**, not `PHYSICALLY CLOSED`. The procedure below has not been
+  run on this tree.
+* Operator-facing live telemetry: **NOT INTEGRATED**. The dashboard is simulation-only (§6.4, re-checked 2026-10-20:
+  `src/aegisflight/backend/engine.py` builds only `SimulatedTelemetrySource`; `/health`, `/` and `/api/status` hard-code `"sim": True`;
+  `/api/events` returns the engine's in-memory alert deque).
+* GNSS never-acquired scoring (P3): **open, user decision**.
+
+**Supervised physical validation: procedure for a person at the bench (not run; Claude must not run it).**
+*What it can establish:* that the current tree's start-up and coverage behaviour holds on the physical COM7 link. That
+covers four things: no "never received" alert in the first 3 s when monitoring starts at port open; `telemetry_coverage` in
+`summary.json` / `health.jsonl` matching the messages that arrive; receive-only (`bytes_sent` 0); and a byte-exact input
+capture for offline replay. *What it cannot establish:* GPS fix behaviour (needs a connected GNSS receiver with sky view),
+attack detection (no attack is made), a false-alarm rate (n = 1), or anything about flight.
+*Duration:* 60 s per step. That matches every earlier COM7 capture and run (005–007, `serial_ids_com7_001`); it is not a
+statistical choice.
+
+0. **Setup.** Use the same physical arrangement as §6.7/§6.8: Pixhawk 6X disarmed, no propellers, telemetry radio on TELEM1,
+   laptop-side radio on USB. Do not change any parameter or radio setting, and do not use Mission Planner *Write Params*.
+   **During steps 3, 4 and 7, no ground station may be connected on any port, USB included.** A connected GCS transmits to
+   the board, ArduPilot may forward its traffic onto TELEM1 (not verified on this board), and a GCS HEARTBEAT would count as
+   heartbeat presence (presence is not source-checked), confounding the coverage result. Record the UTC time, how the board
+   is powered, and whether a GNSS module is physically attached (look; do not infer). The firmware version may be read
+   in a GCS over USB **before step 3 or after step 4** (read-only; then disconnect the GCS).
+1. **Identify the port without opening it.** In PowerShell: `Get-PnpDevice -Class Ports -PresentOnly | Format-Table
+   FriendlyName, InstanceId` lists devices from the OS without opening them. The laptop-side radio was a "Silicon Labs
+   CP210x" on COM7; use whatever COM number it shows now. The board's own USB port is a different device (COM5 before): do
+   not open it. If the CP210x is absent or ambiguous, stop.
+2. **Baud.** Use `--baud 115200`. Its provenance is empirical, not a read configuration. At 115200, captures 005–007 were
+   CRC-valid and byte-exact with 0 garbage bytes; at 57600, capture 001 got 964 B of garbage and 0 frames. The radio's own
+   serial setting has never been read, and `SERIAL1_BAUD=115` is a user report (F6). Step 3 re-checks the rate: frames > 0,
+   0 CRC rejects and ≈ 0 garbage bytes confirm it. If not, stop. Do not sweep baud rates and do not reconfigure the radio.
+3. **Receive-only capture (input for replay).** Check that the three paths do not exist (`Test-Path`). `--tlog` and `--json`
+   overwrite without asking (`pixhawk_passive_probe.py` opens `--tlog` with `"wb"`); only `--raw` refuses.
+   ```
+   .venv/Scripts/python.exe scripts/hardware/pixhawk_passive_probe.py --port COM7 --baud 115200 --duration 60 --json artifacts/hardware/telemetry_radio_probe_008.json --tlog data/hardware/raw/telemetry_radio_008.tlog --raw data/hardware/raw/telemetry_radio_008.rawbin
+   ```
+   Pass: `bytes_sent` 0, frames > 0, 0 CRC rejects, and the same six pipeline messages as 007 at similar rates (§6.7 table).
+4. **IDS run on the current tree.** The output directory must not exist; the runner refuses to reuse a run's files.
+   ```
+   .venv/Scripts/python.exe scripts/hardware/run_serial_ids.py --port COM7 --baud 115200 --out-dir artifacts/hardware/serial_ids_com7_002 --seconds 60 --no-reconnect
+   ```
+   `--no-reconnect` matters: without it, a busy or unopenable port does not fail. It produces "heartbeat never received"
+   alerts after 3.2 s instead. The console prints `telemetry_coverage`, `passive_check` and `hash_chain`.
+   Then run `.venv/Scripts/aegis.exe verify-log artifacts/hardware/serial_ids_com7_002/events.sqlite`.
+5. **Record the code state.** In Git Bash: `git rev-parse HEAD`, `git diff HEAD -- src configs | sha256sum` and
+   `git diff HEAD -- src configs scripts | sha256sum`. For this sprint's tree they are `83f07c1`, `708192a0…0ad6` and
+   `cd109aae…71f6`; any difference means a different tree was tested.
+   Hash each new input file with `Get-FileHash -Algorithm SHA256` (the tlog and rawbin are git-ignored).
+6. **Offline replay of step 3 (no hardware).**
+   `.venv/Scripts/python.exe -W ignore scripts/ardupilot/replay_ap_tlog.py data/hardware/raw/telemetry_radio_008.tlog --no-ml --json <scratch>/replay_008.json`
+   Its GNSS evidence text names `fix_type` (0 = no receiver reported, 1 = receiver without fix).
+7. *Optional, only if comfortable:* power the board off by normal power removal, keep the laptop-side radio plugged in, and
+   run step 4 with a new `--out-dir` (`serial_ids_com7_003`) and `--seconds 10`. This shows a never-received heartbeat on
+   hardware. Expected from the code, tests and the loopback dry run below: no alert before t = 3.0 s, then "heartbeat
+   stale (never received …)" `DOS` from the first decision after 3.0 s (t = 3.2 s, then 7.2 s; dry run: 51 decisions, 35
+   threats, 2 alerts). The coverage line is on each saved alert; non-alert decisions are not saved. Expect
+   `decisions_without_global_position` = `decisions` and `link_ever_delivered_frames` false.
+
+**Expected, step 4.** These are predictions from the code and from replay 007, not results. Exit 0;
+`passive_check.passed` true; `hash_chain.ok` true; 0 CRC rejects (a few garbage bytes and 1 resync at port open, as in
+run 001, are tolerable); about 300 decisions (run 001 had 301). `telemetry_coverage` shows
+`heartbeat_seen`, `global_position_seen` and `gps_raw_seen` all true. `decisions_without_global_position` counts the
+decisions before the first `GLOBAL_POSITION_INT` frame, about the first frame's arrival time / 0.2 s: 0 if frames flow at
+port open, a few if they start later. `alerts.jsonl` has **no** "never received" alert in the first 3 s. If `GPS_RAW_INT`
+again reports `fix_type` 0, there are "GNSS fix never acquired" `DOS` alerts, the first about 1 s after the first
+`GPS_RAW_INT` and then every 4.0–4.2 s (`cooldown_s`). Replay 007 had 15 in 60 s, first at t = 1 s; run 001 started at
+t = 1.4 s. These are expected false alarms under the open P3 policy, not attacks.
+
+**Loopback dry run of steps 4 and 7 (2026-10-20, aegis-px4-mavlink).** Environment: `REPLAY` of `BENCH` captures 005/007
+through the live serial runner (`origin="start"`), over `socket://127.0.0.1` (`--allow-url`). Not hardware: no baud,
+driver, UART or DTR/RTS. Not detection evidence. Outputs, tools and regeneration notes are in
+`artifacts/hardware/loopback_dryrun_20261020/` (untracked; `README.md`). Code: this sprint's tree (`src`+`configs` diff
+sha256 `708192a0…0ad6`).
+
+| Run | Result |
+|---|---|
+| 007 via `virtual_serial_replay.py` | 301 decisions, 296 threats; 15 `DOS` "GNSS fix never acquired" alerts at t = 1.0 + 4k s, the same as replay 007 |
+| 007, first frame delayed to +1.5 s after connect (`tools/delayed_replay.py`) | 301 decisions, 289 threats; 15 alerts, first at t = 2.4 s; no "never received" alert; `decisions_without_global_position` 8 |
+| 005 (HEARTBEAT only), immediate and delayed | 0 alerts each; coverage T/F/F, 301 of 301 decisions without position |
+| no frames, 10 s | 51 decisions, 35 threats; 2 alerts at t = 3.2 and 7.2 s, "heartbeat stale (never received …)" |
+
+In every run: exit 0, `passive_check.passed` true, `aegis verify-log` chain OK, and `telemetry_coverage` printed on the
+console. In the 005 run `disconnects` was 1 because the replay tool closes its socket at ~59.5 s, before the 60 s deadline.
+That is the tool, not the code, so keep `--seconds` below the capture span in any loopback dry run. This dry run
+exercises the "monitor starts before the first frame" path that the in-process replays cannot. It still does **not**
+replace the physical run.
+
+**Stop conditions:**
+* exit 3, or `bytes_sent` / `write_errors` > 0;
+* exit 4, or `hash_chain.ok` false, or `aegis verify-log` not OK (keep the files untouched for inspection);
+* exit 2 because the port could not be opened (close the other program; do not retry in a loop);
+* frames 0, or CRC rejects / garbage bytes still growing after the first seconds (baud/wiring; do not sweep or reconfigure);
+* the USB device disappears or `disconnects` > 0;
+* the board arms, changes mode or behaves in any way the operator does not expect (unplug the laptop-side radio; do not
+  interpret LEDs or tones);
+* any alert other than the one expected for that step. In step 4 that is only "GNSS fix never acquired" `DOS`. In step 7
+  it is only "heartbeat stale (never received …)" `DOS`, and only after t = 3.0 s.
+
+If you see an unexpected source id, record it; do not conclude an attack. The presence rules accept any sysid. A radio that
+injects `RADIO_STATUS` (often sysid 51) would raise a rogue-source `MAVLINK_ANOMALY`. None was seen in 005–007, which had no
+GCS on the link.
+In every case, keep the output directory and the console text.
+
+**Side effect not measured:** opening the port with pyserial asserts DTR and RTS. `mavlink_serial.py` sets only
+`rtscts`/`xonxoff` False, and no option holds the lines low. The effect on the CP210x or radio is unmeasured; zero transmit
+counters do not rule it out. Earlier opens (005–007, run 001) showed no observed problem, which is not proof.
+
+**Preserve:** `artifacts/hardware/telemetry_radio_probe_008.json`; `data/hardware/raw/telemetry_radio_008.{tlog,rawbin}`
+(git-ignored; keep, with their sha256); `artifacts/hardware/serial_ids_com7_002/` (and `_003/`) including the git-ignored
+`events.sqlite`; the console output; the step-0 notes.
+**Verdicts it can give:** *telemetry-ingestion PASS* when steps 3–4 meet the pass and expected rows above. It is **not** a GPS
+validation (no receiver reported, or no sky view) and **not** attack detection. The `PHYSICALLY CLOSED` verdict for telemetry
+core requires this pass on the tree it ran (record the hash).

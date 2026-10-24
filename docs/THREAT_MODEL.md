@@ -42,5 +42,28 @@ benchmark to score detections — never by the detectors.
 - The firmware check assumes a trustworthy manifest (it is **not signed** in the PoC —
   signing is future work) and read access to
   the components.
+- **Position-stream suppression from link-up** (P1/P2 policy, 2026-10-15): with the default
+  `protocol.require_global_position: false`, a `GLOBAL_POSITION_INT` stream that is absent from the
+  moment the IDS starts observing (e.g. filtered by an in-path adversary, including across an IDS
+  restart or `pipeline.reset()` while it is already filtered) is reported only as a score-0 coverage
+  condition, and the rule-based position-dependent physics checks do not run: position residual and
+  acceleration (the `GPS_SPOOFING` votes) have no input, and the GPS/VFR speed rule is gated off until
+  `GLOBAL_POSITION_INT` has been received. With ML enabled the ML detector still sees the raw features
+  (one uncommitted synthetic scratch run with ML on alerted; not measured, not evidence). Suppression after the stream was seen is still a DOS
+  alert, but with the protocol rule as the only contributor it becomes a fused threat only after
+  ≈ 4 s of absence (detector-level from `gps_dropout_s` = 2 s); a restart or `reset()` inside that
+  window leaves only the coverage line. Profiles where position is expected must set
+  `require_global_position: true`; no shipped profile does (`configs/detector.yaml` and
+  `configs/px4_sitl/` both leave it `false`). Only `scripts/hardware/run_serial_ids.py` persists the
+  condition (`telemetry_coverage` in `summary.json` / `health.jsonl`); it is not hash-chained and not
+  shown on the dashboard. See `docs/DETECTION.md`.
+- **No `GPS_RAW_INT` staleness check** (pre-existing): the GNSS fix-loss rule reads the last
+  `GPS_RAW_INT` received. If an in-path adversary drops it, the last fix stays frozen and a real GNSS
+  loss is masked; if it never arrives, the rule is silently inactive (no evidence line). A
+  `GPS_RAW_INT` age/presence rule is proposed, not implemented.
+- **Presence is not source-checked**: HEARTBEAT, `GLOBAL_POSITION_INT` and `GPS_RAW_INT` count as
+  received from any sysid/compid. A forged or other-source frame can therefore establish "seen", and a
+  GCS heartbeat can mask loss of the vehicle heartbeat (latent; not observed in any capture).
+  Per-source liveness is proposed, not implemented.
 - This is a PoC over a *simulated* link; real-RF, multi-vehicle, and
   hardware-in-the-loop coverage are future work (see the technical proposal).
