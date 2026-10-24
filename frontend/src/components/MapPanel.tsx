@@ -5,13 +5,14 @@ interface Props {
   track: Array<[number, number]>;
   scoreHistory: Array<{ t: number; score: number }>;
   threat: Threat | null;
+  note: string; // what the positions are (simulated / replayed / bench, not flight) — lib/source.ts
 }
 
 // Self-scaling 2D position plot (lat/lon -> metres from the first fix). This is
 // an operational local-frame view, not a geographic map — no tiles, no real GPS
 // basemap. The threat timeline underneath shares the same alert colour so the
 // track and the current assessment read as one instrument.
-export function MapPanel({ track, scoreHistory, threat }: Props) {
+export function MapPanel({ track, scoreHistory, threat, note }: Props) {
   const W = 680, H = 440, pad = 34;
   const active = !!threat?.threat;
   const color = active ? `var(--high)` : `var(--accent)`;
@@ -62,7 +63,7 @@ export function MapPanel({ track, scoreHistory, threat }: Props) {
     <div className="panel">
       <header>
         <span className="panel-title">Flight Track</span>
-        <span className="panel-note">local frame · {track.length} fixes · simulated</span>
+        <span className="panel-note">local frame · {track.length} fixes · {note}</span>
       </header>
 
       <div className="map-frame">

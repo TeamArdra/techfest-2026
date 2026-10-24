@@ -1,6 +1,7 @@
+import { useEffect } from "react";
 import { AlertsPanel } from "./components/AlertsPanel";
 import { ControlPanel } from "./components/ControlPanel";
-import { Header } from "./components/Header";
+import { Header, SourceBar } from "./components/Header";
 import { MapPanel } from "./components/MapPanel";
 import { DetectorPanel, EvidencePanel, ThreatPanel, TelemetryPanel } from "./components/panels";
 import {
@@ -10,18 +11,34 @@ import {
   ValidationPanel,
 } from "./components/evalPanels";
 import { useLiveData } from "./hooks/useLiveData";
+import { envView, linkView } from "./lib/source";
 
 export default function App() {
   const live = useLiveData();
   const m = live.metrics;
   const chainOk = m?.event_log.chain_ok !== false;
+  // every source label below comes from the backend's own report (environment + link state)
+  const env = envView(live.environment);
+  const lv = linkView(live.link, live.connected, live.updateAgeS);
+  useEffect(() => {
+    document.title = `AegisFlight — UAV IDS (${env.badge})`;
+  }, [env.badge]);
 
   return (
     <div className="app">
       <Header
         connected={live.connected}
-        simTime={live.t}
+        clock={live.t}
         mlAvailable={m?.ml_available ?? false}
+        env={env}
+        link={lv}
+      />
+      <SourceBar
+        source={live.source}
+        link={live.link}
+        linkView={lv}
+        runId={live.runId}
+        eventsCount={live.eventsCount}
       />
 
       <main className="console">
@@ -31,23 +48,28 @@ export default function App() {
             <ThreatPanel threat={live.threat} />
             <DetectorPanel threat={live.threat} />
           </div>
-          <MapPanel track={live.track} scoreHistory={live.scoreHistory} threat={live.threat} />
-          <AlertsPanel alerts={live.alerts} />
+          <MapPanel track={live.track} scoreHistory={live.scoreHistory} threat={live.threat} note={env.trackNote} />
+          <AlertsPanel
+            alerts={live.alerts}
+            emptyText={env.emptyAlerts}
+            count={live.eventsCount}
+            environment={env.badge}
+          />
         </section>
 
         {/* 2. secondary: runtime performance · attack-vector coverage */}
         <section className="secondary">
-          <RuntimePanel metrics={m} distance={live.distance} />
+          <RuntimePanel metrics={m} distance={live.distance} distanceNote={env.distanceNote} />
           <CoveragePanel activeAttack={live.attackActive} />
         </section>
 
         {/* 3. telemetry */}
-        <TelemetryPanel tele={live.telemetry} />
+        <TelemetryPanel tele={live.telemetry} note={env.telemetryNote} />
 
         {/* 4. evidence · controls */}
         <section className="lower">
           <EvidencePanel threat={live.threat} />
-          <ControlPanel activeAttack={live.attackActive} />
+          <ControlPanel activeAttack={live.attackActive} controls={env.controls} environment={env.badge} />
         </section>
 
         {/* 5. reference: integration · validation evidence */}
@@ -58,7 +80,7 @@ export default function App() {
       </main>
 
       <div className="metrics-bar">
-        <span className="m-tag">Live</span>
+        <span className="m-tag">{env.badge} · this run</span>
         <span className="m">Messages <b>{m?.messages_processed ?? 0}</b></span>
         <span className="m">Decisions <b>{m?.decisions ?? 0}</b></span>
         <span className="m">Alerts <b>{m?.alerts ?? 0}</b></span>
@@ -70,9 +92,8 @@ export default function App() {
           <b style={{ color: chainOk ? "var(--ok)" : "var(--crit)" }}>{chainOk ? "OK" : "BROKEN"}</b>
         </span>
       </div>
-      <div className="foot">
-        AegisFlight is a Stage-1 proof-of-concept. All flight data and attacks shown are{" "}
-        <b>local simulations</b> — this dashboard does not connect to a real UAV.
+      <div className="foot" data-testid="footer">
+        AegisFlight is a proof-of-concept IDS. <b>{env.badge}</b>: {env.footer}
       </div>
     </div>
   );

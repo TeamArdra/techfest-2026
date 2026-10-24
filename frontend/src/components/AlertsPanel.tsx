@@ -1,19 +1,22 @@
 import type { AlertRow } from "../types";
 import { sourcesOf, SOURCE_LABEL } from "../lib/evidence";
 
-export function AlertsPanel({ alerts }: { alerts: AlertRow[] }) {
+// `alerts`: the current run's alerts as persisted in the hash-chained event log (/api/events), newest first.
+export function AlertsPanel({ alerts, emptyText, count, environment }: {
+  alerts: AlertRow[];
+  emptyText: string;
+  count: number | null;
+  environment: string;
+}) {
   return (
-    <div className="panel">
+    <div className="panel" data-testid="alerts-panel">
       <header>
         <span className="panel-title">Incident History</span>
-        <span className="panel-note">{alerts.length} logged</span>
+        <span className="panel-note">{count ?? alerts.length} persisted · {environment} · this run</span>
       </header>
 
       {alerts.length === 0 ? (
-        <div className="empty">
-          No incidents logged. Inject an attack to generate a tamper-evident
-          event record.
-        </div>
+        <div className="empty">{emptyText}</div>
       ) : (
         <ul className="incidents">
           {alerts.map((a, i) => {
@@ -25,7 +28,7 @@ export function AlertsPanel({ alerts }: { alerts: AlertRow[] }) {
                   <span className={`i-sev sev-${a.severity}`}>{a.severity}</span>
                 </div>
                 <div className="i-meta">
-                  t={a.t.toFixed(1)}s · score {a.threat_score.toFixed(2)} · conf {a.confidence.toFixed(2)}
+                  #{a.id ?? "—"} · t={a.t.toFixed(1)}s · score {a.threat_score.toFixed(2)} · conf {a.confidence.toFixed(2)}
                 </div>
                 {a.evidence[0] && <div className="i-ev">{a.evidence[0]}</div>}
                 {sources.length > 0 && (

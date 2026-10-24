@@ -10,8 +10,28 @@ const ATTACKS: Array<{ id: string; label: string }> = [
   { id: "firmware_integrity", label: "Firmware Tamper" },
 ];
 
-export function ControlPanel({ activeAttack }: { activeAttack: string | null }) {
+export function ControlPanel({ activeAttack, controls, environment }: {
+  activeAttack: string | null;
+  controls: boolean; // SIM only (lib/source.ts envView)
+  environment: string;
+}) {
   const [busy, setBusy] = useState(false);
+
+  if (!controls) {
+    return (
+      <div className="panel" data-testid="controls-readonly">
+        <header>
+          <span className="panel-title">Console Controls</span>
+          <span className="panel-note">read-only source</span>
+        </header>
+        <div className="empty">
+          This server monitors a <b>{environment}</b> source. Start / stop / reset and attack injection
+          are simulation-only — the backend refuses them (HTTP 409) — and the IDS never transmits to the
+          vehicle.
+        </div>
+      </div>
+    );
+  }
 
   const run = async (fn: () => Promise<unknown>) => {
     setBusy(true);

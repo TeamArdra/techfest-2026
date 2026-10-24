@@ -1,9 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { api, wsUrl } from "../services/api";
-import type { AlertRow, Metrics, Telemetry, Threat, Update } from "../types";
+import type {
+  AlertRow, Environment, LinkStatus, Metrics, SourceInfo, Telemetry, Threat, Update,
+} from "../types";
 
 export interface LiveState {
-  connected: boolean;
+  connected: boolean; // dashboard <-> backend WebSocket (NOT the vehicle link: see `link`)
+  environment: Environment | null; // as reported by the backend; null until it has reported
+  source: SourceInfo | null;
+  link: LinkStatus | null;
+  runId: string | null;
+  eventsCount: number | null; // persisted alerts of the current run
+  updateAgeS: number | null; // seconds since the last WebSocket update (backend freshness)
   t: number;
   telemetry: Telemetry | null;
   threat: Threat | null;
@@ -20,6 +28,14 @@ const MAX_HISTORY = 240;
 
 export function useLiveData(): LiveState {
   const [connected, setConnected] = useState(false);
+  const [environment, setEnvironment] = useState<Environment | null>(null);
+  const [source, setSource] = useState<SourceInfo | null>(null);
+  const [link, setLink] = useState<LinkStatus | null>(null);
+  const [runId, setRunId] = useState<string | null>(null);
+  const [eventsCount, setEventsCount] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  const lastUpdateRef = useRef<number | null>(null);
+  const runRef = useRef<string | null>(null);
   const [t, setT] = useState(0);
   const [telemetry, setTelemetry] = useState<Telemetry | null>(null);
   const [threat, setThreat] = useState<Threat | null>(null);
@@ -48,6 +64,17 @@ export function useLiveData(): LiveState {
       ws.onmessage = (ev) => {
         const msg = JSON.parse(ev.data) as Update;
         if (msg.type !== "update") return;
+        lastUpdateRef.current = Date.now();
+        setEnvironment(msg.environment ?? null);
+        setSource(msg.source ?? null);
+        setLink(msg.link ?? null);
+        if (msg.run_id && msg.run_id !== runRef.current) {
+          // a new run (SIM reset, or a backend restarted on another source): never mix tracks across runs
+          runRef.current = msg.run_id;
+          trackRef.current = [];
+          histRef.current = [];
+          setRunId(msg.run_id);
+        }
         setT(msg.t);
         setTelemetry(msg.telemetry);
         setAttackActive(msg.attack_active);
@@ -74,15 +101,21 @@ export function useLiveData(): LiveState {
     };
   }, []);
 
-  // Poll REST for alerts + metrics.
+  // Poll REST for the persisted alerts, metrics and status. Status also keeps the source / link current
+  // when the WebSocket is silent (a finished or failed source sends no further updates).
   useEffect(() => {
     let alive = true;
     const tick = async () => {
       try {
-        const [ev, m] = await Promise.all([api.events(30), api.metrics()]);
+        const [ev, m, st] = await Promise.all([api.events(30), api.metrics(), api.status()]);
         if (!alive) return;
         setAlerts(ev.events);
+        setEventsCount(ev.count ?? ev.events.length);
         setMetrics(m);
+        setEnvironment(st.environment ?? null);
+        setSource(st.source ?? null);
+        const last = lastUpdateRef.current;
+        if (st.link && (last == null || Date.now() - last > 1000)) setLink(st.link);
       } catch {
         /* backend not ready */
       }
@@ -95,8 +128,21 @@ export function useLiveData(): LiveState {
     };
   }, []);
 
+  // 1 Hz clock for the "time since the last backend update" freshness indicator.
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const last = lastUpdateRef.current;
   return {
     connected,
+    environment,
+    source,
+    link,
+    runId,
+    eventsCount,
+    updateAgeS: last == null ? null : Math.max(0, (now - last) / 1000),
     t,
     telemetry,
     threat,

@@ -16,9 +16,11 @@ function num(x: number | null | undefined, d = 1): string {
 export function RuntimePanel({
   metrics,
   distance,
+  distanceNote,
 }: {
   metrics: Metrics | null;
   distance: number;
+  distanceNote: string; // simulated flight path vs reported positions of a replayed / bench source
 }) {
   const dist = fmtDistance(distance);
   const compute = metrics?.decision_compute_ms ?? metrics?.last_latency_ms ?? null;
@@ -45,7 +47,7 @@ export function RuntimePanel({
     <div className="panel">
       <header>
         <span className="panel-title">Runtime Performance</span>
-        <span className="panel-note">live · this session</span>
+        <span className="panel-note">this run</span>
       </header>
 
       <div className="kpi-hero">
@@ -54,7 +56,7 @@ export function RuntimePanel({
           {dist.value}
           <span className="u">{dist.unit}</span>
         </div>
-        <div className="kpi-hero-sub">Flight path · simulated</div>
+        <div className="kpi-hero-sub">{distanceNote}</div>
       </div>
 
       <div className="rt-grid">
@@ -143,9 +145,9 @@ const IMPLEMENTED = [
   "FastAPI + WebSocket API",
   "CLI + config-driven YAML pipeline",
   "SQLite tamper-evident hash-chain log",
+  "Live serial / UDP MAVLink source (receive-only)",
 ];
 const PLANNED = [
-  "Live UDP / serial MAVLink source",
   "SITL live integration",
   "Hardware-in-the-loop (HIL)",
   "Onboard / companion deployment",

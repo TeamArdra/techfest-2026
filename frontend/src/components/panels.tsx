@@ -20,7 +20,7 @@ export function ThreatPanel({ threat }: { threat: Threat | null }) {
     <div className={`panel threat lvl-${sev}`}>
       <header>
         <span className="panel-title">Threat State</span>
-        <span className="panel-note">live assessment</span>
+        <span className="panel-note">current assessment</span>
       </header>
 
       <div className={`threat-state sev-${sev}`}>{sev}</div>
@@ -153,7 +153,7 @@ function n(x: number | null | undefined, d = 1): string {
   return x == null ? "—" : x.toFixed(d);
 }
 
-export function TelemetryPanel({ tele }: { tele: Telemetry | null }) {
+export function TelemetryPanel({ tele, note }: { tele: Telemetry | null; note: string }) {
   const lowBatt = tele?.battery_remaining != null && tele.battery_remaining < 20;
   const cells: Array<{ label: string; value: string; unit?: string; warn?: boolean }> = [
     { label: "Altitude", value: n(tele?.rel_alt, 1), unit: "m" },
@@ -170,7 +170,7 @@ export function TelemetryPanel({ tele }: { tele: Telemetry | null }) {
     <div className="panel">
       <header>
         <span className="panel-title">Vehicle Telemetry</span>
-        <span className="panel-note">simulated airframe state</span>
+        <span className="panel-note">{note}</span>
       </header>
       <div className="tele">
         {cells.map((c) => (

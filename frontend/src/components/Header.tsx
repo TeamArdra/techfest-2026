@@ -1,12 +1,17 @@
+import type { EnvView, LinkView } from "../lib/source";
+import type { LinkStatus, SourceInfo } from "../types";
+
 interface Props {
   connected: boolean;
-  simTime: number;
+  clock: number;
   mlAvailable: boolean;
+  env: EnvView;
+  link: LinkView;
 }
 
-export function Header({ connected, simTime, mlAvailable }: Props) {
-  const mm = Math.floor(simTime / 60);
-  const ss = Math.floor(simTime % 60);
+export function Header({ connected, clock, mlAvailable, env, link }: Props) {
+  const mm = Math.floor(clock / 60);
+  const ss = Math.floor(clock % 60);
   return (
     <header className="header">
       <div className="brand">
@@ -17,12 +22,17 @@ export function Header({ connected, simTime, mlAvailable }: Props) {
       </div>
 
       <div className="status-rail">
-        <div className="stat">
-          <span className="dot sim" />
-          <span className="val">Simulation</span>
+        <div className="stat" data-testid="source-env">
+          <span className={`env-badge env-${env.badge}`}>{env.badge}</span>
+          <span className="val">{env.label}</span>
+        </div>
+        <div className="stat" data-testid="link-state" title={link.detail}>
+          <span className={`dot ${link.tone}`} />
+          <span>Link</span>
+          <span className="val">{link.label}</span>
         </div>
         <div className="stat">
-          <span>Mission clock</span>
+          <span>{env.clockLabel}</span>
           <span className="val mono">
             {mm}:{ss.toString().padStart(2, "0")}
           </span>
@@ -34,9 +44,46 @@ export function Header({ connected, simTime, mlAvailable }: Props) {
         </div>
         <div className="stat">
           <span className={`dot ${connected ? "on" : "off"}`} />
+          <span>Backend</span>
           <span className="val">{connected ? "Connected" : "Disconnected"}</span>
         </div>
       </div>
     </header>
+  );
+}
+
+function fmt(v: unknown): string {
+  return v == null ? "—" : String(v);
+}
+
+// One line naming exactly what is being displayed: the source, the run, the link and the GPS report.
+export function SourceBar({ source, link, linkView, runId, eventsCount }: {
+  source: SourceInfo | null;
+  link: LinkStatus | null;
+  linkView: LinkView;
+  runId: string | null;
+  eventsCount: number | null;
+}) {
+  const d = source?.detail ?? {};
+  const where =
+    source?.kind === "serial" ? `${fmt(d.port)} @ ${fmt(d.baud)} baud${d.virtual ? " · virtual port" : ""}`
+    : source?.kind === "replay" ? `${fmt(d.tlog)} · speed ${fmt(d.speed)}`
+    : source?.kind === "udp" ? `${fmt(d.bind)} · passive`
+    : source?.kind === "sim" ? "in-process simulator"
+    : "—";
+  const gps = link?.gps;
+  return (
+    <div className="source-bar" data-testid="source-bar">
+      <span><b>{source?.label ?? "Source not reported"}</b> · {where}</span>
+      <span>run <b className="mono">{runId ?? "—"}</b> · {eventsCount ?? 0} persisted alerts</span>
+      <span>link <b>{linkView.label}</b>{linkView.detail ? ` — ${linkView.detail}` : ""}</span>
+      {gps && gps.fix_type != null && (
+        <span>
+          GPS report <b>{fmt(gps.fix_name)}</b> · {fmt(gps.satellites)} sats · valid fix{" "}
+          <b>{gps.valid_fix ? "yes" : "no"}</b>
+        </span>
+      )}
+      {source && !source.ml && source.kind !== "sim" && <span>ML off · integrity UNKNOWN (no verifier)</span>}
+    </div>
   );
 }
