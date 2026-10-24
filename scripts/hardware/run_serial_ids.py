@@ -10,16 +10,19 @@ deployment can additionally leave the monitor's TX pin unconnected, which makes 
 wiring and not just of this code.
 
 What it does NOT do: it does not ask the flight controller for telemetry (that is a transmit). The controller
-must already be configured to stream the six messages the extractor reads (see docs/ONBOARD_DEPLOYMENT.md);
-otherwise the pipeline sees a link without GPS/attitude and reports it as a threat (measured on the physical
-board: docs/HARDWARE_BENCH_PIXHAWK6X.md).
+must already be configured to stream the six messages the extractor reads (see docs/ONBOARD_DEPLOYMENT.md).
+A link that never delivers GLOBAL_POSITION_INT is, under the default ``protocol.require_global_position: false``,
+a coverage condition (evidence line, no alert; position-dependent checks inactive), reported as
+``telemetry_coverage`` in summary.json / health.jsonl; a heartbeat absent for > 3 s of monitoring is still an
+alert. (Before that policy, 2026-10-15, such a link was reported as a threat: docs/HARDWARE_BENCH_PIXHAWK6X.md.)
 
 Defaults are deliberately conservative for ArduPilot: the ML detector is OFF (``--ml`` to enable) because the
 Stage-1 model does not transfer (docs/ARDUPILOT_SITL.md). Stage-1 thresholds are used unchanged.
 
 Outputs under ``--out-dir``: ``events.sqlite`` (hash-chained alerts), ``alerts.jsonl``, ``health.jsonl``
-(one line per ``--health-interval``: transport/source counters, decision counts, process CPU/RSS) and
-``summary.json`` (final). Stop with Ctrl-C / SIGTERM (clean shutdown, exit 0) or ``--seconds N``.
+(one line per ``--health-interval``: transport/source counters, decision counts, process CPU/RSS,
+``telemetry_coverage``) and ``summary.json`` (final; its key fields, incl. ``telemetry_coverage``, are also
+printed). Stop with Ctrl-C / SIGTERM (clean shutdown, exit 0) or ``--seconds N``.
 Exit codes: 0 ok (NOT a statement about link health: see ``link_ever_delivered_frames`` in summary.json),
 2 bad arguments / cannot open the port with ``--no-reconnect`` / ``--out-dir`` already holds a previous run,
 3 transmit attempted, 4 alert hash chain broken. An existing run is never overwritten.
@@ -44,6 +47,16 @@ from aegisflight.logging import EventStore
 from aegisflight.pipeline import IDSPipeline
 from aegisflight.sources.mavlink_live import LiveMavlinkSource
 from aegisflight.sources.mavlink_serial import SerialMavlinkTransport
+
+
+def _coverage(pipe: IDSPipeline, no_gpi: int) -> dict:
+    """Which streams have EVER arrived (P1/P2). A never-received GLOBAL_POSITION_INT is a coverage
+    condition, not an alert, under the default profile, so it is persisted here instead."""
+    f = pipe.last_frame
+    return {"heartbeat_seen": f.heartbeat_seen if f else None,
+            "global_position_seen": f.gps_seen if f else None,
+            "gps_raw_seen": f.gps_raw_seen if f else None,
+            "decisions_without_global_position": no_gpi}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -107,7 +120,7 @@ def main(argv: list[str] | None = None) -> int:
     proc = psutil.Process()
     proc.cpu_percent(None)
     t_wall0, cpu0 = time.perf_counter(), sum(proc.cpu_times()[:2])
-    decisions = alerts = threats = 0
+    decisions = alerts = threats = no_gpi = 0
     types: Counter[str] = Counter()
     lat: deque[float] = deque(maxlen=100_000)  # bounded: this runner may run for days; p99 is over the last 100k
     lat_sum = lat_max = 0.0
@@ -128,6 +141,7 @@ def main(argv: list[str] | None = None) -> int:
                 lat.append(asmt.latency_ms)
                 lat_sum += asmt.latency_ms
                 lat_max = max(lat_max, asmt.latency_ms)
+                no_gpi += pipe.last_frame is not None and pipe.last_frame.gps_seen is False
                 if asmt.is_alert:
                     alerts += 1
                     types[asmt.attack_type.value] += 1
@@ -144,7 +158,8 @@ def main(argv: list[str] | None = None) -> int:
                 rss_max = max(rss_max, proc.memory_info().rss)
                 health.write(json.dumps({"wall_utc": datetime.now(UTC).isoformat(), "decisions": decisions,
                                          "alerts": alerts, "transport": tr.stats, "source": src.stats,
-                                         "cpu_pct": cpu_samples[-1], "rss_mb": round(rss_max / 2**20, 1)},
+                                         "cpu_pct": cpu_samples[-1], "rss_mb": round(rss_max / 2**20, 1),
+                                         "telemetry_coverage": _coverage(pipe, no_gpi)},
                                         default=str) + "\n")
                 health.flush()
             if stop.is_set() or (deadline is not None and now >= deadline):
@@ -178,12 +193,13 @@ def main(argv: list[str] | None = None) -> int:
                                        "max": round(lat_max, 4) if decisions else None},
                "transport": t_stats, "source": s_stats,
                "link_ever_delivered_frames": t_stats["frames_received"] > 0,  # exit 0 does NOT mean a healthy link
+               "telemetry_coverage": _coverage(pipe, no_gpi),
                "passive_check": {"bytes_sent": t_stats["bytes_sent"], "write_errors": t_stats["write_errors"],
                                  "passed": t_stats["bytes_sent"] == 0 and t_stats["write_errors"] == 0},
                "hash_chain": {"ok": chain.ok, "length": chain.length}, "exit_code": rc}
     (out / "summary.json").write_text(json.dumps(summary, indent=2, default=str), encoding="utf-8")
     print(json.dumps({k: summary[k] for k in ("wall_s", "decisions", "alert_decisions", "alert_types",
-                                              "passive_check", "hash_chain")}, indent=2))
+                                              "telemetry_coverage", "passive_check", "hash_chain")}, indent=2))
     return rc
 
 

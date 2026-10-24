@@ -92,6 +92,23 @@ def test_runs_receive_only_writes_outputs_and_exits_zero(tmp_path, restore_signa
     assert len((tmp_path / "health.jsonl").read_text().splitlines()) >= 2
 
 
+def test_telemetry_coverage_is_persisted_in_summary_and_health(tmp_path, restore_signals):
+    """A coverage condition (P1/P2: never-received position is not an alert by default) must still be
+    persisted somewhere the operator can read: summary.json and every health.jsonl line."""
+    dev = Device(_frames(20))  # HEARTBEAT + ATTITUDE only: no GLOBAL_POSITION_INT, no GPS_RAW_INT
+    rc = run_serial_ids.main(["--port", f"socket://127.0.0.1:{dev.port}", "--allow-url", "--out-dir", str(tmp_path),
+                              "--seconds", "4", "--health-interval", "1"])
+    dev.close()
+    assert rc == 0
+    cov = json.loads((tmp_path / "summary.json").read_text())["telemetry_coverage"]
+    assert cov["heartbeat_seen"] is True
+    assert cov["global_position_seen"] is False and cov["gps_raw_seen"] is False
+    assert cov["decisions_without_global_position"] > 0
+    lines = [json.loads(ln) for ln in (tmp_path / "health.jsonl").read_text().splitlines()]
+    assert all("telemetry_coverage" in ln for ln in lines)
+    assert lines[-1]["telemetry_coverage"]["global_position_seen"] is False
+
+
 def test_url_port_without_allow_url_is_refused(tmp_path, restore_signals):
     rc = run_serial_ids.main(["--port", "socket://127.0.0.1:1", "--out-dir", str(tmp_path), "--seconds", "1"])
     assert rc == 2
@@ -124,3 +141,101 @@ def test_refuses_to_overwrite_a_previous_run(tmp_path, restore_signals):
     (tmp_path / "events.sqlite").write_bytes(b"precious evidence")
     rc = run_serial_ids.main(["--port", "socket://127.0.0.1:1", "--allow-url", "--out-dir", str(tmp_path), "--seconds", "1"])
     assert rc == 2 and (tmp_path / "events.sqlite").read_bytes() == b"precious evidence"
+
+
+# ---- telemetry_coverage completeness (appended 2026-10-20, aegis-validation; lead-authorised) ---------------- #
+
+def _frames_with_position(n: int) -> list[bytes]:
+    """Per group: HEARTBEAT, GLOBAL_POSITION_INT, GPS_RAW_INT (3D fix, 10 sats), ATTITUDE; one sequence counter."""
+    m = mav.MAVLink(None, srcSystem=1, srcComponent=1)
+    out = []
+    for i in range(n):
+        for msg in (m.heartbeat_encode(2, 3, 81, 0, 4, 3),
+                    m.global_position_int_encode(i * 100, 129_000_000, 775_000_000, 900_000, 0, 0, 0, 0, 0),
+                    m.gps_raw_int_encode(i * 100_000, 3, 129_000_000, 775_000_000, 900_000, 100, 100, 0, 0, 10),
+                    m.attitude_encode(i * 100, 0.01, 0.02, 0.03, 0.0, 0.0, 0.0)):
+            m.seq = (m.seq + 1) & 0xFF
+            out.append(bytes(msg.pack(m)))
+    return out
+
+
+def _run_for_coverage(tmp_path, port: int, seconds: str, *extra: str) -> tuple[int, dict, list[dict]]:
+    rc = run_serial_ids.main(["--port", f"socket://127.0.0.1:{port}", "--allow-url", "--out-dir", str(tmp_path),
+                              "--seconds", seconds, "--health-interval", "1", *extra])
+    summary = json.loads((tmp_path / "summary.json").read_text())
+    health = [json.loads(ln) for ln in (tmp_path / "health.jsonl").read_text().splitlines()]
+    return rc, summary, health
+
+
+def _assert_health_coverage_shape(health: list[dict]) -> None:
+    assert health, "no health lines"
+    prev = 0
+    for ln in health:
+        cov = ln["telemetry_coverage"]
+        assert set(cov) == {"heartbeat_seen", "global_position_seen", "gps_raw_seen",
+                            "decisions_without_global_position"}
+        assert 0 <= cov["decisions_without_global_position"] <= ln["decisions"]
+        assert cov["decisions_without_global_position"] >= prev  # a running count, never decreases
+        prev = cov["decisions_without_global_position"]
+
+
+def test_telemetry_coverage_counts_every_decision_without_position(tmp_path, restore_signals):
+    """HEARTBEAT + ATTITUDE only: GLOBAL_POSITION_INT is never received, so EVERY decision counts as one
+    without position (count == decisions), and heartbeat_seen is carried on every health line."""
+    dev = Device(_frames(20))
+    rc, s, health = _run_for_coverage(tmp_path, dev.port, "4")
+    dev.close()
+    assert rc == 0 and s["decisions"] > 0
+    cov = s["telemetry_coverage"]
+    assert cov["decisions_without_global_position"] == s["decisions"]
+    assert cov["heartbeat_seen"] is True and cov["global_position_seen"] is False and cov["gps_raw_seen"] is False
+    _assert_health_coverage_shape(health)
+    assert all(isinstance(ln["telemetry_coverage"]["heartbeat_seen"], bool) for ln in health)
+    assert health[-1]["telemetry_coverage"]["heartbeat_seen"] is True
+    assert all(ln["telemetry_coverage"]["decisions_without_global_position"] == ln["decisions"] for ln in health)
+
+
+def test_telemetry_coverage_positive_when_position_and_gps_raw_arrive(tmp_path, restore_signals):
+    """GLOBAL_POSITION_INT and GPS_RAW_INT both flow: the run ends with every flag True and no coverage alert.
+    Decisions before the first position frame (the monitor ticks from start, before the device's first byte)
+    may count as without position, so the count is only bounded, not zero."""
+    dev = Device(_frames_with_position(10))  # 40 frames, ~4 s at 10 frames/s
+    rc, s, health = _run_for_coverage(tmp_path, dev.port, "4")
+    dev.close()
+    assert rc == 0 and s["decisions"] > 0 and s["transport"]["crc_rejects"] == 0
+    cov = s["telemetry_coverage"]
+    assert cov["heartbeat_seen"] is True and cov["global_position_seen"] is True and cov["gps_raw_seen"] is True
+    assert cov["decisions_without_global_position"] < s["decisions"]
+    _assert_health_coverage_shape(health)
+    assert health[-1]["telemetry_coverage"]["global_position_seen"] is True
+
+
+def test_dead_link_coverage_is_all_false_and_heartbeat_alert_waits_for_the_timeout(tmp_path, restore_signals):
+    """Nothing ever arrives: every flag False, count == decisions, and the only alert family is the
+    never-received heartbeat, raised only once monitoring time exceeds heartbeat_timeout_s (no t=0 alert).
+    Loopback socket, NOT hardware: this does not validate the physical monitor-start behaviour."""
+    s0 = socket.socket()
+    s0.bind(("127.0.0.1", 0))
+    port = s0.getsockname()[1]
+    s0.close()  # nothing listens: the transport keeps retrying, the source still ticks from start
+    rc, s, health = _run_for_coverage(tmp_path, port, "5", "--reconnect-interval", "0.5")
+    assert rc == 0 and s["transport"]["frames_received"] == 0 and s["decisions"] > 0
+    cov = s["telemetry_coverage"]
+    assert cov == {"heartbeat_seen": False, "global_position_seen": False, "gps_raw_seen": False,
+                   "decisions_without_global_position": s["decisions"]}
+    _assert_health_coverage_shape(health)
+    hb_timeout = run_serial_ids.load_config().detector["protocol"]["heartbeat_timeout_s"]
+    alerts = [json.loads(ln) for ln in (tmp_path / "alerts.jsonl").read_text().splitlines()]
+    assert alerts, "a never-received heartbeat for > heartbeat_timeout_s must alert"
+    assert all(al["t"] > hb_timeout for al in alerts)
+    assert alerts[0]["type"] == "DOS"
+    assert any(e.startswith("heartbeat stale (never received") for e in alerts[0]["evidence"])
+    assert all("GPS dropout" not in e for al in alerts for e in al["evidence"])  # position: coverage, not alert
+
+
+def test_coverage_helper_is_none_before_any_decision():
+    """No decision yet (``last_frame`` None): presence is unknown, reported as None, never as False."""
+    pipe = run_serial_ids.IDSPipeline(run_serial_ids.load_config(), model_path=None, firmware_dir=None)
+    assert pipe.last_frame is None
+    assert run_serial_ids._coverage(pipe, 0) == {"heartbeat_seen": None, "global_position_seen": None,
+                                                 "gps_raw_seen": None, "decisions_without_global_position": 0}
