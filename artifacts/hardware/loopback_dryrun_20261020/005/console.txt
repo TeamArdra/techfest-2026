@@ -1,0 +1,22 @@
+{
+  "wall_s": 60.0,
+  "decisions": 301,
+  "alert_decisions": 0,
+  "alert_types": {},
+  "telemetry_coverage": {
+    "heartbeat_seen": true,
+    "global_position_seen": false,
+    "gps_raw_seen": false,
+    "decisions_without_global_position": 301
+  },
+  "passive_check": {
+    "bytes_sent": 0,
+    "write_errors": 0,
+    "passed": true
+  },
+  "hash_chain": {
+    "ok": true,
+    "length": 0
+  }
+}
+EXIT=0

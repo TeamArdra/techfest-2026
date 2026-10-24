@@ -1,0 +1,2 @@
+events: 2  chain: OK  1 run chain(s) intact
+EXIT=0

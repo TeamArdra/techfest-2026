@@ -1,0 +1,73 @@
+{
+  "tlog": "data/hardware/raw/telemetry_radio_007.tlog",
+  "config_dir": "configs (Stage-1 default)",
+  "ml_enabled": false,
+  "clock_offset_s_used_for_phases": 0.0,
+  "decisions": 300,
+  "threat_decisions": 295,
+  "alert_decisions": 15,
+  "alert_rate_per_decision": 0.05,
+  "by_phase": {
+    "boot": {
+      "decisions": 300,
+      "threat": 295,
+      "alerts": 15
+    }
+  },
+  "detector_ge_0.5": {
+    "protocol_rule": 295
+  },
+  "alert_types": {
+    "DOS": 15
+  },
+  "alert_evidence_top": [
+    [
+      "GNSS fix never acquired: fix_type=0, satellites=0 for 5 decisions (no valid fix ",
+      1
+    ],
+    [
+      "GNSS fix never acquired: fix_type=0, satellites=0 for 25 decisions (no valid fix",
+      1
+    ],
+    [
+      "GNSS fix never acquired: fix_type=0, satellites=0 for 45 decisions (no valid fix",
+      1
+    ],
+    [
+      "GNSS fix never acquired: fix_type=0, satellites=0 for 65 decisions (no valid fix",
+      1
+    ],
+    [
+      "GNSS fix never acquired: fix_type=0, satellites=0 for 85 decisions (no valid fix",
+      1
+    ],
+    [
+      "GNSS fix never acquired: fix_type=0, satellites=0 for 105 decisions (no valid fi",
+      1
+    ],
+    [
+      "GNSS fix never acquired: fix_type=0, satellites=0 for 125 decisions (no valid fi",
+      1
+    ],
+    [
+      "GNSS fix never acquired: fix_type=0, satellites=0 for 145 decisions (no valid fi",
+      1
+    ],
+    [
+      "GNSS fix never acquired: fix_type=0, satellites=0 for 165 decisions (no valid fi",
+      1
+    ],
+    [
+      "GNSS fix never acquired: fix_type=0, satellites=0 for 185 decisions (no valid fi",
+      1
+    ],
+    [
+      "GNSS fix never acquired: fix_type=0, satellites=0 for 205 decisions (no valid fi",
+      1
+    ],
+    [
+      "GNSS fix never acquired: fix_type=0, satellites=0 for 225 decisions (no valid fi",
+      1
+    ]
+  ]
+}

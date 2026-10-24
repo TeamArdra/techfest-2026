@@ -1,0 +1,8 @@
+{
+  "accept_unix": 1792483829.0810018,
+  "delay_s": 1.5,
+  "frames_total": 60,
+  "first_send_unix": 1792483830.5814335,
+  "last_send_unix": 1792483889.5816944,
+  "sent": 60
+}

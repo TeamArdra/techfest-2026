@@ -1,0 +1,9 @@
+{
+  "accept_unix": 1792483829.0707393,
+  "delay_s": 1.5,
+  "frames_total": 1620,
+  "first_send_unix": 1792483830.5713034,
+  "last_send_unix": 1792483889.080801,
+  "send_error": "ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)",
+  "sent": 1581
+}
