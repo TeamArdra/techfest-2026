@@ -141,7 +141,7 @@ def test_live_engine_reset_clean_and_preserves_history(tmp_path):
     assert run_b != run_a
     assert engine.pipeline.verifier.verify().status is IntegrityStatus.VALID
     assert engine._active_attack_name is None
-    assert len(engine._alerts) == 0
+    assert engine.recent_alerts() == []  # the new run has no alerts (read back from the store)
     assert engine.pipeline.anomaly._ticks == 0
     assert engine.pipeline._last is None
 

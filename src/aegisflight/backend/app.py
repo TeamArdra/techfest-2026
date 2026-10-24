@@ -1,56 +1,87 @@
 """FastAPI backend for the AegisFlight dashboard.
 
-Exposes REST control/status endpoints and a WebSocket that streams live
-telemetry + threat assessments from the :class:`LiveEngine`. If a built
-frontend exists at ``frontend/dist`` it is served at ``/`` so ``aegis serve``
-hosts the whole app; otherwise ``/`` returns a small JSON banner.
+Exposes REST status endpoints and a WebSocket that streams live telemetry +
+threat assessments from the :class:`LiveEngine`. If a built frontend exists at
+``frontend/dist`` it is served at ``/`` so ``aegis serve`` hosts the whole app;
+otherwise ``/`` returns a small JSON banner.
 
-Every payload carries ``sim: true`` — the dashboard must always show this is a
-simulation, never a real airframe.
+The telemetry source is chosen at startup (``aegis serve --source``, read here
+from ``AEGIS_*`` variables); no endpoint can open or switch it. Every payload
+carries ``environment`` (SIM / REPLAY / SITL / BENCH) and ``sim`` (true only for
+SIM), so the dashboard can never present simulated or replayed activity as a
+real airframe. The control and attack endpoints are simulation-only (HTTP 409
+otherwise): a real or replayed source is read-only.
+
+Exposure: same-origin only. There is no CORS middleware (the built frontend is
+served from this origin and the Vite dev server proxies ``/api``, ``/health`` and
+``/ws``), the Host header must be local (DNS-rebinding guard), and the WebSocket
+refuses a browser Origin that is not local -- live bench telemetry (possibly a
+real position) must not be readable by an arbitrary web page.
 """
 
 from __future__ import annotations
 
 import contextlib
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import urlparse
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from .. import __version__
 from ..attacks import ATTACK_REGISTRY
-from ..config import load_config
 from .engine import LiveEngine
+from .sources import spec_from_env
 
 engine: LiveEngine | None = None
 
+_LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1"}
+
+
+def _local_hosts() -> set[str]:
+    # AEGIS_SERVE_HOST is the operator's own --host (non-loopback only for SIM); an unset one adds nothing
+    # (adding None would match the hostname-less ``Origin: null``)
+    extra = os.environ.get("AEGIS_SERVE_HOST")
+    return _LOCAL_HOSTS | ({extra} if extra else set())
+
+
+def _allowed_hosts() -> list[str]:
+    # "testserver" is Starlette's TestClient host
+    return sorted(_local_hosts() | {"[::1]", "testserver"})
+
 
 def get_engine() -> LiveEngine:
+    """The single engine; a pre-set ``engine`` (tests) wins, else it is built from ``AEGIS_*``."""
     global engine
     if engine is None:
-        engine = LiveEngine()
+        engine = LiveEngine(spec=spec_from_env(), db_path=os.environ.get("AEGIS_DB") or None)
     return engine
+
+
+def _sim_only(action: str) -> JSONResponse | None:
+    eng = get_engine()
+    if eng.is_sim:
+        return None
+    return JSONResponse(status_code=409, content={
+        "ok": False, "environment": eng.spec.environment,
+        "error": f"{action} is simulation-only; the source is {eng.spec.environment} (read-only)"})
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    await get_engine().start()  # auto-start the live simulation
+    await get_engine().start()  # auto-start the configured source
     yield
     if engine is not None:
-        await engine.stop()
+        await engine.close()  # loop and source stopped, port released, event store closed
 
 
 app = FastAPI(title="AegisFlight IDS", version=__version__, lifespan=lifespan)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # local demo only
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=_allowed_hosts())
 
 
 # --------------------------------------------------------------------------- #
@@ -58,7 +89,8 @@ app.add_middleware(
 # --------------------------------------------------------------------------- #
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok", "version": __version__, "sim": True}
+    eng = get_engine()
+    return {"status": "ok", "version": __version__, "sim": eng.is_sim, "environment": eng.spec.environment}
 
 
 @app.get("/api/status")
@@ -66,20 +98,25 @@ def status() -> dict:
     return get_engine().status()
 
 
+# metrics / events are async on purpose: every EventStore read then runs on the event-loop thread, the same
+# thread that appends the alerts (no SQLite connection is shared across threads).
 @app.get("/api/metrics")
-def metrics() -> dict:
+async def metrics() -> dict:
     return get_engine().metrics()
 
 
 @app.get("/api/events")
-def events(limit: int = 50) -> dict:
+async def events(limit: int = Query(50, ge=1, le=1000)) -> dict:
+    """The CURRENT run's persisted alerts, newest first, read back from the event store (hash-chain fields
+    included); ``count`` is the run's total. Bounded ``limit``: SQLite treats a negative LIMIT as unlimited."""
     eng = get_engine()
-    return {"events": eng.recent_alerts(limit), "run_id": eng._run_id}
+    return {"events": eng.recent_alerts(limit), "run_id": eng._run_id, "source": eng.spec.describe(),
+            "count": eng.store.count_events(eng._run_id)}
 
 
 @app.get("/api/config")
 def config() -> dict:
-    cfg = load_config()
+    cfg = get_engine().cfg  # the configuration actually in use (a --config-dir profile, if any)
     det = cfg.detector
     return {
         "attacks": sorted(ATTACK_REGISTRY.keys()),
@@ -94,20 +131,27 @@ def config() -> dict:
     }
 
 
-@app.post("/api/simulation/start")
-async def sim_start() -> dict:
+@app.post("/api/simulation/start", response_model=None)
+async def sim_start() -> dict | JSONResponse:
+    if (refused := _sim_only("start")) is not None:
+        return refused
     await get_engine().start()
     return {"ok": True, "running": True}
 
 
-@app.post("/api/simulation/stop")
-async def sim_stop() -> dict:
+@app.post("/api/simulation/stop", response_model=None)
+async def sim_stop() -> dict | JSONResponse:
+    if (refused := _sim_only("stop")) is not None:
+        return refused
     await get_engine().stop()
     return {"ok": True, "running": False}
 
 
-@app.post("/api/simulation/reset")
-async def sim_reset() -> dict:
+@app.post("/api/simulation/reset", response_model=None)
+async def sim_reset() -> dict | JSONResponse:
+    # Refused for a live source: pipeline.reset() would erase detector memory (docs/THREAT_MODEL.md).
+    if (refused := _sim_only("reset")) is not None:
+        return refused
     # Stop the running loop, restore a clean baseline, then start a fresh loop.
     # Async (not sync) so start()'s create_task runs on the event loop.
     eng = get_engine()
@@ -119,6 +163,8 @@ async def sim_reset() -> dict:
 
 @app.post("/api/simulation/attack")
 def sim_attack(payload: dict) -> JSONResponse:
+    if (refused := _sim_only("attack injection")) is not None:
+        return refused
     name = (payload or {}).get("attack")
     if name and name not in ATTACK_REGISTRY and name not in ("none", "benign"):
         return JSONResponse(
@@ -135,6 +181,12 @@ def sim_attack(payload: dict) -> JSONResponse:
 # --------------------------------------------------------------------------- #
 @app.websocket("/ws/telemetry")
 async def ws_telemetry(ws: WebSocket) -> None:
+    # CORS does not apply to WebSockets: refuse a browser Origin that is not this machine. No Origin
+    # (non-browser clients, TestClient) is allowed. Client messages are never read.
+    origin = ws.headers.get("origin")
+    if origin is not None and urlparse(origin).hostname not in _local_hosts():  # "null" -> hostname None
+        await ws.close(code=1008)
+        return
     await ws.accept()
     eng = get_engine()
     q = eng.subscribe()
@@ -161,10 +213,12 @@ if _DIST.exists():
 else:
     @app.get("/")
     def root() -> dict:
+        eng = get_engine()
         return {
             "name": "AegisFlight IDS",
             "version": __version__,
-            "sim": True,
+            "sim": eng.is_sim,
+            "environment": eng.spec.environment,
             "note": "frontend not built; run `npm --prefix frontend install && "
                     "npm --prefix frontend run build`, or use the dev server",
             "endpoints": ["/health", "/api/status", "/api/metrics", "/api/events",

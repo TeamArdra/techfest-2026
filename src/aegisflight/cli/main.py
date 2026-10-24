@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import os
 import sys
 
 from .. import __version__
@@ -124,12 +125,47 @@ def _cmd_train(args: argparse.Namespace) -> int:
     return 0
 
 
+_LOOPBACK_HOSTS = ("127.0.0.1", "localhost", "::1")
+
+
+def _serve_env(spec, args: argparse.Namespace) -> dict[str, str]:
+    """Every ``AEGIS_*`` key the app reads (``backend/sources.py:spec_from_env``, ``backend/app.py``), ALL set,
+    so a stale variable in the operator's shell can never change the source."""
+    return {
+        "AEGIS_SOURCE": spec.kind, "AEGIS_SERIAL_PORT": spec.port or "", "AEGIS_BAUD": str(spec.baud),
+        "AEGIS_ALLOW_URL": "1" if spec.allow_url else "0", "AEGIS_TLOG": spec.tlog or "",
+        "AEGIS_REPLAY_SPEED": repr(spec.speed), "AEGIS_UDP_PORT": str(spec.udp_port or ""),
+        "AEGIS_CONFIG_DIR": spec.config_dir or "", "AEGIS_ML": "",  # "" -> SourceSpec default (SIM only)
+        "AEGIS_RECONNECT": "1" if spec.reconnect else "0", "AEGIS_DB": args.db or "",
+        "AEGIS_SERVE_HOST": args.host,
+    }
+
+
 def _cmd_serve(args: argparse.Namespace) -> int:
+    from ..backend.sources import SourceSpec
+
+    try:  # validated before anything starts: a bad source is an error, never a silent SIM fallback
+        spec = SourceSpec(kind=args.source, port=args.serial_port, baud=args.baud, allow_url=args.allow_url,
+                          tlog=args.tlog, speed=args.replay_speed, udp_port=args.udp_port,
+                          config_dir=args.config_dir, reconnect=not args.no_reconnect)
+    except ValueError as exc:
+        print(f"aegis serve: {exc}", file=sys.stderr)
+        return 2
+    if spec.kind != "sim":
+        if args.reload:  # the reloader restarts the worker on every edit, re-opening the source each time
+            print("aegis serve: --reload is simulation-only", file=sys.stderr)
+            return 2
+        if args.host not in _LOOPBACK_HOSTS:  # live telemetry (possibly a real position) stays on this machine
+            print(f"aegis serve: a {spec.environment} source is served on loopback only (--host 127.0.0.1)",
+                  file=sys.stderr)
+            return 2
     try:
         import uvicorn
     except ImportError:
         print("uvicorn not installed", file=sys.stderr)
         return 1
+    os.environ.update(_serve_env(spec, args))
+    print(f"aegis serve: source {spec.environment} ({spec.describe()['label']}) on http://{args.host}:{args.port}")
     uvicorn.run("aegisflight.backend.app:app", host=args.host, port=args.port, reload=args.reload)
     return 0
 
@@ -173,10 +209,22 @@ def build_parser() -> argparse.ArgumentParser:
     t.add_argument("--seed", type=int, default=100)
     t.set_defaults(func=_cmd_train)
 
-    sv = sub.add_parser("serve", help="start the FastAPI backend")
+    sv = sub.add_parser("serve", help="start the FastAPI backend (dashboard API + WebSocket)")
     sv.add_argument("--host", default="127.0.0.1")
     sv.add_argument("--port", type=int, default=8000)
-    sv.add_argument("--reload", action="store_true")
+    sv.add_argument("--reload", action="store_true", help="SIM only")
+    sv.add_argument("--source", choices=["sim", "replay", "serial", "udp"], default="sim",
+                    help="telemetry source, fixed for the server's lifetime (default: sim)")
+    sv.add_argument("--serial-port", default=None, help="serial: COM7, /dev/ttyAMA0 (receive-only)")
+    sv.add_argument("--baud", type=int, default=115200, help="serial: must match the link (115200 on COM7)")
+    sv.add_argument("--allow-url", action="store_true", help="serial: allow a socket:// virtual port (REPLAY)")
+    sv.add_argument("--no-reconnect", action="store_true",
+                    help="serial: a port that cannot be opened is a source error instead of being retried")
+    sv.add_argument("--tlog", default=None, help="replay: repo-framed .tlog to replay")
+    sv.add_argument("--replay-speed", type=float, default=1.0, help="replay: 1.0 = capture time")
+    sv.add_argument("--udp-port", type=int, default=None, help="udp: listen on 127.0.0.1:<port>, passive")
+    sv.add_argument("--config-dir", default=None, help="detector profile dir (default: Stage-1 configs/)")
+    sv.add_argument("--db", default=None, help="event store (default: artifacts/aegisflight_live.sqlite)")
     sv.set_defaults(func=_cmd_serve)
 
     v = sub.add_parser("verify-log", help="verify a SQLite event-log hash chain")
