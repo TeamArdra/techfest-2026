@@ -53,6 +53,7 @@ export default function App() {
           </div>
           <MapPanel
             track={live.track}
+            trackThreat={live.trackThreat}
             rawTrack={live.rawTrack}
             scoreHistory={live.scoreHistory}
             altHistory={live.altHistory}

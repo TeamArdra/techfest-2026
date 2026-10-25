@@ -3,6 +3,7 @@ import { THREAT_THRESHOLD } from "../lib/constants";
 
 interface Props {
   track: Array<[number, number]>;
+  trackThreat?: boolean[];
   rawTrack?: Array<[number, number]>;
   scoreHistory: Array<{ t: number; score: number }>;
   altHistory?: Array<{ t: number; rawAlt: number; effAlt: number; diverging: boolean }>;
@@ -27,6 +28,7 @@ function fmtNum(val: number | null | undefined, digits = 1, fallback = "0.0"): s
 // Track and the dashed red Rejected/Blocked Ghost Track.
 export function MapPanel({
   track,
+  trackThreat,
   rawTrack,
   scoreHistory,
   altHistory,
@@ -49,6 +51,18 @@ export function MapPanel({
 
   const effTele = isIpsActive && sanitizedTelemetry ? sanitizedTelemetry : telemetry;
 
+  const atk = String(attackActive || "").toLowerCase();
+
+  // The red dashed "ghost" track means: the RAW reported position that the IPS rejected.
+  // That is only meaningful for attacks that actually corrupt the position channel. DoS
+  // floods/blackouts, telemetry manipulation (alt/speed/battery/attitude), sequence/rate
+  // anomalies, command injection and firmware tamper do NOT forge GPS, so no ghost is drawn
+  // for them -- even if a GPS-sanitizer flag is still latched from an earlier GPS attack.
+  // Live (non-sim) sources have no injected-attack name, so fall back to the fused class.
+  const isPositionAttack = atk
+    ? atk.startsWith("gps_spoofing") || atk.includes("gnss_jamming") || atk.includes("rogue_sysid")
+    : threat?.attack_type === "GPS_SPOOFING";
+
   const trackColor = isIpsProtecting
     ? `var(--ok)`
     : active
@@ -56,29 +70,36 @@ export function MapPanel({
       : `var(--accent)`;
   const timelineColor = active ? `var(--high)` : `var(--accent)`;
 
-  const getGhostLabel = (atk: string | null | undefined): string => {
-    const s = String(atk || "").toLowerCase();
-    if (s.includes("mode_flip")) return isIpsActive ? "FORCED LAND (BLOCKED)" : "⚠️ HIJACKED LAND";
-    if (s.includes("gcs_replay")) return isIpsActive ? "REPLAYED RTL (BLOCKED)" : "⚠️ REPLAYED RTL";
-    if (s.includes("rogue_command")) return isIpsActive ? "ROGUE GUIDED (BLOCKED)" : "⚠️ ROGUE GUIDED";
-    if (s.includes("arm_disarm")) return isIpsActive ? "DISARM DROP (VETOED)" : "⚠️ DISARM PLUMMET";
-    if (s.includes("replay_freeze")) return isIpsActive ? "FROZEN FIX (BYPASSED)" : "⚠️ FROZEN FIX";
-    if (s.includes("rogue_sysid")) return isIpsActive ? "ROGUE SYSID 42 (DROPPED)" : "⚠️ ROGUE SYSID 42 OFFSET";
-    return isIpsActive ? "SPOOFED GPS (REJECTED)" : "⚠️ ANOMALOUS TRACK";
+  const getGhostLabel = (): string => {
+    if (atk.includes("replay_freeze")) return "FROZEN GPS FIX (BYPASSED)";
+    if (atk.includes("sudden_offset")) return "SPOOFED GPS JUMP (REJECTED)";
+    if (atk.includes("gradual_drift")) return "SPOOFED GPS DRIFT (REJECTED)";
+    if (atk.includes("gnss_jamming")) return "JAMMED GNSS FIX (IGNORED)";
+    if (atk.includes("rogue_sysid")) return "ROGUE SYSID 42 POSITION (DROPPED)";
+    return "SPOOFED GPS (REJECTED)";
   };
 
-  const getProtectedLabel = (atk: string | null | undefined): string => {
-    const s = String(atk || "").toLowerCase();
-    const topNote = topology === "a" ? " [Top-A Detour/Recov]" : " [Top-B Inline]";
-    if (s.includes("mode_flip")) return `IPS AUTO 12 m/s (MAINTAINED)${topNote}`;
-    if (s.includes("gcs_replay")) return `IPS MISSION (CONTINUED)${topNote}`;
-    if (s.includes("rogue_command")) return `IPS SURVEY TRACK${topNote}`;
-    if (s.includes("arm_disarm")) return `IPS FLIGHT SUSTAINED${topNote}`;
-    if (s.includes("rogue_sysid")) return `IPS CLEAN TRACK${topNote}`;
-    return `IPS RESTORED (DR)${topNote}`;
+  const topNote =
+    topology === "a" ? " [Top-A Sidecar]" : topology === "a+b" ? " [Top-A+B Hybrid]" : " [Top-B Inline]";
+
+  const getProtectedLabel = (): string => {
+    if (atk.includes("mode_flip")) return `IPS AUTO 12 m/s (LAND BLOCKED)${topNote}`;
+    if (atk.includes("gcs_replay")) return `IPS MISSION (REPLAY BLOCKED)${topNote}`;
+    if (atk.includes("rogue_command")) return `IPS SURVEY TRACK (CMD BLOCKED)${topNote}`;
+    if (atk.includes("arm_disarm")) return `IPS FLIGHT SUSTAINED (DISARM VETOED)${topNote}`;
+    if (atk.includes("rogue_sysid")) return `IPS CLEAN TRACK (SYSID QUARANTINED)${topNote}`;
+    if (atk.includes("gnss_jamming")) return `IPS DEAD-RECKONING (GNSS LOST)${topNote}`;
+    if (atk.startsWith("gps_spoofing")) return `IPS RESTORED (DEAD-RECKONING)${topNote}`;
+    if (atk.startsWith("dos")) return `IPS LINK GUARDED (RATE-LIMITED)${topNote}`;
+    if (atk.startsWith("telemetry_manipulation")) return `IPS TELEMETRY SANITIZED${topNote}`;
+    if (atk.startsWith("mavlink_anomaly")) return `IPS LINK GUARDED${topNote}`;
+    if (atk.startsWith("firmware")) return `IPS INTEGRITY ALERT${topNote}`;
+    if (threat?.attack_type === "GPS_SPOOFING") return `IPS RESTORED (DEAD-RECKONING)${topNote}`;
+    return `IPS PROTECTED${topNote}`;
   };
 
   let path = "";
+  let threatPath = "";
   let rawPath = "";
   let head: [number, number] | null = null;
   let rawHead: [number, number] | null = null;
@@ -104,9 +125,10 @@ export function MapPanel({
     if (rawTrack && rawTrack.length > 1) {
       rawXs = rawTrack.map((p) => (p[1] - lons[0]) * mPerLon);
       rawYs = rawTrack.map((p) => (p[0] - lats[0]) * mPerLat);
-      const lastIdx = Math.min(xs.length - 1, rawXs.length - 1);
-      const sepM = Math.hypot(rawXs[rawXs.length - 1] - xs[lastIdx], rawYs[rawYs.length - 1] - ys[lastIdx]);
-      hasDivergence = isIpsActive && (isSanitizingGps || sepM > 2.5);
+      // rawTrack is scoped to the current attack episode (see useLiveData), so compare the
+      // two LATEST fixes rather than index-aligning against the full effective history.
+      const sepM = Math.hypot(rawXs[rawXs.length - 1] - xs[xs.length - 1], rawYs[rawYs.length - 1] - ys[ys.length - 1]);
+      hasDivergence = isIpsActive && isPositionAttack && (isSanitizingGps || sepM > 2.5);
 
       if (hasDivergence) {
         // Expand viewport modestly (up to +65m margin) so the diverging spoofed ghost track
@@ -126,6 +148,18 @@ export function MapPanel({
     const sx = (x: number) => pad + ((x - minX) / span) * (W - 2 * pad);
     const sy = (y: number) => H - pad - ((y - minY) / span) * (H - 2 * pad);
     path = track.map((_, i) => `${i ? "L" : "M"}${sx(xs[i]).toFixed(1)},${sy(ys[i]).toFixed(1)}`).join(" ");
+    // Overlay only the fixes flown under threat (index-aligned flags), so an attack
+    // recolours its own segment instead of repainting the entire flight history.
+    if (trackThreat && trackThreat.length === track.length) {
+      const segs: string[] = [];
+      for (let i = 1; i < track.length; i++) {
+        if (trackThreat[i]) {
+          const move = trackThreat[i - 1] ? "L" : `M${sx(xs[i - 1]).toFixed(1)},${sy(ys[i - 1]).toFixed(1)} L`;
+          segs.push(`${move}${sx(xs[i]).toFixed(1)},${sy(ys[i]).toFixed(1)}`);
+        }
+      }
+      threatPath = segs.join(" ");
+    }
     head = [sx(xs[xs.length - 1]), sy(ys[ys.length - 1])];
     start = [sx(xs[0]), sy(ys[0])];
 
@@ -219,13 +253,26 @@ export function MapPanel({
                   fontFamily="var(--mono)"
                   fontWeight="700"
                 >
-                  {getGhostLabel(attackActive)}
+                  {getGhostLabel()}
                 </text>
               </g>
             )}
 
-            {/* effective / IPS-protected vehicle trajectory */}
-            {path && <path d={path} fill="none" stroke={trackColor} strokeWidth="2.4" opacity="0.95" strokeLinejoin="round" />}
+            {/* effective / IPS-protected vehicle trajectory: nominal history in accent,
+                only the segment flown under threat recoloured on top */}
+            {path && (
+              <path
+                d={path}
+                fill="none"
+                stroke={threatPath ? "var(--accent)" : trackColor}
+                strokeWidth="2.4"
+                opacity="0.95"
+                strokeLinejoin="round"
+              />
+            )}
+            {threatPath && (
+              <path d={threatPath} fill="none" stroke={trackColor} strokeWidth="2.6" opacity="0.98" strokeLinejoin="round" />
+            )}
             {/* home / first fix */}
             {start && <rect x={start[0] - 3} y={start[1] - 3} width="6" height="6" fill="none" stroke="var(--muted)" strokeWidth="1.5" />}
             {/* current vehicle position */}
@@ -245,7 +292,7 @@ export function MapPanel({
                     fontFamily="var(--mono)"
                     fontWeight="700"
                   >
-                    {getProtectedLabel(attackActive)}
+                    {getProtectedLabel()}
                   </text>
                 )}
 
@@ -294,7 +341,7 @@ export function MapPanel({
               <line x1="0" y1="6" x2="16" y2="6" stroke="var(--ok)" strokeWidth="2.4" />
               <text x="21" y="9" fill="var(--ok)" fontSize="9.5" fontFamily="var(--mono)">IPS Protected Track</text>
               <line x1="126" y1="6" x2="142" y2="6" stroke="var(--crit)" strokeWidth="1.6" strokeDasharray="4 3" />
-              <text x="147" y="9" fill="var(--crit)" fontSize="9.5" fontFamily="var(--mono)">Ghost Track</text>
+              <text x="147" y="9" fill="var(--crit)" fontSize="9.5" fontFamily="var(--mono)">Rejected GPS</text>
             </g>
           )}
         </svg>

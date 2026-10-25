@@ -454,9 +454,16 @@ class LiveEngine:
             self._pending_drift_rate = None
             self._attack_injected_t = None
             self._ttd_pending = False
+            self.mitigation.reset()
             return
         if name not in ATTACK_REGISTRY:
             return
+
+        # When switching to a non-GPS attack, unlatch any leftover GPS sanitizer flags
+        if not name.startswith("gps"):
+            self.mitigation._sanitize_gps_latched = False
+            self.mitigation._ekf_switched = False
+            self.mitigation.sanitizer.sanitize_gps = False
         rng = np.random.default_rng(int(self._sim_t * 1000) & 0xFFFF)
         kwargs = {"firmware_dir": self.fw_dir} if name == "firmware_integrity" else {}
         atk = build_attack(name, self.cfg.attacks, rng, **kwargs)

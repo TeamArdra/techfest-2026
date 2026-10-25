@@ -21,7 +21,8 @@ export interface LiveState {
   attackActive: string | null;
   distance: number; // cumulative simulated flight-path length (m), live
   track: Array<[number, number]>; // effective vehicle [lat, lon] (IPS-restored when active-ips)
-  rawTrack: Array<[number, number]>; // raw un-sanitized GPS [lat, lon] (spoofed ghost track)
+  trackThreat: boolean[]; // index-aligned with `track`: true where that fix was flown under threat
+  rawTrack: Array<[number, number]>; // raw un-sanitized GPS [lat, lon] for the CURRENT attack episode only
   scoreHistory: Array<{ t: number; score: number }>;
   altHistory: Array<{ t: number; rawAlt: number; effAlt: number; diverging: boolean }>;
   topology: string;
@@ -53,6 +54,7 @@ interface ReducerState {
   attackActive: string | null;
   distance: number;
   track: Array<[number, number]>;
+  trackThreat: boolean[];
   rawTrack: Array<[number, number]>;
   scoreHistory: Array<{ t: number; score: number }>;
   altHistory: Array<{ t: number; rawAlt: number; effAlt: number; diverging: boolean }>;
@@ -80,6 +82,7 @@ const initialState: ReducerState = {
   attackActive: null,
   distance: 0,
   track: [],
+  trackThreat: [],
   rawTrack: [],
   scoreHistory: [],
   altHistory: [],
@@ -126,12 +129,23 @@ function liveReducer(state: ReducerState, action: Action): ReducerState {
       const currentMode = msg.defense_mode ?? (msg.source?.defense_mode || state.defenseMode);
       const isIps = currentMode === "active-ips";
       const effTele = isIps && msg.sanitized_telemetry ? msg.sanitized_telemetry : msg.telemetry;
-      const newTrack = isNewRun ? [] : state.track.length >= MAX_TRACK ? state.track.slice(-(MAX_TRACK - 1)) : state.track.slice();
+      const trimmed = state.track.length >= MAX_TRACK;
+      const newTrack = isNewRun ? [] : trimmed ? state.track.slice(-(MAX_TRACK - 1)) : state.track.slice();
+      // Per-point "flown under threat" flag, kept index-aligned with `track` so the
+      // map highlights only the segment flown during an attack, not the whole history.
+      const newTrackThreat = isNewRun ? [] : trimmed ? state.trackThreat.slice(-(MAX_TRACK - 1)) : state.trackThreat.slice();
       if (effTele?.lat != null && effTele?.lon != null) {
         newTrack.push([effTele.lat, effTele.lon]);
+        const underThreat = !!(msg.threat?.threat ?? state.threat?.threat) || !!msg.attack_active;
+        newTrackThreat.push(underThreat);
       }
 
-      const newRawTrack = isNewRun ? [] : state.rawTrack.length >= MAX_TRACK ? state.rawTrack.slice(-(MAX_TRACK - 1)) : state.rawTrack.slice();
+      // The raw (pre-sanitization) track only feeds the rejected-GPS ghost overlay, so it
+      // is scoped to the CURRENT attack episode: switching or clearing the attack starts a
+      // fresh ghost. Otherwise an earlier GPS-spoof excursion would be redrawn (and
+      // mislabelled) during a later, unrelated attack such as DoS or telemetry manipulation.
+      const attackChanged = (msg.attack_active ?? null) !== state.attackActive;
+      const newRawTrack = isNewRun || attackChanged ? [] : state.rawTrack.length >= MAX_TRACK ? state.rawTrack.slice(-(MAX_TRACK - 1)) : state.rawTrack.slice();
       if (msg.telemetry?.lat != null && msg.telemetry?.lon != null) {
         newRawTrack.push([msg.telemetry.lat, msg.telemetry.lon]);
       }
@@ -165,6 +179,7 @@ function liveReducer(state: ReducerState, action: Action): ReducerState {
         distance: typeof msg.distance_m === "number" ? msg.distance_m : state.distance,
         threat: msg.threat ?? state.threat,
         track: newTrack,
+        trackThreat: newTrackThreat,
         rawTrack: newRawTrack,
         scoreHistory: newHistory,
         altHistory: newAltHistory,
@@ -272,6 +287,7 @@ export function useLiveData(): LiveState {
     attackActive: state.attackActive,
     distance: state.distance,
     track: state.track,
+    trackThreat: state.trackThreat,
     rawTrack: state.rawTrack,
     scoreHistory: state.scoreHistory,
     altHistory: state.altHistory,
