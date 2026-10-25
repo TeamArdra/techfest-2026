@@ -21,20 +21,24 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import math
 import shutil
 import tempfile
 import time
 from collections import deque
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
 from ..attacks import ATTACK_REGISTRY, build_attack
 from ..attacks.base import NoAttack
 from ..config import AegisConfig, load_config
-from ..core.enums import IntegrityStatus
-from ..core.geo import haversine_m
+from ..core.enums import AttackType, IntegrityStatus
+from ..core.geo import haversine_m, offset_latlon
 from ..logging import EventStore
+from ..mitigation import DefenseMode, MitigationController, MitigationState
+from ..mitigation.types import AttackSubMode
 from ..pipeline import IDSPipeline
 from ..sources.stream import SimulatedTelemetrySource, TelemetryTick
 from .sources import LiveFeed, SourceSpec
@@ -136,6 +140,8 @@ class LiveEngine:
 
         self._active_attack_name: str | None = None
         self._pending_attack: str | None = "__none__"  # sentinel: no change pending
+        self._pending_attack_mode: str | None = None
+        self._pending_drift_rate: float | None = None
         self._sim_t = 0.0
         self._t0_wall = time.time()
         self._n_messages = 0
@@ -153,8 +159,34 @@ class LiveEngine:
         self._last_ttd_s: float | None = None
         self._latest_update: dict | None = None
         self._last_threat: dict = {}  # last DECISION's threat block (for status)
+        self._last_assessment = None
+        self._last_mitigation_action = None
+        self.mitigation = MitigationController(mode=DefenseMode(self.spec.defense_mode))
         self._run_seq = 0
         self._run_id = self._new_run_id()
+
+        # Closed-loop cyber-physical state twin (simulates real drone dynamics under attack)
+        self._cp_lat: float | None = None
+        self._cp_lon: float | None = None
+        self._cp_alt: float | None = None
+        self._cp_mode: str | None = None
+        self._cp_armed: bool | None = None
+        self._cp_speed: float | None = None
+        self._ips_lat: float | None = None
+        self._ips_lon: float | None = None
+        self._ips_alt: float | None = None
+        self._ips_mode: str | None = None
+        self._ips_armed: bool | None = None
+        self._ips_speed: float | None = None
+        self._last_cp_t: float | None = None
+        self._top_a_detour_t: float = 0.0
+
+        # Topology configuration: "auto" | "a" | "b" | "a+b" | "ids"
+        self.topology: str = "b"
+        self.topology_reasons: list[str] = [
+            "Topology B active: Inline FrameSanitizer filtering on primary link",
+            "Hardware verified: Cube/Pixhawk on TELEM1 via companion bridge",
+        ]
 
         self._build()
 
@@ -188,6 +220,12 @@ class LiveEngine:
             self.source = None
             self.feed = LiveFeed(self.spec, 1.0 / self.dt)
         self.store = EventStore(self.db_path)
+        self.gcs_notifier = None
+        if getattr(self.spec, "gcs_notify", False):
+            from ..mavlink.gcs_notifier import GcsNotifier
+            target = ((self.spec.gcs_notify_host, self.spec.gcs_notify_port)
+                      if getattr(self.spec, "gcs_notify_port", None) else None)
+            self.gcs_notifier = GcsNotifier(enabled=True, udp_target=target)
         self._start_run()
 
     async def start(self) -> None:
@@ -220,6 +258,8 @@ class LiveEngine:
                 pass
 
         self.feed.start(deliver)
+        if self.gcs_notifier is not None and getattr(self.feed, "transport", None) is not None:
+            self.gcs_notifier.transport = self.feed.transport
         self._task = asyncio.create_task(self._live_loop())
 
     async def stop(self) -> None:
@@ -247,6 +287,8 @@ class LiveEngine:
         self._closed = True
         await self.stop()
         self.store.close()
+        if self.gcs_notifier is not None:
+            self.gcs_notifier.close()
         if self.fw_dir is not None:
             shutil.rmtree(self.fw_dir, ignore_errors=True)
 
@@ -268,6 +310,8 @@ class LiveEngine:
         self.running = False
         self._active_attack_name = None
         self._pending_attack = "__none__"
+        self._pending_attack_mode = None
+        self._pending_drift_rate = None
         self._sim_t = 0.0
         self._n_messages = 0
         self._n_decisions = 0
@@ -279,6 +323,23 @@ class LiveEngine:
         self._last_ttd_s = None
         self._latest_update = None
         self._last_threat = {}
+        self._last_assessment = None
+        self._last_mitigation_action = None
+        self.mitigation.reset()
+        self._cp_lat = None
+        self._cp_lon = None
+        self._cp_alt = None
+        self._cp_mode = None
+        self._cp_armed = None
+        self._cp_speed = None
+        self._ips_lat = None
+        self._ips_lon = None
+        self._ips_alt = None
+        self._ips_mode = None
+        self._ips_armed = None
+        self._ips_speed = None
+        self._last_cp_t = None
+        self._top_a_detour_t = 0.0
         self.link = LinkMonitor(self.link.stale_after_s, self.link.min_fix, self.link.min_sats)
         # Restore the simulated vehicle to a clean baseline: this reflashes the
         # firmware fixture to known-good AND clears extractor/detector/fusion
@@ -289,10 +350,76 @@ class LiveEngine:
         self._gen = self.source.stream()
         self._start_run()
 
-    def set_attack(self, name: str | None) -> None:
+    def set_defense_mode(self, mode: str) -> dict:
+        self.mitigation.set_mode(mode)
+        if self.mitigation.mode == DefenseMode.ACTIVE_IPS and self._cp_lat is not None:
+            # Seed recovery from current hijacked position so the drone flies smoothly back
+            self._ips_lat = self._cp_lat
+            self._ips_lon = self._cp_lon
+            self._ips_alt = self._cp_alt
+            self._ips_mode = "AUTO"
+            self._ips_speed = 12.0
+            self._ips_armed = True
+        if self._last_mitigation_action is not None:
+            self._last_mitigation_action.mode = self.mitigation.mode
+            self._last_mitigation_action.actions = list(self.mitigation.action_history)
+            if self.mitigation.mode != DefenseMode.ACTIVE_IPS:
+                self._last_mitigation_action.sanitize_gps = False
+                self._last_mitigation_action.sanitize_alt = False
+                self._last_mitigation_action.ekf_switched = False
+        return {"mode": self.mitigation.mode.value}
+
+    def set_topology(self, topology: str) -> dict:
+        t = str(topology).lower().strip()
+        if t not in ("auto", "a", "b", "a+b", "ids"):
+            raise ValueError(f"Unknown topology '{topology}', must be one of: auto, a, b, a+b, ids")
+        self.topology = t
+        if t == "a":
+            self.topology_reasons = [
+                "Topology A selected: Sidecar counter-command recovery via MavlinkActuator",
+                "Command-path attacks experience short reaction detour before recovery",
+            ]
+        elif t == "b":
+            self.topology_reasons = [
+                "Topology B selected: Inline FrameSanitizer packet filtering + counter-commands",
+                "Zero detour on command injection & rogue SysID; hostile frames dropped before FC",
+            ]
+        elif t == "a+b":
+            self.topology_reasons = [
+                "Topology A+B Hybrid selected: Inline filtering on primary link + sidecar recovery on secondary",
+            ]
+        elif t == "ids":
+            self.topology_reasons = [
+                "IDS-only selected: Zero actuation, passthrough monitoring only",
+            ]
+        else:  # auto
+            self.topology_reasons = [
+                "Auto-selected Topology B: Companion compute detected inline on primary telemetry",
+                "Hardware verified: Cube/Pixhawk on TELEM1 via companion bridge",
+            ]
+        return {"topology": self.topology, "reasons": self.topology_reasons}
+
+    def defense_override(self, action: str) -> dict:
+        act = self.mitigation.manual_override(action)
+        self._last_mitigation_action = act
+        if self.mitigation.mode == DefenseMode.ACTIVE_IPS and act.counter_frames:
+            if self.feed is not None and getattr(self.feed, "transport", None) is not None:
+                for f in act.counter_frames:
+                    with contextlib.suppress(Exception):
+                        self.feed.transport.send(f)
+        return act.to_dict()
+
+    def set_attack(
+        self,
+        name: str | None,
+        mode: str | None = None,
+        drift_rate_ms: float | None = None,
+    ) -> None:
         if not self.is_sim:
             raise RuntimeError("attacks are simulation-only")
         self._pending_attack = name or None
+        self._pending_attack_mode = mode
+        self._pending_drift_rate = drift_rate_ms
 
     # -- subscribers -------------------------------------------------------- #
 
@@ -323,6 +450,8 @@ class LiveEngine:
         if not name or name in ("none", "benign"):
             self.source.attack = NoAttack()
             self._active_attack_name = None
+            self._pending_attack_mode = None
+            self._pending_drift_rate = None
             self._attack_injected_t = None
             self._ttd_pending = False
             return
@@ -331,11 +460,16 @@ class LiveEngine:
         rng = np.random.default_rng(int(self._sim_t * 1000) & 0xFFFF)
         kwargs = {"firmware_dir": self.fw_dir} if name == "firmware_integrity" else {}
         atk = build_attack(name, self.cfg.attacks, rng, **kwargs)
+        if getattr(self, "_pending_attack_mode", None):
+            atk.mode = self._pending_attack_mode
+        if getattr(self, "_pending_drift_rate", None) is not None and hasattr(atk, "drift_rate"):
+            atk.drift_rate = float(self._pending_drift_rate)
         # Activate from *now* for a long window (until cleared).
         atk.start_s = self._sim_t
         atk.duration_s = _LIVE_DURATION_S
         self.source.attack = atk
-        self._active_attack_name = name
+        submode_tag = f":{atk.mode}" if getattr(self, "_pending_attack_mode", None) else ""
+        self._active_attack_name = f"{name}{submode_tag}"
         # Arm the live time-to-detect measurement: record the injection instant;
         # the first alert after this stamps the elapsed onset->detection time.
         self._attack_injected_t = self._sim_t
@@ -379,18 +513,60 @@ class LiveEngine:
         self.link.observe(tick)
         assessment = self.pipeline.process_tick(tick)
         self._accumulate_distance()
-        update = self._make_update(tick.t, assessment)
-        self._latest_update = update
+
+        # Compact telemetry optimization:
+        # During active mitigation (state != NOMINAL), skip intermediate non-decision ticks
+        # to save companion compute and GCS network bandwidth.
+        if self.mitigation.state != MitigationState.NOMINAL and assessment is None:
+            return
+
         if assessment is not None:
+            self._last_assessment = assessment
             self._n_decisions += 1
+
+            # Step autonomous mitigation controller BEFORE building update payload
+            last_frame = self.pipeline.last_frame
+            if last_frame is not None:
+                act = self.mitigation.step(last_frame, assessment)
+                self._last_mitigation_action = act
+
+                # Topology B inline frame sanitization stats & filtering
+                if self.mitigation.mode == DefenseMode.ACTIVE_IPS and self.topology in ("b", "a+b", "auto"):
+                    for msg_env in tick.messages:
+                        if msg_env.sysid in self.mitigation.sanitizer.quarantined_sysids:
+                            self.mitigation.sanitizer.frames_dropped += 1
+                        elif self.mitigation.sanitizer.sanitize_gps and msg_env.msgname == "GLOBAL_POSITION_INT":
+                            self.mitigation.sanitizer.frames_sanitized += 1
+                        elif self.mitigation.sanitizer.sanitize_alt and msg_env.msgname in ("GLOBAL_POSITION_INT", "VFR_HUD"):
+                            self.mitigation.sanitizer.frames_sanitized += 1
+
+                # Transmit counter-actuation frames if in ACTIVE_IPS mode
+                if self.mitigation.mode == DefenseMode.ACTIVE_IPS and act.counter_frames:
+                    if self.feed is not None and getattr(self.feed, "transport", None) is not None:
+                        for f in act.counter_frames:
+                            with contextlib.suppress(Exception):
+                                self.feed.transport.send(f)
+
+        self._step_cyber_physical_twin(tick.t, self.pipeline._telemetry_dict(), assessment)
+        update = self._make_update(tick.t, assessment)
+        if assessment is not None:
             self._last_threat = update.get("threat", {})
+            if self._last_mitigation_action is not None:
+                update["mitigation"] = self._last_mitigation_action.to_dict()
+
             if assessment.is_alert:
                 # persisted only: /api/events reads the run back from the store (no in-memory copy)
                 self.store.log_event(assessment, self._run_id)
+                if self.gcs_notifier is not None:
+                    self.gcs_notifier.notify(assessment)
                 # First alert after an injection -> stamp live time-to-detect.
                 if self._ttd_pending and self._attack_injected_t is not None:
                     self._last_ttd_s = round(assessment.t - self._attack_injected_t, 2)
                     self._ttd_pending = False
+        elif self._last_mitigation_action is not None:
+            update["mitigation"] = self._last_mitigation_action.to_dict()
+
+        self._latest_update = update
         await self._broadcast(update)
 
     # -- link state --------------------------------------------------------- #
@@ -453,16 +629,250 @@ class LiveEngine:
 
     # -- serialisation ------------------------------------------------------ #
 
+    def _step_cyber_physical_twin(self, tick_t: float, raw_tele: dict, assessment: Any) -> None:
+        """Closed-loop cyber-physical simulation twin.
+
+        Simulates real vehicle physics and flight controller execution:
+        - In PASSIVE / ADVISORY: The flight controller executes rogue commands (e.g. LAND,
+          RTL, disarm, or veering off in GUIDED) and follows spoofed GPS positions.
+        - In ACTIVE_IPS:
+          - Topology B (Inline): Rogue frames are dropped before FC; 0.0 m detour.
+          - Topology A (Sidecar): FC briefly reacts (0.4s reaction window) before
+            counter-command (SET_MODE AUTO) recovers vehicle to survey track.
+          - GPS Spoofing: EKF switch / Golden State dead reckoning maintains true position.
+        """
+        base_lat = raw_tele.get("lat")
+        base_lon = raw_tele.get("lon")
+        base_alt = raw_tele.get("rel_alt") if raw_tele.get("rel_alt") is not None else raw_tele.get("alt_msl", 60.0)
+        base_mode = raw_tele.get("flight_mode") or "AUTO"
+        base_armed = raw_tele.get("armed", True)
+        base_speed = raw_tele.get("groundspeed") if raw_tele.get("groundspeed") is not None else 12.0
+
+        if base_lat is None or base_lon is None:
+            return
+
+        has_threat = (
+            self._active_attack_name is not None
+            or (assessment is not None and assessment.threat)
+        )
+
+        if not has_threat:
+            self._cp_lat = base_lat
+            self._cp_lon = base_lon
+            self._cp_alt = base_alt
+            self._cp_mode = base_mode
+            self._cp_armed = base_armed
+            self._cp_speed = base_speed
+            self._ips_lat = base_lat
+            self._ips_lon = base_lon
+            self._ips_alt = base_alt
+            self._ips_mode = base_mode
+            self._ips_armed = base_armed
+            self._ips_speed = base_speed
+            self._top_a_detour_t = 0.0
+            self._last_cp_t = tick_t
+            return
+
+        dt = max(0.01, min(tick_t - (self._last_cp_t or tick_t), 0.5))
+        self._last_cp_t = tick_t
+
+        if self._cp_lat is None:
+            self._cp_lat = base_lat
+        if self._cp_lon is None:
+            self._cp_lon = base_lon
+        if self._cp_alt is None:
+            self._cp_alt = base_alt
+        if self._cp_mode is None:
+            self._cp_mode = base_mode
+        if self._cp_armed is None:
+            self._cp_armed = base_armed
+        if self._cp_speed is None:
+            self._cp_speed = base_speed
+
+        if self._ips_lat is None:
+            self._ips_lat = base_lat
+        if self._ips_lon is None:
+            self._ips_lon = base_lon
+        if self._ips_alt is None:
+            self._ips_alt = base_alt
+        if self._ips_mode is None:
+            self._ips_mode = base_mode
+        if self._ips_armed is None:
+            self._ips_armed = base_armed
+        if self._ips_speed is None:
+            self._ips_speed = base_speed
+
+        atk_tag = str(self._active_attack_name or "").lower()
+        submode_tag = ""
+        if assessment is not None and getattr(assessment, "sub_mode", None):
+            submode_tag = str(assessment.sub_mode).lower()
+
+        # 1. Unmitigated Drone Physics (_cp_*)
+        if "mode_flip" in atk_tag or "mode_flip" in submode_tag:
+            self._cp_mode = "LAND"
+            self._cp_speed = max(0.0, self._cp_speed - 2.5 * dt)
+            self._cp_alt = max(0.0, self._cp_alt - 3.0 * dt)
+        elif "gcs_replay" in atk_tag or "gcs_replay" in submode_tag:
+            self._cp_mode = "RTL"
+            self._cp_speed = 11.0
+            home_lat, home_lon = 19.1334, 72.9133
+            dlat = home_lat - self._cp_lat
+            dlon = home_lon - self._cp_lon
+            brg = math.atan2(dlon, dlat)
+            vn = 11.0 * math.cos(brg)
+            ve = 11.0 * math.sin(brg)
+            self._cp_lat, self._cp_lon = offset_latlon(self._cp_lat, self._cp_lon, vn * dt, ve * dt)
+        elif "arm_disarm" in atk_tag or "arm_disarm" in submode_tag:
+            self._cp_armed = False
+            self._cp_speed = max(0.0, self._cp_speed - 5.0 * dt)
+            self._cp_alt = max(0.0, self._cp_alt - 7.5 * dt)
+        elif "rogue_command" in atk_tag or "rogue_command" in submode_tag:
+            self._cp_mode = "GUIDED"
+            self._cp_speed = 10.5
+            vn = 10.5 * math.cos(math.radians(225.0))
+            ve = 10.5 * math.sin(math.radians(225.0))
+            self._cp_lat, self._cp_lon = offset_latlon(self._cp_lat, self._cp_lon, vn * dt, ve * dt)
+        elif "replay_freeze" in atk_tag or "replay_freeze" in submode_tag:
+            self._cp_speed = 0.0
+            self._cp_lat = base_lat
+            self._cp_lon = base_lon
+        elif "rogue_sysid" in atk_tag or "rogue_sysid" in submode_tag:
+            vn = 4.0
+            ve = -4.0
+            self._cp_lat, self._cp_lon = offset_latlon(self._cp_lat, self._cp_lon, vn * dt, ve * dt)
+            self._cp_mode = base_mode
+            self._cp_speed = base_speed
+        else:
+            self._cp_lat = base_lat
+            self._cp_lon = base_lon
+            self._cp_alt = base_alt
+            self._cp_mode = base_mode
+            self._cp_speed = base_speed
+
+        # 2. Protected Drone Physics (_ips_*)
+        if self.mitigation.mode == DefenseMode.ACTIVE_IPS:
+            is_cmd = any(k in atk_tag or k in submode_tag for k in ("mode_flip", "gcs_replay", "arm_disarm", "rogue_command"))
+            if is_cmd and self.topology == "a":
+                # Topology A (Sidecar): FC obeys rogue command for ~0.4s before counter-command takes effect
+                self._top_a_detour_t += dt
+                if self._top_a_detour_t <= 0.4:
+                    self._ips_lat = self._cp_lat
+                    self._ips_lon = self._cp_lon
+                    self._ips_alt = self._cp_alt
+                    self._ips_speed = self._cp_speed
+                    self._ips_mode = self._cp_mode
+                else:
+                    self._ips_mode = "AUTO"
+                    self._ips_speed = 12.0
+                    self._ips_alt = 60.0
+                    dist_deg = math.hypot(base_lat - self._ips_lat, base_lon - self._ips_lon)
+                    if dist_deg > 0.00002:
+                        self._ips_lat += 0.35 * (base_lat - self._ips_lat)
+                        self._ips_lon += 0.35 * (base_lon - self._ips_lon)
+                    else:
+                        self._ips_lat = base_lat
+                        self._ips_lon = base_lon
+            else:
+                # Topology B (Inline): Dropped before FC, 0.0 m detour
+                self._top_a_detour_t = 0.0
+                self._ips_mode = "AUTO"
+                self._ips_speed = 12.0
+                self._ips_alt = 60.0
+                self._ips_armed = True
+                dist_deg = math.hypot(base_lat - self._ips_lat, base_lon - self._ips_lon)
+                if dist_deg > 0.00005:  # Smooth return if recovering from previous passive hijack
+                    self._ips_lat += 0.4 * (base_lat - self._ips_lat)
+                    self._ips_lon += 0.4 * (base_lon - self._ips_lon)
+                else:
+                    is_gps = "gps" in atk_tag or "drift" in atk_tag or "offset" in atk_tag or (
+                        assessment is not None and assessment.attack_type == AttackType.GPS_SPOOFING
+                    )
+                    if is_gps and self.mitigation.golden.dr_lat is not None and self.mitigation.golden.dr_lon is not None:
+                        self._ips_lat = self.mitigation.golden.dr_lat
+                        self._ips_lon = self.mitigation.golden.dr_lon
+                    else:
+                        self._ips_lat = base_lat
+                        self._ips_lon = base_lon
+        else:
+            # PASSIVE / ADVISORY: Drone follows unmitigated hijacked state
+            self._ips_lat = self._cp_lat
+            self._ips_lon = self._cp_lon
+            self._ips_alt = self._cp_alt
+            self._ips_mode = self._cp_mode
+            self._ips_armed = self._cp_armed
+            self._ips_speed = self._cp_speed
+            self._top_a_detour_t = 0.0
+
+    def _initial_mitigation_dict(self) -> dict:
+        from ..mitigation.types import AttackParameters, AttackSubMode, MitigationAction
+
+        summary = (
+            "Autonomous IPS standby (passive)"
+            if self.mitigation.mode == DefenseMode.PASSIVE
+            else f"Autonomous IPS active ({self.mitigation.mode.value})"
+        )
+        return MitigationAction(
+            t=round(self._sim_t, 3),
+            mode=self.mitigation.mode,
+            state=self.mitigation.state,
+            sub_mode=AttackSubMode.NONE,
+            params=AttackParameters(
+                trusted_lat=self.mitigation.golden.trusted_lat,
+                trusted_lon=self.mitigation.golden.trusted_lon,
+                trusted_alt_m=self.mitigation.golden.trusted_alt_m,
+                trusted_mode=self.mitigation.golden.trusted_mode,
+            ),
+            recovery_target_ticks=self.mitigation.recovery_clean_ticks,
+            actions=list(self.mitigation.action_history),
+            summary=summary,
+        ).to_dict()
+
     def _make_update(self, t: float, assessment) -> dict:
+        source_desc = dict(self.spec.describe())
+        source_desc["defense_mode"] = self.mitigation.mode.value
+        raw_tele = self.pipeline._telemetry_dict()
+        sanitized_tele = dict(raw_tele)
+
+        if self._cp_lat is not None:
+            if self.mitigation.mode != DefenseMode.ACTIVE_IPS:
+                raw_tele["lat"] = self._cp_lat
+                raw_tele["lon"] = self._cp_lon
+                raw_tele["rel_alt"] = self._cp_alt
+                raw_tele["alt_msl"] = self._cp_alt
+                raw_tele["flight_mode"] = self._cp_mode
+                raw_tele["armed"] = self._cp_armed
+                raw_tele["groundspeed"] = self._cp_speed
+                sanitized_tele = dict(raw_tele)
+            else:
+                sanitized_tele["lat"] = round(self._ips_lat, 7) if self._ips_lat is not None else raw_tele.get("lat")
+                sanitized_tele["lon"] = round(self._ips_lon, 7) if self._ips_lon is not None else raw_tele.get("lon")
+                sanitized_tele["rel_alt"] = round(self._ips_alt, 2) if self._ips_alt is not None else raw_tele.get("rel_alt")
+                sanitized_tele["alt_msl"] = round(self._ips_alt, 2) if self._ips_alt is not None else raw_tele.get("alt_msl")
+                sanitized_tele["flight_mode"] = self._ips_mode or "AUTO"
+                sanitized_tele["armed"] = self._ips_armed if self._ips_armed is not None else True
+                sanitized_tele["groundspeed"] = round(self._ips_speed, 2) if self._ips_speed is not None else 12.0
+
+        if self._last_mitigation_action is not None and self.mitigation.mode == DefenseMode.ACTIVE_IPS:
+            act = self._last_mitigation_action
+            if act.sub_mode == AttackSubMode.TELEM_SPEED_MISMATCH:
+                gs = math.hypot(self.mitigation.golden.vx_ms, self.mitigation.golden.vy_ms)
+                sanitized_tele["groundspeed"] = round(gs, 2)
+            if act.sub_mode == AttackSubMode.TELEM_BATTERY_JUMP and self.mitigation.golden.trusted_battery_v is not None:
+                sanitized_tele["battery_voltage"] = round(self.mitigation.golden.trusted_battery_v, 2)
+
         msg = {
             "type": "update",
             "sim": self.is_sim,
             "environment": self.spec.environment,
-            "source": self.spec.describe(),
+            "source": source_desc,
+            "defense_mode": self.mitigation.mode.value,
+            "topology": self.topology,
+            "topology_reasons": self.topology_reasons,
             "link": self.link_status(),
             "run_id": self._run_id,
             "t": round(t, 2),
-            "telemetry": self.pipeline._telemetry_dict(),
+            "telemetry": raw_tele,
+            "sanitized_telemetry": sanitized_tele,
             "attack_active": self._active_attack_name,
             "distance_m": round(self._distance_m, 1),
         }
@@ -480,17 +890,27 @@ class LiveEngine:
                 "latency_ms": round(assessment.latency_ms, 3),
                 "is_alert": assessment.is_alert,
             }
+        if self._last_mitigation_action is not None:
+            msg["mitigation"] = self._last_mitigation_action.to_dict()
+        else:
+            msg["mitigation"] = self._initial_mitigation_dict()
         return msg
 
     # -- status snapshots --------------------------------------------------- #
 
     def status(self) -> dict:
         thr = self._last_threat
+        source_desc = dict(self.spec.describe())
+        source_desc["defense_mode"] = self.mitigation.mode.value
         return {
             "running": self.running,
             "sim": self.is_sim,
             "environment": self.spec.environment,
-            "source": self.spec.describe(),
+            "source": source_desc,
+            "defense_mode": self.mitigation.mode.value,
+            "topology": self.topology,
+            "topology_reasons": self.topology_reasons,
+            "mitigation": self._last_mitigation_action.to_dict() if self._last_mitigation_action else self._initial_mitigation_dict(),
             "link": self.link_status(),
             "sim_time_s": round(self._sim_t, 1),
             "uptime_s": round(time.time() - self._t0_wall, 1),
@@ -530,3 +950,24 @@ class LiveEngine:
         stored row (id, hash-chain fields, evidence, ...) plus the run's source ``environment``."""
         env = self.spec.environment
         return [{**row, "environment": env} for row in self.store.get_events(run_id=self._run_id, limit=limit)]
+
+    def forensic_bundle(self, limit: int = 200) -> dict:
+        """Build a tamper-evident forensic audit bundle for the current run."""
+        cs = self.store.verify_chain(self._run_id)
+        rows = self.recent_alerts(limit=limit)
+        head_hash = rows[0].get("hash") if rows else ("0" * 64)
+        return {
+            "run_id": self._run_id,
+            "environment": self.spec.environment,
+            "defense_mode": self.mitigation.mode.value,
+            "chain_verification": {
+                "ok": cs.ok,
+                "length": cs.length,
+                "broken_at": cs.broken_at,
+                "detail": cs.detail,
+                "genesis_hash": "0" * 64,
+                "head_hash": head_hash,
+            },
+            "mitigation_actions": list(self.mitigation.action_history),
+            "events": rows,
+        }

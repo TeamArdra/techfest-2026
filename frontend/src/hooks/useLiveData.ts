@@ -1,24 +1,31 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useReducer, useRef } from "react";
 import { api, wsUrl } from "../services/api";
 import type {
-  AlertRow, Environment, LinkStatus, Metrics, SourceInfo, Telemetry, Threat, Update,
+  AlertRow, DefenseMode, Environment, LinkStatus, Metrics, MitigationInfo, SourceInfo, Telemetry, Threat, Update,
 } from "../types";
 
 export interface LiveState {
   connected: boolean; // dashboard <-> backend WebSocket (NOT the vehicle link: see `link`)
   environment: Environment | null; // as reported by the backend; null until it has reported
   source: SourceInfo | null;
+  defenseMode: DefenseMode;
+  mitigation: MitigationInfo | null;
   link: LinkStatus | null;
   runId: string | null;
   eventsCount: number | null; // persisted alerts of the current run
   updateAgeS: number | null; // seconds since the last WebSocket update (backend freshness)
   t: number;
   telemetry: Telemetry | null;
+  sanitizedTelemetry: Telemetry | null;
   threat: Threat | null;
   attackActive: string | null;
   distance: number; // cumulative simulated flight-path length (m), live
-  track: Array<[number, number]>; // recent [lat, lon]
+  track: Array<[number, number]>; // effective vehicle [lat, lon] (IPS-restored when active-ips)
+  rawTrack: Array<[number, number]>; // raw un-sanitized GPS [lat, lon] (spoofed ghost track)
   scoreHistory: Array<{ t: number; score: number }>;
+  altHistory: Array<{ t: number; rawAlt: number; effAlt: number; diverging: boolean }>;
+  topology: string;
+  topologyReasons: string[];
   alerts: AlertRow[];
   metrics: Metrics | null;
 }
@@ -26,26 +33,152 @@ export interface LiveState {
 const MAX_TRACK = 400;
 const MAX_HISTORY = 240;
 
+interface ReducerState {
+  connected: boolean;
+  environment: Environment | null;
+  source: SourceInfo | null;
+  defenseMode: DefenseMode;
+  topology: string;
+  topologyReasons: string[];
+  mitigation: MitigationInfo | null;
+  link: LinkStatus | null;
+  runId: string | null;
+  eventsCount: number | null;
+  lastUpdate: number | null;
+  now: number;
+  t: number;
+  telemetry: Telemetry | null;
+  sanitizedTelemetry: Telemetry | null;
+  threat: Threat | null;
+  attackActive: string | null;
+  distance: number;
+  track: Array<[number, number]>;
+  rawTrack: Array<[number, number]>;
+  scoreHistory: Array<{ t: number; score: number }>;
+  altHistory: Array<{ t: number; rawAlt: number; effAlt: number; diverging: boolean }>;
+  alerts: AlertRow[];
+  metrics: Metrics | null;
+}
+
+const initialState: ReducerState = {
+  connected: false,
+  environment: null,
+  source: null,
+  defenseMode: "passive",
+  topology: "b",
+  topologyReasons: [],
+  mitigation: null,
+  link: null,
+  runId: null,
+  eventsCount: null,
+  lastUpdate: null,
+  now: Date.now(),
+  t: 0,
+  telemetry: null,
+  sanitizedTelemetry: null,
+  threat: null,
+  attackActive: null,
+  distance: 0,
+  track: [],
+  rawTrack: [],
+  scoreHistory: [],
+  altHistory: [],
+  alerts: [],
+  metrics: null,
+};
+
+type Action =
+  | { type: "WS_OPEN" }
+  | { type: "WS_CLOSE" }
+  | { type: "UPDATE"; payload: Update; now: number }
+  | { type: "POLL"; events: AlertRow[]; count: number; metrics: Metrics; status: any }
+  | { type: "TICK"; now: number };
+
+function liveReducer(state: ReducerState, action: Action): ReducerState {
+  switch (action.type) {
+    case "WS_OPEN":
+      return { ...state, connected: true };
+    case "WS_CLOSE":
+      return { ...state, connected: false };
+    case "TICK":
+      return { ...state, now: action.now };
+    case "POLL": {
+      const st = action.status;
+      const last = state.lastUpdate;
+      return {
+        ...state,
+        alerts: action.events,
+        eventsCount: action.count,
+        metrics: action.metrics,
+        environment: st?.environment ?? state.environment,
+        source: st?.source ?? state.source,
+        defenseMode: st?.defense_mode ?? (st?.source?.defense_mode || state.defenseMode),
+        topology: st?.topology ?? state.topology,
+        topologyReasons: st?.topology_reasons ?? state.topologyReasons,
+        mitigation: st?.mitigation ?? state.mitigation,
+        link: st?.link && (last == null || Date.now() - last > 1000) ? st.link : state.link,
+      };
+    }
+    case "UPDATE": {
+      const msg = action.payload;
+      const isNewRun = msg.run_id && msg.run_id !== state.runId;
+
+      const currentMode = msg.defense_mode ?? (msg.source?.defense_mode || state.defenseMode);
+      const isIps = currentMode === "active-ips";
+      const effTele = isIps && msg.sanitized_telemetry ? msg.sanitized_telemetry : msg.telemetry;
+      const newTrack = isNewRun ? [] : state.track.length >= MAX_TRACK ? state.track.slice(-(MAX_TRACK - 1)) : state.track.slice();
+      if (effTele?.lat != null && effTele?.lon != null) {
+        newTrack.push([effTele.lat, effTele.lon]);
+      }
+
+      const newRawTrack = isNewRun ? [] : state.rawTrack.length >= MAX_TRACK ? state.rawTrack.slice(-(MAX_TRACK - 1)) : state.rawTrack.slice();
+      if (msg.telemetry?.lat != null && msg.telemetry?.lon != null) {
+        newRawTrack.push([msg.telemetry.lat, msg.telemetry.lon]);
+      }
+
+      const newHistory = isNewRun ? [] : state.scoreHistory.length >= MAX_HISTORY ? state.scoreHistory.slice(-(MAX_HISTORY - 1)) : state.scoreHistory.slice();
+      if (msg.threat) {
+        newHistory.push({ t: msg.t, score: msg.threat.threat_score });
+      }
+
+      const rawAlt = msg.telemetry?.rel_alt ?? msg.telemetry?.alt_msl ?? 60.0;
+      const effAlt = effTele?.rel_alt ?? effTele?.alt_msl ?? 60.0;
+      const diverging = isIps && Math.abs(rawAlt - effAlt) > 1.5;
+      const newAltHistory = isNewRun ? [] : state.altHistory.length >= MAX_HISTORY ? state.altHistory.slice(-(MAX_HISTORY - 1)) : state.altHistory.slice();
+      newAltHistory.push({ t: msg.t, rawAlt, effAlt, diverging });
+
+      return {
+        ...state,
+        lastUpdate: action.now,
+        environment: msg.environment ?? state.environment,
+        source: msg.source ?? state.source,
+        defenseMode: msg.defense_mode ?? (msg.source?.defense_mode || state.defenseMode),
+        topology: msg.topology ?? state.topology,
+        topologyReasons: msg.topology_reasons ?? state.topologyReasons,
+        mitigation: msg.mitigation ?? state.mitigation,
+        link: msg.link ?? state.link,
+        runId: msg.run_id ?? state.runId,
+        t: msg.t,
+        telemetry: msg.telemetry,
+        sanitizedTelemetry: msg.sanitized_telemetry ?? msg.telemetry,
+        attackActive: msg.attack_active,
+        distance: typeof msg.distance_m === "number" ? msg.distance_m : state.distance,
+        threat: msg.threat ?? state.threat,
+        track: newTrack,
+        rawTrack: newRawTrack,
+        scoreHistory: newHistory,
+        altHistory: newAltHistory,
+      };
+    }
+    default:
+      return state;
+  }
+}
+
 export function useLiveData(): LiveState {
-  const [connected, setConnected] = useState(false);
-  const [environment, setEnvironment] = useState<Environment | null>(null);
-  const [source, setSource] = useState<SourceInfo | null>(null);
-  const [link, setLink] = useState<LinkStatus | null>(null);
-  const [runId, setRunId] = useState<string | null>(null);
-  const [eventsCount, setEventsCount] = useState<number | null>(null);
-  const [now, setNow] = useState(() => Date.now());
-  const lastUpdateRef = useRef<number | null>(null);
-  const runRef = useRef<string | null>(null);
-  const [t, setT] = useState(0);
-  const [telemetry, setTelemetry] = useState<Telemetry | null>(null);
-  const [threat, setThreat] = useState<Threat | null>(null);
-  const [attackActive, setAttackActive] = useState<string | null>(null);
-  const [distance, setDistance] = useState(0);
-  const [alerts, setAlerts] = useState<AlertRow[]>([]);
-  const [metrics, setMetrics] = useState<Metrics | null>(null);
-  const trackRef = useRef<Array<[number, number]>>([]);
-  const histRef = useRef<Array<{ t: number; score: number }>>([]);
-  const [, force] = useState(0);
+  const [state, dispatch] = useReducer(liveReducer, initialState);
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   // WebSocket live telemetry stream (auto-reconnect).
   useEffect(() => {
@@ -55,41 +188,20 @@ export function useLiveData(): LiveState {
 
     const connect = () => {
       ws = new WebSocket(wsUrl());
-      ws.onopen = () => setConnected(true);
+      ws.onopen = () => dispatch({ type: "WS_OPEN" });
       ws.onclose = () => {
-        setConnected(false);
+        dispatch({ type: "WS_CLOSE" });
         if (!closed) retry = window.setTimeout(connect, 1500);
       };
       ws.onerror = () => ws?.close();
       ws.onmessage = (ev) => {
-        const msg = JSON.parse(ev.data) as Update;
-        if (msg.type !== "update") return;
-        lastUpdateRef.current = Date.now();
-        setEnvironment(msg.environment ?? null);
-        setSource(msg.source ?? null);
-        setLink(msg.link ?? null);
-        if (msg.run_id && msg.run_id !== runRef.current) {
-          // a new run (SIM reset, or a backend restarted on another source): never mix tracks across runs
-          runRef.current = msg.run_id;
-          trackRef.current = [];
-          histRef.current = [];
-          setRunId(msg.run_id);
-        }
-        setT(msg.t);
-        setTelemetry(msg.telemetry);
-        setAttackActive(msg.attack_active);
-        if (typeof msg.distance_m === "number") setDistance(msg.distance_m);
-        if (msg.telemetry.lat != null && msg.telemetry.lon != null) {
-          const tr = trackRef.current;
-          tr.push([msg.telemetry.lat, msg.telemetry.lon]);
-          if (tr.length > MAX_TRACK) tr.shift();
-        }
-        if (msg.threat) {
-          setThreat(msg.threat);
-          const h = histRef.current;
-          h.push({ t: msg.t, score: msg.threat.threat_score });
-          if (h.length > MAX_HISTORY) h.shift();
-          force((n) => n + 1);
+        try {
+          const msg = JSON.parse(ev.data) as Update;
+          if (msg.type === "update") {
+            dispatch({ type: "UPDATE", payload: msg, now: Date.now() });
+          }
+        } catch {
+          // ignore corrupted frame
         }
       };
     };
@@ -101,56 +213,71 @@ export function useLiveData(): LiveState {
     };
   }, []);
 
-  // Poll REST for the persisted alerts, metrics and status. Status also keeps the source / link current
-  // when the WebSocket is silent (a finished or failed source sends no further updates).
+  // Poll REST for the persisted alerts, metrics and status.
+  // Throttles polling during active mitigation (state !== "NOMINAL") to save companion CPU & bandwidth.
   useEffect(() => {
     let alive = true;
-    const tick = async () => {
+    let timerId: number | undefined;
+
+    const poll = async () => {
       try {
         const [ev, m, st] = await Promise.all([api.events(30), api.metrics(), api.status()]);
         if (!alive) return;
-        setAlerts(ev.events);
-        setEventsCount(ev.count ?? ev.events.length);
-        setMetrics(m);
-        setEnvironment(st.environment ?? null);
-        setSource(st.source ?? null);
-        const last = lastUpdateRef.current;
-        if (st.link && (last == null || Date.now() - last > 1000)) setLink(st.link);
+        dispatch({
+          type: "POLL",
+          events: ev.events,
+          count: ev.count ?? ev.events.length,
+          metrics: m,
+          status: st,
+        });
       } catch {
         /* backend not ready */
+      } finally {
+        if (alive) {
+          const isMitigating = stateRef.current.mitigation && stateRef.current.mitigation.state !== "NOMINAL";
+          const delay = isMitigating ? 5000 : 2000;
+          timerId = window.setTimeout(poll, delay);
+        }
       }
     };
-    tick();
-    const id = window.setInterval(tick, 2000);
+
+    poll();
     return () => {
       alive = false;
-      clearInterval(id);
+      if (timerId) clearTimeout(timerId);
     };
   }, []);
 
   // 1 Hz clock for the "time since the last backend update" freshness indicator.
   useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    const id = window.setInterval(() => dispatch({ type: "TICK", now: Date.now() }), 1000);
     return () => clearInterval(id);
   }, []);
 
-  const last = lastUpdateRef.current;
+  const last = state.lastUpdate;
   return {
-    connected,
-    environment,
-    source,
-    link,
-    runId,
-    eventsCount,
-    updateAgeS: last == null ? null : Math.max(0, (now - last) / 1000),
-    t,
-    telemetry,
-    threat,
-    attackActive,
-    distance,
-    track: trackRef.current,
-    scoreHistory: histRef.current,
-    alerts,
-    metrics,
+    connected: state.connected,
+    environment: state.environment,
+    source: state.source,
+    defenseMode: state.defenseMode,
+    mitigation: state.mitigation,
+    link: state.link,
+    runId: state.runId,
+    eventsCount: state.eventsCount,
+    updateAgeS: last == null ? null : Math.max(0, (state.now - last) / 1000),
+    t: state.t,
+    telemetry: state.telemetry,
+    sanitizedTelemetry: state.sanitizedTelemetry,
+    threat: state.threat,
+    attackActive: state.attackActive,
+    distance: state.distance,
+    track: state.track,
+    rawTrack: state.rawTrack,
+    scoreHistory: state.scoreHistory,
+    altHistory: state.altHistory,
+    topology: state.topology,
+    topologyReasons: state.topologyReasons,
+    alerts: state.alerts,
+    metrics: state.metrics,
   };
 }

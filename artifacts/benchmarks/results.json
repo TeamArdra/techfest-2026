@@ -1,21 +1,21 @@
 {
   "n_decisions": 23430,
   "binary": {
-    "accuracy": 0.9971,
-    "precision": 0.9994,
-    "recall_tpr": 0.9902,
-    "fpr": 0.0002,
-    "f1": 0.9947,
-    "tp": 6535,
-    "fp": 4,
-    "tn": 16826,
-    "fn": 65
+    "accuracy": 0.9959,
+    "precision": 1.0,
+    "recall_tpr": 0.9855,
+    "fpr": 0.0,
+    "f1": 0.9927,
+    "tp": 6504,
+    "fp": 0,
+    "tn": 16830,
+    "fn": 96
   },
   "per_attack": {
     "GPS_SPOOFING": {
       "precision": 1.0,
-      "recall": 0.9544,
-      "f1": 0.9767,
+      "recall": 0.9267,
+      "f1": 0.9619,
       "support": 900
     },
     "MAVLINK_ANOMALY": {
@@ -31,9 +31,9 @@
       "support": 600
     },
     "TELEMETRY_MANIPULATION": {
-      "precision": 0.9956,
-      "recall": 1.0,
-      "f1": 0.9978,
+      "precision": 1.0,
+      "recall": 0.9933,
+      "f1": 0.9967,
       "support": 900
     },
     "DOS": {
@@ -50,23 +50,23 @@
     }
   },
   "macro": {
-    "precision": 0.9993,
-    "recall": 0.9909,
-    "f1": 0.995
+    "precision": 1.0,
+    "recall": 0.9852,
+    "f1": 0.9924
   },
   "confusion_matrix": {
     "BENIGN": {
-      "BENIGN": 16826,
+      "BENIGN": 16830,
       "GPS_SPOOFING": 0,
       "MAVLINK_ANOMALY": 0,
       "COMMAND_INJECTION": 0,
-      "TELEMETRY_MANIPULATION": 4,
+      "TELEMETRY_MANIPULATION": 0,
       "DOS": 0,
       "FIRMWARE_INTEGRITY": 0
     },
     "GPS_SPOOFING": {
-      "BENIGN": 41,
-      "GPS_SPOOFING": 859,
+      "BENIGN": 66,
+      "GPS_SPOOFING": 834,
       "MAVLINK_ANOMALY": 0,
       "COMMAND_INJECTION": 0,
       "TELEMETRY_MANIPULATION": 0,
@@ -92,11 +92,11 @@
       "FIRMWARE_INTEGRITY": 0
     },
     "TELEMETRY_MANIPULATION": {
-      "BENIGN": 0,
+      "BENIGN": 6,
       "GPS_SPOOFING": 0,
       "MAVLINK_ANOMALY": 0,
       "COMMAND_INJECTION": 0,
-      "TELEMETRY_MANIPULATION": 900,
+      "TELEMETRY_MANIPULATION": 894,
       "DOS": 0,
       "FIRMWARE_INTEGRITY": 0
     },
@@ -120,21 +120,21 @@
     }
   },
   "detection_latency_s": {
-    "mean": 0.3611111111111119,
-    "p50": 0.0,
-    "p95": 1.4000000000000057,
-    "max": 1.6000000000000014
+    "mean": 0.5333333333333344,
+    "p50": 0.10000000000000142,
+    "p95": 2.2500000000000036,
+    "max": 2.4000000000000057
   },
   "compute_latency_ms": {
-    "mean": 17.7463,
-    "p50": 17.6938,
-    "p95": 23.6335,
-    "max": 75.5785
+    "mean": 0.1033,
+    "p50": 0.046,
+    "p95": 0.3215,
+    "max": 1.0629
   },
   "per_attack_detection_latency_s": {
     "gps_spoofing": {
-      "mean": 1.367,
-      "max": 1.6
+      "mean": 2.2,
+      "max": 2.4
     },
     "mavlink_anomaly": {
       "mean": 0.0,
@@ -145,8 +145,8 @@
       "max": 0.0
     },
     "telemetry_manipulation": {
-      "mean": 0.0,
-      "max": 0.0
+      "mean": 0.2,
+      "max": 0.2
     },
     "dos": {
       "mean": 0.0,
@@ -160,55 +160,55 @@
   "throughput": {
     "messages_processed": 181920,
     "decisions": 25200,
-    "wall_time_s": 468.82,
-    "messages_per_s": 388.0
+    "wall_time_s": 5.33,
+    "messages_per_s": 34101.2
   },
   "distance_m": {
     "mean_per_session": 1145.8,
     "total": 48123.2
   },
   "resources": {
-    "cpu_percent_mean": 99.38,
-    "cpu_percent_max": 100.0,
-    "rss_mb_mean": 154.69,
-    "rss_mb_max": 157.95,
-    "n_cores": 12
+    "cpu_percent_mean": 99.65,
+    "cpu_percent_max": 99.9,
+    "rss_mb_mean": 62.9,
+    "rss_mb_max": 64.56,
+    "n_cores": 15
   },
   "per_scenario": {
     "benign": {
       "recall": NaN,
-      "fpr": 0.0002898550724637681,
-      "precision": 0.0,
+      "fpr": 0.0,
+      "precision": NaN,
       "n_scored": 3450
     },
     "gps_spoofing": {
-      "recall": 0.9544444444444444,
+      "recall": 0.9266666666666666,
       "fpr": 0.0,
       "precision": 1.0,
       "n_scored": 3306
     },
     "mavlink_anomaly": {
       "recall": 1.0,
-      "fpr": 0.00041562759767248546,
-      "precision": 0.9988901220865705,
+      "fpr": 0.0,
+      "precision": 1.0,
       "n_scored": 3306
     },
     "command_injection": {
       "recall": 1.0,
-      "fpr": 0.0003695491500369549,
-      "precision": 0.9983361064891847,
+      "fpr": 0.0,
+      "precision": 1.0,
       "n_scored": 3306
     },
     "telemetry_manipulation": {
-      "recall": 1.0,
+      "recall": 0.9933333333333333,
       "fpr": 0.0,
       "precision": 1.0,
       "n_scored": 3306
     },
     "dos": {
       "recall": 1.0,
-      "fpr": 0.0003695491500369549,
-      "precision": 0.9983361064891847,
+      "fpr": 0.0,
+      "precision": 1.0,
       "n_scored": 3306
     },
     "firmware_integrity": {
@@ -233,8 +233,8 @@
       "perimeter"
     ],
     "grace_s": 5.0,
-    "model_used": true,
+    "model_used": false,
     "decision_rate_hz": 5.0,
-    "python": "3.13.11"
+    "python": "3.13.13"
   }
 }

@@ -1,5 +1,5 @@
 import type { EnvView, LinkView } from "../lib/source";
-import type { LinkStatus, SourceInfo } from "../types";
+import type { DefenseMode, LinkStatus, SourceInfo } from "../types";
 
 interface Props {
   connected: boolean;
@@ -7,11 +7,13 @@ interface Props {
   mlAvailable: boolean;
   env: EnvView;
   link: LinkView;
+  defenseMode?: DefenseMode;
 }
 
-export function Header({ connected, clock, mlAvailable, env, link }: Props) {
+export function Header({ connected, clock, mlAvailable, env, link, defenseMode }: Props) {
   const mm = Math.floor(clock / 60);
   const ss = Math.floor(clock % 60);
+  const def = defenseMode || "passive";
   return (
     <header className="header">
       <div className="brand">
@@ -22,6 +24,10 @@ export function Header({ connected, clock, mlAvailable, env, link }: Props) {
       </div>
 
       <div className="status-rail">
+        <div className="stat" data-testid="defense-mode-stat">
+          <span className={`env-badge def-badge-${def}`}>{def.toUpperCase()}</span>
+          <span className="val">Defense</span>
+        </div>
         <div className="stat" data-testid="source-env">
           <span className={`env-badge env-${env.badge}`}>{env.badge}</span>
           <span className="val">{env.label}</span>

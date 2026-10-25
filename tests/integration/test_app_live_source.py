@@ -352,8 +352,15 @@ def test_api_status_events_health_and_ws_shapes(tmp_path):
     dev = Device(synthetic_stream(4.0), hold_s=6.0)  # SYNTHETIC
     try:
         with serve(make_engine(tmp_path, serial_spec(dev))) as client:
-            st, _ = poll(client, lambda s: link(s)["frames"] > 20 and link(s)["gps"]["fix_type"] is not None,
-                         timeout_s=15)
+            st, _ = poll(
+                client,
+                lambda s: (
+                    link(s)["frames"] > 20
+                    and link(s)["gps"]["fix_type"] is not None
+                    and "HEARTBEAT" in link(s)["messages"]
+                ),
+                timeout_s=15,
+            )
             health = client.get("/health").json()
             ev = client.get("/api/events?limit=5").json()
             with client.websocket_connect("/ws/telemetry") as ws:

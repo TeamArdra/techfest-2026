@@ -11,10 +11,73 @@ residual fires immediately.
 
 from __future__ import annotations
 
+import math
+
 from ..core.enums import AttackType, DetectorName
 from ..core.types import DetectorResult
 from ..features.extractor import FeatureFrame
 from .base import Detector, ramp
+
+
+class CusumDriftIntegrator:
+    """2D Page-Hinkley / CUSUM Vector Residual Integrator for subtle micro-drift (< 0.3 m/s).
+
+    Implements isotropic 2D radial soft-thresholding:
+        u_k = S_{k-1} + (v_gps,k - v_imu,k) * dt
+        S_k = max(0, 1 - (nu * dt) / ||u_k||) * u_k
+    Zero-mean Gaussian turbulence cancels out over time (sum(eps_k) ~ 0), whereas a
+    directional micro-drift (0.15 - 0.30 m/s) accumulates monotonically past threshold_m.
+    """
+
+    def __init__(self, slack_ms: float = 0.05, threshold_m: float = 1.2) -> None:
+        self.slack_ms = float(slack_ms)
+        self.threshold_m = float(threshold_m)
+        self.s_north_m: float = 0.0
+        self.s_east_m: float = 0.0
+
+    @property
+    def magnitude_m(self) -> float:
+        return math.hypot(self.s_north_m, self.s_east_m)
+
+    @property
+    def triggered(self) -> bool:
+        return self.magnitude_m >= self.threshold_m
+
+    def reset(self) -> None:
+        self.s_north_m = 0.0
+        self.s_east_m = 0.0
+
+    def update_displacement(self, inc_n_m: float, inc_e_m: float, dt: float) -> float:
+        """Update 2D CUSUM state from a step displacement residual (inc_n, inc_e) over dt."""
+        if dt <= 0.0:
+            return self.magnitude_m
+        un = self.s_north_m + inc_n_m
+        ue = self.s_east_m + inc_e_m
+        umag = math.hypot(un, ue)
+        allowance = self.slack_ms * dt
+        if umag > allowance and umag > 1e-12:
+            scale = (umag - allowance) / umag
+            self.s_north_m = un * scale
+            self.s_east_m = ue * scale
+        else:
+            self.s_north_m = 0.0
+            self.s_east_m = 0.0
+        return self.magnitude_m
+
+    def update_velocity_residual(
+        self,
+        v_gps_n_ms: float,
+        v_gps_e_ms: float,
+        v_imu_n_ms: float,
+        v_imu_e_ms: float,
+        dt: float,
+    ) -> float:
+        """Update 2D CUSUM state directly from GPS vs IMU/reference velocity vectors."""
+        return self.update_displacement(
+            (v_gps_n_ms - v_imu_n_ms) * dt,
+            (v_gps_e_ms - v_imu_e_ms) * dt,
+            dt,
+        )
 
 
 class PhysicsDetector(Detector):
@@ -35,6 +98,13 @@ class PhysicsDetector(Detector):
         # the default stays the Stage-1 constant 25.0
         self.yaw_course_deg = float(p.get("yaw_course_deg", 25.0))
         self.hysteresis_ticks = int(p.get("hysteresis_ticks", 2))
+        self.cusum_enabled = bool(p.get("cusum_enabled", False))
+        self.cusum_threshold_m = float(p.get("cusum_threshold_m", 1.2))
+        self.cusum_slack_ms = float(p.get("cusum_slack_ms", 0.05))
+        self.cusum = CusumDriftIntegrator(
+            slack_ms=self.cusum_slack_ms,
+            threshold_m=self.cusum_threshold_m,
+        )
         self._soft_streak = 0
 
     def process(self, frame: FeatureFrame) -> DetectorResult:
@@ -62,6 +132,17 @@ class PhysicsDetector(Detector):
             evidence.append(
                 f"position residual {pr:.1f} m > {self.pos_resid:.0f} m "
                 "(reported track diverges from velocity)"
+            )
+
+        # ---- 2D Page-Hinkley / CUSUM micro-drift (< 0.3 m/s) ----
+        cusum_val = max(frame.cusum_drift_m, self.cusum.magnitude_m)
+        signals["cusum_drift_m"] = cusum_val
+        if (self.cusum_enabled or self.cusum.triggered) and cusum_val >= self.cusum_threshold_m:
+            s = ramp(cusum_val, self.cusum_threshold_m, self.cusum_threshold_m * 3.0)
+            bump(AttackType.GPS_SPOOFING, max(0.65, s), hard_hit=True)
+            evidence.append(
+                f"CUSUM micro-drift residual {cusum_val:.2f} m ≥ {self.cusum_threshold_m:.1f} m "
+                "(sustained sub-noise velocity divergence)"
             )
 
         # ---- GPS altitude vs baro (telemetry manipulation / spoofing) ----
@@ -136,3 +217,4 @@ class PhysicsDetector(Detector):
 
     def reset(self) -> None:
         self._soft_streak = 0
+        self.cusum.reset()

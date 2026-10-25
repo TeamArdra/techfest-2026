@@ -22,13 +22,15 @@ real position) must not be readable by an arbitrary web page.
 from __future__ import annotations
 
 import contextlib
+import hmac
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import urlparse
 
-from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Query, Request, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
@@ -40,7 +42,19 @@ from .sources import spec_from_env
 
 engine: LiveEngine | None = None
 
-_LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1"}
+_LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1", "tauri.localhost"}
+
+_ALLOWED_CORS_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:8008",
+    "http://127.0.0.1:8008",
+    "tauri://localhost",
+    "http://tauri.localhost",
+    "https://tauri.localhost",
+]
 
 
 def _local_hosts() -> set[str]:
@@ -53,6 +67,30 @@ def _local_hosts() -> set[str]:
 def _allowed_hosts() -> list[str]:
     # "testserver" is Starlette's TestClient host
     return sorted(_local_hosts() | {"[::1]", "testserver"})
+
+
+def _require_control_auth(request: Request) -> JSONResponse | None:
+    """Validate Origin and optional X-Aegis-Token / Bearer HMAC on mutating control-plane POST routes."""
+    origin = request.headers.get("origin")
+    if origin is not None and urlparse(origin).hostname not in _local_hosts():
+        return JSONResponse(
+            status_code=403,
+            content={"ok": False, "error": "forbidden cross-origin control-plane request"},
+        )
+
+    expected_token = os.environ.get("AEGIS_API_TOKEN", "").strip()
+    if expected_token:
+        provided = request.headers.get("x-aegis-token", "").strip()
+        if not provided:
+            auth_hdr = request.headers.get("authorization", "").strip()
+            if auth_hdr.lower().startswith("bearer "):
+                provided = auth_hdr[7:].strip()
+        if not provided or not hmac.compare_digest(provided.encode("utf-8"), expected_token.encode("utf-8")):
+            return JSONResponse(
+                status_code=401,
+                content={"ok": False, "error": "unauthorized: valid X-Aegis-Token or Bearer token required"},
+            )
+    return None
 
 
 def get_engine() -> LiveEngine:
@@ -82,6 +120,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="AegisFlight IDS", version=__version__, lifespan=lifespan)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=_allowed_hosts())
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_ALLOWED_CORS_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "X-Aegis-Token", "Authorization"],
+)
 
 
 # --------------------------------------------------------------------------- #
@@ -114,6 +159,12 @@ async def events(limit: int = Query(50, ge=1, le=1000)) -> dict:
             "count": eng.store.count_events(eng._run_id)}
 
 
+@app.get("/api/events/forensic")
+async def events_forensic(limit: int = Query(200, ge=1, le=1000)) -> dict:
+    """Return cryptographically verified SHA-256 hash-chain status + forensic alert & mitigation bundle."""
+    return get_engine().forensic_bundle(limit=limit)
+
+
 @app.get("/api/config")
 def config() -> dict:
     cfg = get_engine().cfg  # the configuration actually in use (a --config-dir profile, if any)
@@ -132,7 +183,9 @@ def config() -> dict:
 
 
 @app.post("/api/simulation/start", response_model=None)
-async def sim_start() -> dict | JSONResponse:
+async def sim_start(request: Request) -> dict | JSONResponse:
+    if (auth_err := _require_control_auth(request)) is not None:
+        return auth_err
     if (refused := _sim_only("start")) is not None:
         return refused
     await get_engine().start()
@@ -140,7 +193,9 @@ async def sim_start() -> dict | JSONResponse:
 
 
 @app.post("/api/simulation/stop", response_model=None)
-async def sim_stop() -> dict | JSONResponse:
+async def sim_stop(request: Request) -> dict | JSONResponse:
+    if (auth_err := _require_control_auth(request)) is not None:
+        return auth_err
     if (refused := _sim_only("stop")) is not None:
         return refused
     await get_engine().stop()
@@ -148,7 +203,9 @@ async def sim_stop() -> dict | JSONResponse:
 
 
 @app.post("/api/simulation/reset", response_model=None)
-async def sim_reset() -> dict | JSONResponse:
+async def sim_reset(request: Request) -> dict | JSONResponse:
+    if (auth_err := _require_control_auth(request)) is not None:
+        return auth_err
     # Refused for a live source: pipeline.reset() would erase detector memory (docs/THREAT_MODEL.md).
     if (refused := _sim_only("reset")) is not None:
         return refused
@@ -162,18 +219,84 @@ async def sim_reset() -> dict | JSONResponse:
 
 
 @app.post("/api/simulation/attack")
-def sim_attack(payload: dict) -> JSONResponse:
+def sim_attack(payload: dict, request: Request) -> JSONResponse:
+    if (auth_err := _require_control_auth(request)) is not None:
+        return auth_err
     if (refused := _sim_only("attack injection")) is not None:
         return refused
     name = (payload or {}).get("attack")
+    mode = (payload or {}).get("mode")
+    drift_rate_ms = (payload or {}).get("drift_rate_ms")
     if name and name not in ATTACK_REGISTRY and name not in ("none", "benign"):
         return JSONResponse(
             status_code=400,
             content={"ok": False, "error": f"unknown attack '{name}'",
                      "choices": sorted(ATTACK_REGISTRY.keys())},
         )
-    get_engine().set_attack(name)
-    return JSONResponse(content={"ok": True, "attack": name or "cleared"})
+    get_engine().set_attack(name, mode=mode, drift_rate_ms=drift_rate_ms)
+    return JSONResponse(content={"ok": True, "attack": name or "cleared", "mode": mode})
+
+
+@app.post("/api/defense/mode")
+def set_defense_mode(payload: dict, request: Request) -> JSONResponse:
+    if (auth_err := _require_control_auth(request)) is not None:
+        return auth_err
+    mode = (payload or {}).get("mode")
+    if mode not in ("passive", "advisory", "active-ips"):
+        return JSONResponse(
+            status_code=400,
+            content={"ok": False, "error": f"unknown defense mode '{mode}'",
+                     "choices": ["passive", "advisory", "active-ips"]},
+        )
+    res = get_engine().set_defense_mode(mode)
+    return JSONResponse(content={"ok": True, **res})
+
+
+@app.post("/api/defense/override")
+def defense_override(payload: dict, request: Request) -> JSONResponse:
+    if (auth_err := _require_control_auth(request)) is not None:
+        return auth_err
+    action = (payload or {}).get("action")
+    if action not in ("safe_hold", "reset_quarantine", "ack_takeover"):
+        return JSONResponse(
+            status_code=400,
+            content={"ok": False, "error": f"unknown override action '{action}'",
+                     "choices": ["safe_hold", "reset_quarantine", "ack_takeover"]},
+        )
+    res = get_engine().defense_override(action)
+    return JSONResponse(content={"ok": True, "action": action, "mitigation": res})
+
+
+@app.get("/api/topology")
+def get_topology() -> dict:
+    eng = get_engine()
+    return {
+        "ok": True,
+        "topology": getattr(eng, "topology", "b"),
+        "reasons": getattr(eng, "topology_reasons", []),
+        "available": ["auto", "a", "b", "a+b", "ids"],
+    }
+
+
+@app.post("/api/topology")
+def set_topology(payload: dict, request: Request) -> JSONResponse:
+    if (auth_err := _require_control_auth(request)) is not None:
+        return auth_err
+    top = (payload or {}).get("topology")
+    if not top or str(top).lower() not in ("auto", "a", "b", "a+b", "ids"):
+        return JSONResponse(
+            status_code=400,
+            content={
+                "ok": False,
+                "error": f"unknown topology '{top}'",
+                "choices": ["auto", "a", "b", "a+b", "ids"],
+            },
+        )
+    try:
+        res = get_engine().set_topology(str(top).lower())
+        return JSONResponse(content={"ok": True, **res})
+    except Exception as exc:
+        return JSONResponse(status_code=400, content={"ok": False, "error": str(exc)})
 
 
 # --------------------------------------------------------------------------- #

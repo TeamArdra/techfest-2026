@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { AlertsPanel } from "./components/AlertsPanel";
 import { ControlPanel } from "./components/ControlPanel";
+import { DefensePanel } from "./components/DefensePanel";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Header, SourceBar } from "./components/Header";
 import { MapPanel } from "./components/MapPanel";
 import { DetectorPanel, EvidencePanel, ThreatPanel, TelemetryPanel } from "./components/panels";
@@ -32,6 +34,7 @@ export default function App() {
         mlAvailable={m?.ml_available ?? false}
         env={env}
         link={lv}
+        defenseMode={live.defenseMode}
       />
       <SourceBar
         source={live.source}
@@ -48,13 +51,36 @@ export default function App() {
             <ThreatPanel threat={live.threat} />
             <DetectorPanel threat={live.threat} />
           </div>
-          <MapPanel track={live.track} scoreHistory={live.scoreHistory} threat={live.threat} note={env.trackNote} />
+          <MapPanel
+            track={live.track}
+            rawTrack={live.rawTrack}
+            scoreHistory={live.scoreHistory}
+            altHistory={live.altHistory}
+            threat={live.threat}
+            telemetry={live.telemetry}
+            sanitizedTelemetry={live.sanitizedTelemetry}
+            defenseMode={live.defenseMode}
+            mitigation={live.mitigation}
+            attackActive={live.attackActive}
+            topology={live.topology}
+            note={env.trackNote}
+          />
           <AlertsPanel
             alerts={live.alerts}
             emptyText={env.emptyAlerts}
             count={live.eventsCount}
             environment={env.badge}
           />
+          <ErrorBoundary fallbackTitle="Defense & Recovery Panel Unavailable">
+            <DefensePanel
+              mode={live.defenseMode}
+              mitigation={live.mitigation}
+              threat={live.threat}
+              telemetry={live.telemetry}
+              topology={live.topology}
+              topologyReasons={live.topologyReasons}
+            />
+          </ErrorBoundary>
         </section>
 
         {/* 2. secondary: runtime performance · attack-vector coverage */}
@@ -64,12 +90,23 @@ export default function App() {
         </section>
 
         {/* 3. telemetry */}
-        <TelemetryPanel tele={live.telemetry} note={env.telemetryNote} />
+        <TelemetryPanel
+          tele={live.telemetry}
+          sanitized={live.sanitizedTelemetry}
+          note={env.telemetryNote}
+          defenseMode={live.defenseMode}
+          mitigation={live.mitigation}
+        />
 
         {/* 4. evidence · controls */}
         <section className="lower">
           <EvidencePanel threat={live.threat} />
-          <ControlPanel activeAttack={live.attackActive} controls={env.controls} environment={env.badge} />
+          <ControlPanel
+            activeAttack={live.attackActive}
+            controls={env.controls}
+            environment={env.badge}
+            topology={live.topology}
+          />
         </section>
 
         {/* 5. reference: integration · validation evidence */}

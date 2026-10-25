@@ -21,7 +21,8 @@ cli = importlib.import_module("aegisflight.cli.main")  # the package re-exports 
 
 AEGIS_KEYS = ("AEGIS_SOURCE", "AEGIS_SERIAL_PORT", "AEGIS_BAUD", "AEGIS_ALLOW_URL", "AEGIS_TLOG",
               "AEGIS_REPLAY_SPEED", "AEGIS_UDP_PORT", "AEGIS_CONFIG_DIR", "AEGIS_ML", "AEGIS_RECONNECT",
-              "AEGIS_DB", "AEGIS_SERVE_HOST")
+              "AEGIS_DB", "AEGIS_SERVE_HOST", "AEGIS_GCS_NOTIFY", "AEGIS_GCS_NOTIFY_HOST", "AEGIS_GCS_NOTIFY_PORT",
+              "AEGIS_DEFENSE_MODE")
 
 
 @pytest.fixture
@@ -89,3 +90,19 @@ def test_default_serve_is_sim_even_with_stale_shell_variables(uvicorn_calls, mon
 def test_every_exported_key_is_one_the_app_reads(tlog):
     args = cli.build_parser().parse_args(["serve", "--source", "replay", "--tlog", tlog])
     assert set(cli._serve_env(SourceSpec(kind="replay", tlog=tlog), args)) == set(AEGIS_KEYS)
+
+
+def test_serve_gcs_notify_flag(uvicorn_calls):
+    assert cli.main(["serve", "--gcs-notify", "--gcs-notify-host", "192.168.1.100", "--gcs-notify-port", "14555"]) == 0
+    assert len(uvicorn_calls) == 1
+    spec = spec_from_env()
+    assert spec.gcs_notify is True
+    assert spec.gcs_notify_host == "192.168.1.100"
+    assert spec.gcs_notify_port == 14555
+
+
+def test_serve_defense_mode_flag(uvicorn_calls):
+    assert cli.main(["serve", "--defense-mode", "active-ips"]) == 0
+    assert len(uvicorn_calls) == 1
+    spec = spec_from_env()
+    assert spec.defense_mode == "active-ips"

@@ -108,6 +108,9 @@ class FeatureFrame:
     heartbeat_seen: bool | None = None
     gps_seen: bool | None = None
     gps_raw_seen: bool | None = None
+    # ADDITIVE: 2D Page-Hinkley / CUSUM micro-drift residual magnitude (m) for catching
+    # sub-noise-floor gradual GPS drift (< 0.3 m/s). NOT in ML_FEATURES.
+    cusum_drift_m: float = 0.0
 
     @property
     def battery_v_rate_abs(self) -> float:
@@ -152,6 +155,7 @@ class FeatureExtractor:
 
         # navigation bookkeeping
         self._resid_incs: deque[tuple[float, float]] = deque(maxlen=_RESID_WINDOW)
+        self._cusum_incs: deque[tuple[float, float, float]] = deque(maxlen=60)  # (inc_n, inc_e, dt)
         self._last_fix: tuple[float, float, float] | None = None  # (t, lat, lon)
         self._vel_hist: deque[tuple[float, float, float]] = deque(maxlen=6)  # (t, vx, vy)
         self._accel_prev: tuple[float, float] | None = None  # (t, accel)
@@ -193,9 +197,17 @@ class FeatureExtractor:
         name = msg.msgname
         f = msg.fields
         if name == "HEARTBEAT":
-            self._last_heartbeat_t = t
-            self.snapshot.armed = bool(f.get("base_mode", 0) & 128)
-            self.snapshot.flight_mode = MODE_NAMES.get(int(f.get("custom_mode", 0)), "UNKNOWN")
+            m_type = f.get("type", 0)
+            if m_type != 6:  # Ignore GCS heartbeats for vehicle state
+                self._last_heartbeat_t = t
+                self.snapshot.armed = bool(f.get("base_mode", 0) & 128)
+                cm = int(f.get("custom_mode", 0))
+                autopilot = f.get("autopilot", 0)
+                if autopilot == 12 or cm >= 65536:
+                    from ..sources.mavlink_live import decode_px4_mode
+                    self.snapshot.flight_mode = decode_px4_mode(cm)
+                else:
+                    self.snapshot.flight_mode = MODE_NAMES.get(cm, "UNKNOWN")
         elif name == "GLOBAL_POSITION_INT":
             self._last_gps_t = t
             lat = f["lat"] / 1e7
@@ -243,7 +255,7 @@ class FeatureExtractor:
             t0, lat0, lon0 = self._last_fix
             dt = t - t0
             if dt > _LINK_GAP_S:
-                pass  # outage: constant-velocity assumption invalid; re-anchor on this fix
+                self._cusum_incs.clear()  # outage: re-anchor long-horizon CUSUM buffer
             elif dt > 1e-6:
                 # measured displacement (local NE metres)
                 dn = math.radians(lat - lat0) * EARTH_RADIUS_M
@@ -257,6 +269,7 @@ class FeatureExtractor:
                     inc_n *= scale
                     inc_e *= scale
                 self._resid_incs.append((inc_n, inc_e))
+                self._cusum_incs.append((inc_n, inc_e, dt))
         self._last_fix = (t, lat, lon)
         self._vel_hist.append((t, vx, vy))
 
@@ -264,6 +277,18 @@ class FeatureExtractor:
         rn = sum(i[0] for i in self._resid_incs)
         re = sum(i[1] for i in self._resid_incs)
         return math.hypot(rn, re)
+
+    def _cusum_residual(self) -> float:
+        """2D telescoping Page-Hinkley / CUSUM residual over the extended horizon."""
+        if not self._cusum_incs:
+            return 0.0
+        rn = sum(i[0] for i in self._cusum_incs)
+        re = sum(i[1] for i in self._cusum_incs)
+        total_dt = sum(i[2] for i in self._cusum_incs)
+        mag = math.hypot(rn, re)
+        # Subtract telescoping GPS position endpoint jitter (~1.6m) + velocity slack (0.04 m/s)
+        slack = 1.6 + 0.04 * total_dt
+        return max(0.0, mag - slack)
 
     # -- feature emission --------------------------------------------------- #
 
@@ -350,6 +375,7 @@ class FeatureExtractor:
             heartbeat_seen=self._last_heartbeat_t > -1e8,
             gps_seen=self._last_gps_t > -1e8,
             gps_raw_seen=self._gps_raw_seen,
+            cusum_drift_m=self._cusum_residual(),
         )
 
     # -- small numeric helpers --------------------------------------------- #

@@ -48,10 +48,16 @@ class SourceSpec:
     # serial: retry an unopenable / unplugged port (link "disconnected", ticks continue, as in run_serial_ids.py);
     # False = its --no-reconnect: a port that cannot be opened is a source error (no ticks, so no alerts)
     reconnect: bool = True
+    gcs_notify: bool = False
+    gcs_notify_host: str = "127.0.0.1"
+    gcs_notify_port: int = 14550
+    defense_mode: str = "passive"
 
     def __post_init__(self) -> None:
         if self.kind not in KINDS:
             raise ValueError(f"unknown source kind {self.kind!r}; choose one of {KINDS}")
+        if self.defense_mode not in ("passive", "advisory", "active-ips"):
+            raise ValueError(f"unknown defense_mode {self.defense_mode!r}; choose one of 'passive', 'advisory', 'active-ips'")
         if self.kind == "serial":
             if not self.port:
                 raise ValueError("serial source needs a port (e.g. COM7)")
@@ -110,6 +116,7 @@ class SourceSpec:
                  "BENCH": "Physical bench (live serial)"}[self.environment]
         return {"kind": self.kind, "environment": self.environment, "physical": self.physical,
                 "label": label, "detail": detail, "ml": self.ml_enabled,
+                "gcs_notify": self.gcs_notify, "defense_mode": self.defense_mode,
                 "config_dir": self.config_dir or "configs (Stage-1 default)"}
 
     def run_meta(self) -> dict[str, Any]:
@@ -166,6 +173,10 @@ def spec_from_env(env: dict[str, str] | None = None) -> SourceSpec:
         config_dir=e.get("AEGIS_CONFIG_DIR") or None,
         ml=None if ml_raw in (None, "") else _flag(ml_raw),
         reconnect=_flag(e.get("AEGIS_RECONNECT") or "1"),
+        gcs_notify=_flag(e.get("AEGIS_GCS_NOTIFY")),
+        gcs_notify_host=e.get("AEGIS_GCS_NOTIFY_HOST") or "127.0.0.1",
+        gcs_notify_port=int(e.get("AEGIS_GCS_NOTIFY_PORT") or "14550"),
+        defense_mode=e.get("AEGIS_DEFENSE_MODE", "passive") or "passive",
     )
 
 
