@@ -183,56 +183,216 @@ The `src/aegisflight/hal/` module abstracts serial communication, companion comp
 
 ---
 
-## 6. Quick Start & Installation
+## 6. Multi-OS Installation & Setup Guide
 
-### Prerequisites
-- **Python $\ge 3.11$** (developed on 3.11–3.13)
-- **Node.js $\ge 18$ + npm** (for web dashboard)
-- **Rust $\ge 1.80$ + Cargo** (for Tauri desktop app & fastpath)
+AegisFlight is engineered for 100% native cross-platform compatibility across **Windows**, **macOS**, **Linux**, and **Onboard Companion Computers** (Raspberry Pi, NVIDIA Jetson).
 
-### 1. Python Environment Setup
-```bash
-# Clone the repository
+Choose your operating system below for turnkey setup instructions:
+
+---
+
+### A. Windows 10 & 11 (x64 / ARM64)
+
+#### 1. Prerequisites Installation
+Install Python, Node.js, and Rust using [Winget](https://learn.microsoft.com/en-us/windows/package-manager/winget/) (or download the official installers):
+```powershell
+# Open PowerShell as Administrator or standard user:
+winget install Python.Python.3.11
+winget install OpenJS.NodeJS.LTS
+winget install Rustlang.Rustup
+```
+> [!NOTE]
+> During Python installation, make sure **"Add python.exe to PATH"** is checked.  
+> Microsoft Edge WebView2 is already pre-installed on Windows 10 & 11 and serves as the native GUI engine for the Tauri desktop app.
+
+#### 2. Virtual Environment & Dependencies
+In PowerShell:
+```powershell
+# Allow script execution for the current session (if restricted):
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+# Clone & enter repository:
 git clone https://github.com/<org>/techfest-2026.git
 cd techfest-2026
 
-# Create and activate virtual environment
-python3 -m venv .venv
-source .venv/bin/activate       # On Linux/macOS
-# .venv\Scripts\Activate.ps1    # On Windows
+# Create and activate virtual environment:
+python -m venv .venv
+.venv\Scripts\Activate.ps1
 
-# Install with development dependencies
+# Install AegisFlight in development mode:
 pip install -e ".[dev]"
 ```
 
-### 2. Run Automated Verification (40 ms)
-Verify all 8 Stage 2 cyber-physical prevention audit suites:
-```bash
-python scripts/verify_stage2.py
-```
-
-### 3. Run Test Suite (650+ Tests)
-```bash
-pytest tests/unit -q            # Fast unit suite (< 15 s)
-pytest                          # Full verification suite
-ruff check src tests scripts    # Verify linting & code standards
-```
-
-### 4. Launch Live GCS & Defense Engine
-Build the frontend assets and launch the defense backend in Active IPS mode:
-```bash
+#### 3. Build UI & Launch Defense Engine
+```powershell
+# Build frontend web assets:
 npm --prefix frontend install
 npm --prefix frontend run build
 
-# Start AegisFlight in Active IPS mode:
+# Start AegisFlight in Active IPS mode (FastAPI + WebSocket):
 aegis serve --defense-mode active-ips --port 8000
 ```
 Open **http://127.0.0.1:8000** in your browser.
 
-### 5. Launch Native Desktop App (Tauri 2.0)
+#### 4. (Optional) Launch Native Windows Desktop App
+```powershell
+cd frontend
+cargo tauri dev
+```
+*Compiles directly to a native Windows window (`.exe`) via Microsoft WebView2.*
+
+---
+
+### B. macOS (Apple Silicon M-Series & Intel)
+
+#### 1. Prerequisites Installation
+Install Xcode Command Line Tools and dependencies via [Homebrew](https://brew.sh/):
+```bash
+xcode-select --install
+brew install python@3.11 node rust
+```
+> [!NOTE]
+> macOS uses native Apple WebKit (`WKWebView`), so no external GUI libraries are required for the desktop app.
+
+#### 2. Virtual Environment & Dependencies
+```bash
+git clone https://github.com/<org>/techfest-2026.git
+cd techfest-2026
+
+# Create and activate virtual environment:
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install AegisFlight:
+pip install -e ".[dev]"
+```
+
+#### 3. Build UI & Launch Defense Engine
+```bash
+npm --prefix frontend install
+npm --prefix frontend run build
+
+# Start AegisFlight backend:
+aegis serve --defense-mode active-ips --port 8000
+```
+Open **http://127.0.0.1:8000** in Safari, Chrome, or Firefox.
+
+#### 4. Launch Native macOS Desktop App
 ```bash
 cd frontend
 cargo tauri dev
+```
+*Launches as a native macOS Cocoa application with Apple Silicon hardware acceleration.*
+
+---
+
+### C. Linux (Ubuntu, Debian, Fedora, Arch)
+
+#### 1. System Packages & Build Dependencies
+On **Ubuntu 22.04 / 24.04 / Debian 12**:
+```bash
+sudo apt update && sudo apt install -y \
+  python3-venv python3-pip python3-dev build-essential git curl \
+  libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libayatana-appindicator3-dev
+```
+On **Fedora**:
+```bash
+sudo dnf install -y python3-devel gcc gcc-c++ git curl \
+  webkit2gtk4.1-devel libappindicator-gtk3-devel librsvg2-devel openssl-devel
+```
+
+Install **Node.js LTS** & **Rust**:
+```bash
+# Node.js:
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# Rust:
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+source "$HOME/.cargo/env"
+```
+
+#### 2. Serial Port Permissions (For Hardware & Telemetry Radios)
+To allow communication with USB flight controllers (`/dev/ttyACM*`, `/dev/ttyUSB*`) without `sudo`:
+```bash
+sudo usermod -a -G dialout $USER
+# Log out and log back in, or run: newgrp dialout
+```
+
+#### 3. Virtual Environment & Launch
+```bash
+git clone https://github.com/<org>/techfest-2026.git
+cd techfest-2026
+
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+
+npm --prefix frontend install
+npm --prefix frontend run build
+
+# Start backend:
+aegis serve --defense-mode active-ips --port 8000
+
+# (Optional) Start native Linux desktop app:
+cd frontend && cargo tauri dev
+```
+
+---
+
+### D. Onboard Companion Computers (Raspberry Pi 4/5/Zero & NVIDIA Jetson)
+
+For deployment directly on a physical drone companion computer connected to a Pixhawk / Cube flight controller:
+
+#### 1. Raspberry Pi OS (Bookworm 64-bit)
+1. **Enable Hardware UART**:
+   ```bash
+   sudo raspi-config
+   # Select: 3 Interface Options -> I6 Serial Port
+   # "Would you like a login shell to be accessible over serial?" -> NO
+   # "Would you like the serial port hardware to be enabled?" -> YES
+   sudo reboot
+   ```
+   *The primary hardware UART is now active at `/dev/ttyAMA0` (or `/dev/serial0`).*
+
+2. **Install Dependencies**:
+   ```bash
+   sudo apt update && sudo apt install -y python3-venv python3-pip python3-dev build-essential git
+   git clone https://github.com/<org>/techfest-2026.git
+   cd techfest-2026
+
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -e ".[dev]"
+   ```
+
+3. **Run in Autonomous Defense Daemon Mode**:
+   ```bash
+   # Automatically discovers telemetry ports, locks onto flight controller, and enables IPS:
+   aegis serve --defense-mode active-ips --topology auto --port 8000
+   ```
+
+#### 2. NVIDIA Jetson (Orin / Nano / Xavier — JetPack 5.x / 6.x)
+- Hardware UART `/dev/ttyTHS1` (J41 40-pin header pins 8 & 10) or USB `/dev/ttyUSB0`.
+- AegisFlight's HAL auto-detects Jetson hardware via `/etc/nv_tegra_release` and sets the dynamic latency budget to $18.0\text{ ms}$.
+
+---
+
+### E. Quick Verification (All Operating Systems)
+
+Run the test and audit suites to ensure your local installation is 100% operational:
+```bash
+# 1. Full 8-suite Stage 2 automated audit (~40 ms):
+python scripts/verify_stage2.py
+
+# 2. Fast unit verification (34 tests, < 1 s):
+pytest tests/unit/test_mitigation.py tests/unit/test_hal.py -q
+
+# 3. Full test suite (650+ tests, ~1.5 min):
+pytest
+
+# 4. Code quality & linting:
+ruff check src tests scripts
 ```
 
 ---
