@@ -353,9 +353,15 @@ class LiveEngine:
     def set_defense_mode(self, mode: str) -> dict:
         self.mitigation.set_mode(mode)
         if self.mitigation.mode == DefenseMode.ACTIVE_IPS and self._cp_lat is not None:
-            # Seed recovery from current hijacked position so the drone flies smoothly back
-            self._ips_lat = self._cp_lat
-            self._ips_lon = self._cp_lon
+            # Seed recovery from current position: for GPS attacks, use trusted dead-reckoning;
+            # for command hijacks, seed from current deviated position so the drone smoothly rejoins track
+            is_gps = "gps" in str(self._active_attack_name or "").lower()
+            if is_gps and self.mitigation.golden.dr_lat is not None:
+                self._ips_lat = self.mitigation.golden.dr_lat
+                self._ips_lon = self.mitigation.golden.dr_lon
+            else:
+                self._ips_lat = self._cp_lat
+                self._ips_lon = self._cp_lon
             self._ips_alt = self._cp_alt
             self._ips_mode = "AUTO"
             self._ips_speed = 12.0
@@ -454,10 +460,28 @@ class LiveEngine:
             self._pending_drift_rate = None
             self._attack_injected_t = None
             self._ttd_pending = False
+            self._top_a_detour_t = 0.0
             self.mitigation.reset()
+            self._cp_lat = None
+            self._cp_lon = None
+            self._cp_alt = None
+            self._cp_mode = None
+            self._cp_speed = None
+            self._ips_lat = None
+            self._ips_lon = None
+            self._ips_alt = None
             return
         if name not in ATTACK_REGISTRY:
             return
+
+        self._top_a_detour_t = 0.0
+        if self.mitigation.mode == DefenseMode.ACTIVE_IPS:
+            self._cp_lat = None
+            self._cp_lon = None
+            self._cp_alt = None
+            self._ips_lat = None
+            self._ips_lon = None
+            self._ips_alt = None
 
         # When switching to a non-GPS attack, unlatch any leftover GPS sanitizer flags
         if not name.startswith("gps"):
@@ -756,6 +780,28 @@ class LiveEngine:
             self._cp_mode = base_mode
             self._cp_speed = base_speed
 
+        # Determine if current attack alters GPS position
+        is_gps = "gps" in atk_tag or "drift" in atk_tag or "offset" in atk_tag or (
+            assessment is not None and assessment.attack_type == AttackType.GPS_SPOOFING
+        )
+        if is_gps and self.mitigation.golden.dr_lat is not None and self.mitigation.golden.dr_lon is not None:
+            target_lat = self.mitigation.golden.dr_lat
+            target_lon = self.mitigation.golden.dr_lon
+        else:
+            target_lat = base_lat
+            target_lon = base_lon
+
+        # Altitude handling:
+        # If under altitude bias attack, maintain trusted barometric altitude;
+        # otherwise follow the vehicle's nominal climb/cruise/descent profile (base_alt).
+        is_alt_attack = "altitude" in atk_tag or "alt_bias" in atk_tag or (
+            assessment is not None and getattr(assessment, "sub_mode", None) == "alt_bias"
+        )
+        if is_alt_attack:
+            target_alt = self.mitigation.golden.trusted_rel_alt_m if self.mitigation.golden.trusted_rel_alt_m is not None else max(0.0, base_alt - 35.0)
+        else:
+            target_alt = base_alt
+
         # 2. Protected Drone Physics (_ips_*)
         if self.mitigation.mode == DefenseMode.ACTIVE_IPS:
             is_cmd = any(k in atk_tag or k in submode_tag for k in ("mode_flip", "gcs_replay", "arm_disarm", "rogue_command"))
@@ -771,35 +817,30 @@ class LiveEngine:
                 else:
                     self._ips_mode = "AUTO"
                     self._ips_speed = 12.0
-                    self._ips_alt = 60.0
-                    dist_deg = math.hypot(base_lat - self._ips_lat, base_lon - self._ips_lon)
+                    self._ips_alt = target_alt
+                    self._ips_armed = True
+                    dist_deg = math.hypot(target_lat - self._ips_lat, target_lon - self._ips_lon)
                     if dist_deg > 0.00002:
-                        self._ips_lat += 0.35 * (base_lat - self._ips_lat)
-                        self._ips_lon += 0.35 * (base_lon - self._ips_lon)
+                        self._ips_lat += 0.35 * (target_lat - self._ips_lat)
+                        self._ips_lon += 0.35 * (target_lon - self._ips_lon)
                     else:
-                        self._ips_lat = base_lat
-                        self._ips_lon = base_lon
+                        self._ips_lat = target_lat
+                        self._ips_lon = target_lon
             else:
                 # Topology B (Inline): Dropped before FC, 0.0 m detour
+                # Also handles GPS attacks under both topologies cleanly without oscillation
                 self._top_a_detour_t = 0.0
                 self._ips_mode = "AUTO"
                 self._ips_speed = 12.0
-                self._ips_alt = 60.0
+                self._ips_alt = target_alt
                 self._ips_armed = True
-                dist_deg = math.hypot(base_lat - self._ips_lat, base_lon - self._ips_lon)
-                if dist_deg > 0.00005:  # Smooth return if recovering from previous passive hijack
-                    self._ips_lat += 0.4 * (base_lat - self._ips_lat)
-                    self._ips_lon += 0.4 * (base_lon - self._ips_lon)
+                dist_deg = math.hypot(target_lat - self._ips_lat, target_lon - self._ips_lon)
+                if dist_deg > 0.0005:  # ~55m threshold: smooth return only if recovering from prior passive hijack
+                    self._ips_lat += 0.35 * (target_lat - self._ips_lat)
+                    self._ips_lon += 0.35 * (target_lon - self._ips_lon)
                 else:
-                    is_gps = "gps" in atk_tag or "drift" in atk_tag or "offset" in atk_tag or (
-                        assessment is not None and assessment.attack_type == AttackType.GPS_SPOOFING
-                    )
-                    if is_gps and self.mitigation.golden.dr_lat is not None and self.mitigation.golden.dr_lon is not None:
-                        self._ips_lat = self.mitigation.golden.dr_lat
-                        self._ips_lon = self.mitigation.golden.dr_lon
-                    else:
-                        self._ips_lat = base_lat
-                        self._ips_lon = base_lon
+                    self._ips_lat = target_lat
+                    self._ips_lon = target_lon
         else:
             # PASSIVE / ADVISORY: Drone follows unmitigated hijacked state
             self._ips_lat = self._cp_lat
