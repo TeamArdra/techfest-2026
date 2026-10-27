@@ -1,0 +1,283 @@
+{
+  "definition": "no solution = CONST_POS_MODE or not (POS_HORIZ_ABS | POS_HORIZ_REL); span = continuous no-solution reports with gaps <= 2 s",
+  "n_files": 46,
+  "n_with_ekf_status_report": 2,
+  "files": {
+    "data/ardupilot/raw/ap_attack_drift_001.clean.tlog": {
+      "sha256": "6ecb13be96aef550e55bb88e6908c29fe48b84d06d23062df7c6a7d2aee15628",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_attack_drift_001.observed.tlog": {
+      "sha256": "5d70608f45ebf94cb2c9e7bdfe1af7a20cdd3be26bfb59e9050979fa75d6f6b9",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_attack_drift_002.clean.tlog": {
+      "sha256": "882d7ebe711ede830bd0262feefb3e0122942295dc3fc35799b9a3cd72da057e",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_attack_drift_002.observed.tlog": {
+      "sha256": "8d10fc0e4f436383efb7e67b1cdd4c67ead4aa493df33c10fdd3b5e92d7972d2",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_attack_drift_003.clean.tlog": {
+      "sha256": "22eda595614755220b54598834fcfa413b854935f39aba88800c6c3585f6b5a8",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_attack_drift_003.observed.tlog": {
+      "sha256": "bc3cd84c25170418a31fbfa680f5afeb2399746a92bc4b4dafc9abd2477476b8",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_attack_final_drift_001.clean.tlog": {
+      "sha256": "a9e768758e5522f1bbaef592f5278b13ad1858d71e8f9aa38542b0cb6f46e17e",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_attack_final_drift_001.observed.tlog": {
+      "sha256": "666aeb348a6ea0e46ddda49e4db19f64874327c63c69a214f696b2b9ad2bf9fa",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_attack_final_drift_002.clean.tlog": {
+      "sha256": "aecf18cabd4c512ba0e28f03fea21874610cf7b25e24876cb40d76c656f40850",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_attack_final_drift_002.observed.tlog": {
+      "sha256": "48aba5c6f0dd4fba622f90f41b5ce71e5b437d7c15b38a3751cc6285fc81d6bb",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_attack_final_drift_003.clean.tlog": {
+      "sha256": "e418e068555b34e33a827927af8ddfd3254c59a160f62c9411969e983b47f9ce",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_attack_final_drift_003.observed.tlog": {
+      "sha256": "174dbdb85018c6d960f36b505eaaaf30759e10eee2512155f0a20b956c6590c2",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_benign_final_noml_001.clean.tlog": {
+      "sha256": "b508a97c7b309ccb2dca6cae6dfbe56ea07ec3e4caec07b35cafc2cac84a5454",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_benign_final_noml_001.observed.tlog": {
+      "sha256": "b508a97c7b309ccb2dca6cae6dfbe56ea07ec3e4caec07b35cafc2cac84a5454",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_benign_final_noml_002.clean.tlog": {
+      "sha256": "bbab67debe6b365caac9ebf0e48425694b144e320f1f2fa717f9e12a619a0e01",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_benign_final_noml_002.observed.tlog": {
+      "sha256": "bbab67debe6b365caac9ebf0e48425694b144e320f1f2fa717f9e12a619a0e01",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_benign_groups_001.clean.tlog": {
+      "sha256": "fe081ee6037d3f4cc206f93a21712a6a69198ffd0ffbc950495b867e71f5c02a",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_benign_groups_001.observed.tlog": {
+      "sha256": "fe081ee6037d3f4cc206f93a21712a6a69198ffd0ffbc950495b867e71f5c02a",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_benign_six_001.clean.tlog": {
+      "sha256": "1bcc6caa1598bbfd91aaed55852b9241edf769f1ed4ae86e5bf92b4a760c4b76",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_benign_six_001.observed.tlog": {
+      "sha256": "1bcc6caa1598bbfd91aaed55852b9241edf769f1ed4ae86e5bf92b4a760c4b76",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_benign_six_002.clean.tlog": {
+      "sha256": "c87abf04a36e3dfc42dae15c51deda6f164b44a14cc0bfb7838c6f02f945cfb2",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_benign_six_002.observed.tlog": {
+      "sha256": "c87abf04a36e3dfc42dae15c51deda6f164b44a14cc0bfb7838c6f02f945cfb2",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_benign_six_003.clean.tlog": {
+      "sha256": "29015daf9ece701278153d5dfa8aa375d1d829d8aba4dfb1dd5dcebc4c4d8d83",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_benign_six_003.observed.tlog": {
+      "sha256": "29015daf9ece701278153d5dfa8aa375d1d829d8aba4dfb1dd5dcebc4c4d8d83",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_benign_six_004.clean.tlog": {
+      "sha256": "9044b08d56832143d65ca8b46e638c22275e376fb44307baaf579ed9da1eef22",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_benign_six_004.observed.tlog": {
+      "sha256": "9044b08d56832143d65ca8b46e638c22275e376fb44307baaf579ed9da1eef22",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_passive_monitor_001.clean.tlog": {
+      "sha256": "7636e0b8937dc3ef1b2c0a57ed42da26e1d3d9993f30374ce9068c2e0866fedb",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_passive_monitor_001.observed.tlog": {
+      "sha256": "7636e0b8937dc3ef1b2c0a57ed42da26e1d3d9993f30374ce9068c2e0866fedb",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_passive_monitor_hb_001.clean.tlog": {
+      "sha256": "04913505f19a431f88e9001834a14671f4363d2e583cef35d8cb3a61e09e69d1",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_passive_monitor_hb_001.observed.tlog": {
+      "sha256": "04913505f19a431f88e9001834a14671f4363d2e583cef35d8cb3a61e09e69d1",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_passive_monitor_params_001.clean.tlog": {
+      "sha256": "9b75792040f74766c7d00e6dd94ad623b1a0140fee488ecfe5ddaf4bb62a2994",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/ardupilot/raw/ap_passive_monitor_params_001.observed.tlog": {
+      "sha256": "9b75792040f74766c7d00e6dd94ad623b1a0140fee488ecfe5ddaf4bb62a2994",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/sitl/raw/benign_001.tlog": {
+      "sha256": "9686c31dee3b34aac5c885a9b0066e541a564c7b639d020b0eb04cfeeb0a1569",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/sitl/raw/benign_002.tlog": {
+      "sha256": "53d38fcc25716dd850b72c9f757c177f0d571bd8c65a8f61cdc2fc34b96427ba",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/sitl/raw/benign_003.tlog": {
+      "sha256": "44fc1025c181335af1d44b703545072e4bbea463f6634ba758c2972efd4e8c67",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/sitl/raw/benign_004.tlog": {
+      "sha256": "8a8d3d7ccf60bb8943bcc0cf48d78e89bba2a3eaadaf5691baad61da3967157e",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/sitl/raw/benign_005.tlog": {
+      "sha256": "78350f17811c84919cd7c33d004c6aae1c4e13ffac4ba8bcc90952400d8a62ec",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/sitl/raw/benign_006.tlog": {
+      "sha256": "c540eacaf327ebac84bef94416882374a66e8f7f9efeef484e030ed3d5489318",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/sitl/raw/benign_007.tlog": {
+      "sha256": "63c67c6eec69090f02cf12cd67757165002f3682c55315e1337276ea79534974",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/sitl/raw/benign_008.tlog": {
+      "sha256": "2accd023aa14404ea0c4a20600313e4a1c81f8366789980d9516e494daae88df",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/sitl/raw/benign_009.tlog": {
+      "sha256": "839e8cacfc86890ef5558736fd188a5d7b1cf22e64e3d5500d8fbc0bc72de83f",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/sitl/raw/benign_010.tlog": {
+      "sha256": "c4cdd13a1569fcafbf702a75dcbf45c693527fe54cdec2fd28b88e8924503083",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/hardware/raw/telemetry_radio_005.tlog": {
+      "sha256": "0f4e2887e4da853b0ffb9aadc56488a0080930d453e245c720a8b063256784b5",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/hardware/raw/telemetry_radio_007.tlog": {
+      "sha256": "0a70133114f439aad8e7a45b7e86eb76127cda4efa0674891e8c228025d0e17a",
+      "ekf_status_reports": 0,
+      "no_solution_reports": 0,
+      "longest_no_solution_span_s": 0.0
+    },
+    "data/hardware/raw/telemetry_radio_008.tlog": {
+      "sha256": "c8774324a8d84b2e039b6065d77cdcee5e1682f269b1f2221535e978df95eb9b",
+      "ekf_status_reports": 125,
+      "no_solution_reports": 125,
+      "longest_no_solution_span_s": 62.0
+    },
+    "data/hardware/raw/telemetry_radio_009.tlog": {
+      "sha256": "e6926675305a8fbf592c76a152c57e30aa4c2e854a41b8b2ea0c5a14aafec867",
+      "ekf_status_reports": 120,
+      "no_solution_reports": 120,
+      "longest_no_solution_span_s": 59.49
+    }
+  }
+}

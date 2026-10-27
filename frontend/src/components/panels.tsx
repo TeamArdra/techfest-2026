@@ -1,4 +1,4 @@
-import type { Telemetry, Threat } from "../types";
+import type { DefenseMode, MitigationInfo, Telemetry, Threat } from "../types";
 import { THREAT_THRESHOLD } from "../lib/constants";
 import { classifyEvidence, SOURCE_LABEL, type EvidenceSource } from "../lib/evidence";
 
@@ -153,16 +153,69 @@ function n(x: number | null | undefined, d = 1): string {
   return x == null ? "—" : x.toFixed(d);
 }
 
-export function TelemetryPanel({ tele, note }: { tele: Telemetry | null; note: string }) {
+export function TelemetryPanel({
+  tele,
+  sanitized,
+  note,
+  defenseMode,
+  mitigation,
+}: {
+  tele: Telemetry | null;
+  sanitized?: Telemetry | null;
+  note: string;
+  defenseMode?: DefenseMode;
+  mitigation?: MitigationInfo | null;
+}) {
+  const isIps = defenseMode === "active-ips";
   const lowBatt = tele?.battery_remaining != null && tele.battery_remaining < 20;
-  const cells: Array<{ label: string; value: string; unit?: string; warn?: boolean }> = [
-    { label: "Altitude", value: n(tele?.rel_alt, 1), unit: "m" },
-    { label: "Ground speed", value: n(tele?.groundspeed, 1), unit: "m/s" },
+
+  // In ACTIVE_IPS, check if sanitized telemetry restored perturbed values
+  const altDiff = isIps && sanitized?.alt_msl != null && tele?.alt_msl != null && Math.abs(sanitized.alt_msl - tele.alt_msl) > 1.5;
+  const speedDiff = isIps && sanitized?.groundspeed != null && tele?.groundspeed != null && Math.abs(sanitized.groundspeed - tele.groundspeed) > 1.5;
+  const battDiff = isIps && sanitized?.battery_voltage != null && tele?.battery_voltage != null && Math.abs(sanitized.battery_voltage - tele.battery_voltage) > 0.5;
+  const modeDiff = isIps && sanitized?.flight_mode && tele?.flight_mode && sanitized.flight_mode !== tele.flight_mode;
+
+  // In PASSIVE / ADVISORY, warn if known perturbations exist without claiming sanitization
+  const altWarn = !isIps && Boolean(mitigation?.outputs?.alt_bias_m && Math.abs(mitigation.outputs.alt_bias_m) > 1.5);
+  const speedWarn = !isIps && Boolean(mitigation?.outputs?.speed_bias_ms && Math.abs(mitigation.outputs.speed_bias_ms) > 1.5);
+  const battWarn = !isIps && Boolean(mitigation?.outputs?.battery_bias_v && Math.abs(mitigation.outputs.battery_bias_v) > 0.5);
+  const modeWarn = !isIps && Boolean(mitigation?.params?.target_restore_mode && tele?.flight_mode && mitigation.params.target_restore_mode !== tele.flight_mode);
+
+  const cells: Array<{ label: string; value: string; unit?: string; warn?: boolean; restored?: string; anomalyNotice?: string }> = [
+    {
+      label: "Altitude",
+      value: n(tele?.rel_alt, 1),
+      unit: "m",
+      warn: altDiff || altWarn,
+      restored: altDiff ? `${n(sanitized?.rel_alt ?? sanitized?.alt_msl, 1)} m` : undefined,
+      anomalyNotice: altWarn ? "⚠️ Anomaly (Unsanitized)" : undefined,
+    },
+    {
+      label: "Ground speed",
+      value: n(tele?.groundspeed, 1),
+      unit: "m/s",
+      warn: speedDiff || speedWarn,
+      restored: speedDiff ? `${n(sanitized?.groundspeed, 1)} m/s` : undefined,
+      anomalyNotice: speedWarn ? "⚠️ Anomaly (Unsanitized)" : undefined,
+    },
     { label: "Heading", value: tele?.heading == null ? "—" : n(tele.heading, 0).padStart(3, "0"), unit: "°" },
     { label: "Battery", value: n(tele?.battery_remaining, 0), unit: "%", warn: lowBatt },
-    { label: "Voltage", value: n(tele?.battery_voltage, 2), unit: "V" },
+    {
+      label: "Voltage",
+      value: n(tele?.battery_voltage, 2),
+      unit: "V",
+      warn: battDiff || battWarn,
+      restored: battDiff ? `${n(sanitized?.battery_voltage, 2)} V` : undefined,
+      anomalyNotice: battWarn ? "⚠️ Anomaly (Unsanitized)" : undefined,
+    },
     { label: "GPS sats", value: tele?.satellites != null ? String(tele.satellites) : "—" },
-    { label: "Flight mode", value: tele?.flight_mode ?? "—" },
+    {
+      label: "Flight mode",
+      value: tele?.flight_mode ?? "—",
+      warn: Boolean(modeDiff || modeWarn),
+      restored: modeDiff ? String(sanitized?.flight_mode) : undefined,
+      anomalyNotice: modeWarn ? "⚠️ Hijacked (Unsanitized)" : undefined,
+    },
     { label: "Armed", value: tele?.armed == null ? "—" : tele.armed ? "YES" : "NO" },
   ];
 
@@ -179,6 +232,34 @@ export function TelemetryPanel({ tele, note }: { tele: Telemetry | null; note: s
             <div className={`t-value${c.warn ? " warn" : ""}`}>
               {c.value}
               {c.unit && <span className="u">{c.unit}</span>}
+              {c.restored && (
+                <span
+                  style={{
+                    display: "block",
+                    fontSize: "10.5px",
+                    color: "var(--ok, #4ade80)",
+                    fontWeight: 600,
+                    marginTop: "2px",
+                  }}
+                  title="Autonomous IPS restored value"
+                >
+                  🛡️ Sanitized: {c.restored}
+                </span>
+              )}
+              {c.anomalyNotice && (
+                <span
+                  style={{
+                    display: "block",
+                    fontSize: "10.5px",
+                    color: "var(--warn, #facc15)",
+                    fontWeight: 600,
+                    marginTop: "2px",
+                  }}
+                  title="Observed telemetry is perturbed by active attack (passive IDS / advisory observation)"
+                >
+                  {c.anomalyNotice}
+                </span>
+              )}
             </div>
           </div>
         ))}

@@ -1,0 +1,14 @@
+[package]
+name = "aegisflight-gcs"
+version = "0.1.0"
+description = "AegisFlight Cross-Platform Desktop/Mobile UAV GCS Defense Shell"
+edition = "2021"
+
+[dependencies]
+tauri = { version = "2.0", default-features = false, features = ["wry"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+aegis_fastpath = { path = "../../rust/aegis_fastpath" }
+
+[build-dependencies]
+tauri-build = { version = "2.0", default-features = false }

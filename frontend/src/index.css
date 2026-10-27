@@ -518,3 +518,596 @@ button.attack.active .a-name { font-weight: 600; }
 .incidents::-webkit-scrollbar { width: 8px; }
 .incidents::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 4px; }
 .incidents::-webkit-scrollbar-track { background: transparent; }
+
+/* ============================================================================
+   Autonomous Defense & Recovery Engine (IPS) Styles
+   ========================================================================== */
+.def-badge-passive { color: var(--ok); border: 1px solid #1f4030; }
+.def-badge-advisory { color: var(--watch); border: 1px solid #4a3f17; }
+.def-badge-active-ips { color: #f97316; border: 1px solid #7c2d12; background: rgba(249, 115, 22, 0.1); }
+
+.def-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  grid-column: 1 / -1;
+  background: linear-gradient(180deg, #101722, var(--surface));
+  border: 1px solid var(--line-2);
+}
+
+.def-panel .panel-head .title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.def-panel h3 {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.def-panel .panel-sub {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.def-mode-pill {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: var(--r-sm);
+}
+.def-pill-passive { background: rgba(70, 177, 125, 0.15); color: var(--ok); border: 1px solid #1f4030; }
+.def-pill-advisory { background: rgba(198, 165, 43, 0.15); color: var(--watch); border: 1px solid #4a3f17; }
+.def-pill-active-ips { background: rgba(249, 115, 22, 0.2); color: #f97316; border: 1px solid #9a3412; }
+
+.def-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.def-section-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+/* 1. Mode selector buttons */
+.mode-toggle-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.mode-btn {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 10px 14px;
+  min-height: 48px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mode-btn:hover:not(:disabled) {
+  border-color: var(--line-2);
+  background: #141c27;
+}
+
+.mode-btn.active {
+  border-color: var(--accent);
+  background: rgba(61, 143, 184, 0.12);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.mode-btn .mode-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text);
+}
+
+.mode-btn.active .mode-label {
+  color: var(--accent);
+}
+
+.mode-btn .mode-desc {
+  font-size: 10.5px;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+/* 2. Escalation Ladder */
+.fsm-ladder {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.fsm-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+  position: relative;
+  transition: border-color 0.3s;
+}
+
+.fsm-step.current {
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
+}
+
+.fsm-step .step-num {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--faint);
+  width: 18px;
+}
+
+.fsm-step.current .step-num {
+  color: var(--text);
+}
+
+.fsm-step .step-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.fsm-step .step-name {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.fsm-step .step-desc {
+  font-size: 9.5px;
+  color: var(--faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fsm-step .step-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+/* 3. Recovery Box */
+.recovery-box {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+}
+
+.recovery-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+
+.recovery-title {
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-2);
+}
+
+.recovery-val {
+  color: var(--ok);
+}
+
+.recovery-bar-bg {
+  height: 6px;
+  background: var(--inset);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.recovery-bar-fill {
+  height: 100%;
+  background: var(--ok);
+  transition: width 0.25s linear;
+}
+
+/* 4. Forensics Matrix */
+.forensics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.forensics-col {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+
+.forensics-col .col-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--inset);
+  border-bottom: 1px solid var(--line);
+}
+
+.col-tag {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #fff;
+}
+.input-col .col-tag { background: #b91c1c; }
+.output-col .col-tag { background: #047857; }
+
+.col-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.forensics-data {
+  padding: 6px 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.forensics-data .data-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 11.5px;
+}
+.forensics-data .data-row:last-child {
+  border-bottom: none;
+}
+
+.forensics-data .lbl {
+  color: var(--muted);
+}
+
+.forensics-data .val {
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* 5. Summary Banner */
+.def-summary-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(61, 143, 184, 0.08);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+
+.summary-lbl {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.summary-txt {
+  font-size: 12px;
+  color: var(--text);
+  font-family: var(--sans);
+}
+
+/* 6. Overrides */
+.override-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.override-btn {
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.warn-btn {
+  background: rgba(214, 138, 58, 0.12);
+  border: 1px solid #d68a3a;
+  color: #f59e0b;
+}
+.warn-btn:hover:not(:disabled) {
+  background: rgba(214, 138, 58, 0.25);
+}
+
+.info-btn {
+  background: rgba(61, 143, 184, 0.12);
+  border: 1px solid var(--accent);
+  color: #38bdf8;
+}
+.info-btn:hover:not(:disabled) {
+  background: rgba(61, 143, 184, 0.25);
+}
+
+.success-btn {
+  background: rgba(70, 177, 125, 0.12);
+  border: 1px solid var(--ok);
+  color: #34d399;
+}
+.success-btn:hover:not(:disabled) {
+  background: rgba(70, 177, 125, 0.25);
+}
+
+.override-feedback {
+  font-size: 11px;
+  color: var(--text-2);
+  background: var(--bg-2);
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+}
+
+/* ============================================================================
+   Resistance Monitor & Action Timeline
+   ========================================================================== */
+.resistance-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border-radius: var(--r);
+  border: 1px solid var(--line);
+}
+.res-resisting {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.4);
+}
+.res-passive {
+  background: rgba(234, 179, 8, 0.12);
+  border-color: rgba(234, 179, 8, 0.35);
+}
+.res-nominal {
+  background: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.25);
+}
+.res-advisory {
+  background: rgba(249, 115, 22, 0.12);
+  border-color: rgba(249, 115, 22, 0.35);
+}
+.res-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+}
+.res-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.res-resisting .res-title { color: #4ade80; }
+.res-passive .res-title { color: #facc15; }
+.res-nominal .res-title { color: #38bdf8; }
+.res-advisory .res-title { color: #fb923c; }
+
+.res-desc {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.res-badge {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 6px 12px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.res-resisting .res-badge {
+  background: rgba(34, 197, 94, 0.25);
+  color: #4ade80;
+  border: 1px solid #22c55e;
+}
+.res-passive .res-badge {
+  background: rgba(234, 179, 8, 0.25);
+  color: #facc15;
+  border: 1px solid #eab308;
+}
+.res-nominal .res-badge {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  border: 1px solid #38bdf8;
+}
+
+.action-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 190px;
+  overflow-y: auto;
+  background: var(--bg-2, #080d14);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+}
+.timeline-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.timeline-item:last-child {
+  border-bottom: none;
+}
+.tl-time {
+  font-size: 10.5px;
+  color: var(--faint);
+  min-width: 50px;
+}
+.tl-tag {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  background: var(--line);
+  color: var(--text-2);
+}
+.tl-tag-sanitize_gps, .tl-tag-sanitize_alt {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+.tl-tag-quarantine {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+.tl-tag-ekf_switch, .tl-tag-counter_cmd, .tl-tag-safe_hold_cmd {
+  background: rgba(249, 115, 22, 0.2);
+  color: #fb923c;
+}
+.tl-tag-detected {
+  background: rgba(234, 179, 8, 0.2);
+  color: #facc15;
+}
+.tl-tag-recovered {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+}
+.tl-tag-replay_guard, .tl-tag-veto_disarm, .tl-tag-prearm_lock {
+  background: rgba(239, 68, 68, 0.25);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+.tl-tag-rate_limit, .tl-tag-link_watchdog, .tl-tag-anti_jam_dr {
+  background: rgba(249, 115, 22, 0.25);
+  color: #fb923c;
+  border: 1px solid rgba(249, 115, 22, 0.4);
+}
+.tl-tag-speed_clamp, .tl-tag-batt_filter, .tl-tag-ahrs_crosscheck {
+  background: rgba(168, 85, 247, 0.25);
+  color: #c084fc;
+}
+.tl-tag-statustext {
+  background: rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+.tl-tag-escalation {
+  background: rgba(220, 38, 38, 0.3);
+  color: #fca5a5;
+  font-weight: 800;
+}
+.passive-overrides-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.passive-notice-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
+}
+.passive-notice-card .notice-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  white-space: nowrap;
+}
+.passive-notice-card .notice-text {
+  font-size: 11.5px;
+  color: var(--text-2);
+  line-height: 1.4;
+}
+.tl-detail {
+  color: var(--text);
+  flex: 1;
+  word-break: break-word;
+}
+.empty-timeline {
+  font-size: 11px;
+  color: var(--faint);
+  text-align: center;
+  padding: 12px;
+}
+
+/* ============================================================================
+   Modern Web Guidance: Defer Rendering Heavy Below-the-fold Content
+   ========================================================================== */
+.reference {
+  content-visibility: auto;
+  contain-intrinsic-size: auto none auto 380px;
+}
+
+.secondary {
+  content-visibility: auto;
+  contain-intrinsic-size: auto none auto 240px;
+}
+
+/* ============================================================================
+   Responsive Layout & Touch Breakpoints (Mobile / Tablet / Desktop)
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .mode-toggle-group { grid-template-columns: 1fr; }
+  .fsm-ladder { grid-template-columns: 1fr 1fr; }
+  .forensics-grid { grid-template-columns: 1fr; }
+  .override-actions { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .fsm-ladder { grid-template-columns: 1fr; }
+  .header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .status-rail { flex-wrap: wrap; margin-left: 0; gap: 12px; }
+  .mode-btn, .override-btn { min-height: 48px; }
+}
+

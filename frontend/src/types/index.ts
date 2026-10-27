@@ -32,6 +32,79 @@ export interface Threat {
 export type Environment = "SIM" | "REPLAY" | "SITL" | "BENCH";
 export type LinkState = "simulated" | "waiting" | "live" | "stale" | "disconnected" | "ended" | "error";
 
+export type DefenseMode = "passive" | "advisory" | "active-ips";
+export type MitigationState = "NOMINAL" | "AUTO_MITIGATING" | "SAFE_HOLD" | "GCS_TAKEOVER";
+
+export interface AttackParameters {
+  attack_type: string;
+  sub_mode: string;
+  trusted_lat: number | null;
+  trusted_lon: number | null;
+  trusted_alt_m: number | null;
+  trusted_mode: string | null;
+  lat_offset_deg: number;
+  lon_offset_deg: number;
+  north_offset_m: number;
+  east_offset_m: number;
+  drift_rate_ms: number;
+  alt_bias_m: number;
+  speed_bias_ms: number;
+  battery_bias_v: number;
+  rogue_sysids: number[];
+  target_restore_mode: string | null;
+}
+
+export interface MitigationInputs {
+  trusted_lat: number | null;
+  trusted_lon: number | null;
+  trusted_alt_m: number | null;
+  trusted_mode: string | null;
+}
+
+export interface MitigationOutputs {
+  north_offset_m: number;
+  east_offset_m: number;
+  drift_rate_ms: number;
+  alt_bias_m: number;
+  speed_bias_ms: number;
+  battery_bias_v: number;
+  rogue_sysids: number[];
+  target_restore_mode: string | null;
+  quarantined_sysids: number[];
+  sanitize_gps: boolean;
+  sanitize_alt: boolean;
+  ekf_switched: boolean;
+  last_command_sent: string | null;
+  counter_frames_sent: number;
+}
+
+export interface MitigationActionItem {
+  t: number;
+  tag: string;
+  detail: string;
+}
+
+export interface MitigationInfo {
+  t: number;
+  mode: DefenseMode;
+  state: MitigationState;
+  sub_mode: string;
+  clean_streak: number;
+  recovery_target_ticks: number;
+  recovery_progress?: number;
+  counter_frames_sent: number;
+  quarantined_sysids: number[];
+  sanitize_gps: boolean;
+  sanitize_alt: boolean;
+  ekf_switched: boolean;
+  last_command_sent: string | null;
+  actions?: MitigationActionItem[];
+  inputs?: MitigationInputs;
+  outputs?: MitigationOutputs;
+  params?: AttackParameters;
+  summary: string;
+}
+
 export interface SourceInfo {
   kind: "sim" | "replay" | "serial" | "udp";
   environment: Environment;
@@ -40,6 +113,7 @@ export interface SourceInfo {
   detail: Record<string, unknown>;
   ml: boolean;
   config_dir: string;
+  defense_mode?: DefenseMode;
 }
 
 export interface GpsLink {
@@ -69,10 +143,15 @@ export interface Update {
   sim: boolean;
   environment: Environment;
   source: SourceInfo;
+  defense_mode?: DefenseMode;
+  topology?: string;
+  topology_reasons?: string[];
+  mitigation?: MitigationInfo;
   link: LinkStatus;
   run_id: string;
   t: number;
   telemetry: Telemetry;
+  sanitized_telemetry?: Telemetry;
   attack_active: string | null;
   distance_m: number;
   threat?: Threat;
@@ -108,6 +187,10 @@ export interface Status {
   sim: boolean;
   environment: Environment;
   source: SourceInfo;
+  defense_mode?: DefenseMode;
+  topology?: string;
+  topology_reasons?: string[];
+  mitigation?: MitigationInfo;
   link: LinkStatus;
   sim_time_s: number;
   uptime_s: number;

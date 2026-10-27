@@ -18,6 +18,11 @@ import math
 from collections import deque
 from dataclasses import dataclass, field
 
+# The ardupilotmega dialect is imported only for its EKF_STATUS_FLAGS constants (EKF_POS_HORIZ_ABS,
+# EKF_POS_HORIZ_REL, EKF_CONST_POS_MODE): the common dialect does not define them, and taking them
+# from the installed dialect avoids hand-typed bit values.
+from pymavlink.dialects.v20 import ardupilotmega as _apm
+
 from ..core.geo import EARTH_RADIUS_M, wrap_deg_180
 from ..core.types import MessageEnvelope, TelemetrySnapshot
 from ..mavlink.codec import MODE_NAMES
@@ -37,6 +42,28 @@ _RESID_CLAMP_M = 30.0
 # compared against 8+ s of manoeuvre, and a fresh ATTITUDE against a stale GPS velocity, so both
 # are skipped until GPS is fresh again. Gap-free streams are unaffected (benchmark-identical).
 _LINK_GAP_S = 2.0
+# Estimator state (ADDITIVE, 2026-10-25; v2 2026-10-26). EKF_STATUS_REPORT (ardupilotmega id 193)
+# says whether the autopilot's estimator has a horizontal position solution. In CONST_POS_MODE, or
+# with neither the absolute nor the relative horizontal-position bit, its velocity output is not a
+# measurement (it is pinned at ~0) while GLOBAL_POSITION_INT may carry the receiver's position, so
+# position and velocity are not one navigation solution. Bits come from the installed dialect.
+# A position fix is GATED only when (all three):
+#   * the latest report is fresh (<= _LINK_GAP_S old at the fix) and says no horizontal solution;
+#   * the reports have said no solution continuously for >= _LINK_GAP_S (first to latest report of
+#     the run), so one forged report, flag flipping, or a stale / missing status never gates;
+#   * the run restarts on any solution report and on any gap > _LINK_GAP_S between two reports.
+# The first ungated fix after a gated one is the TRANSITION fix. Both tags are per increment in the
+# existing _RESID_WINDOW; nothing restarts the window.
+_EKF_HORIZ_POS_BITS = _apm.EKF_POS_HORIZ_ABS | _apm.EKF_POS_HORIZ_REL
+_EKF_CONST_POS_MODE = _apm.EKF_CONST_POS_MODE
+_INC_NORMAL, _INC_GATED, _INC_TRANSITION = 0, 1, 2
+
+
+def ekf_has_horizontal_solution(flags: int) -> bool:
+    """True when EKF_STATUS_REPORT ``flags`` report a usable horizontal position solution."""
+    return bool(flags & _EKF_HORIZ_POS_BITS) and not flags & _EKF_CONST_POS_MODE
+
+
 # ML feature vector order (policy-free continuous signals, benign-stable).
 # NB: battery_v_rate is deliberately excluded — it is ~0 in steady flight
 # (tiny variance), so throttle transitions read as extreme outliers and cause
@@ -108,6 +135,33 @@ class FeatureFrame:
     heartbeat_seen: bool | None = None
     gps_seen: bool | None = None
     gps_raw_seen: bool | None = None
+    # ADDITIVE: 2D Page-Hinkley / CUSUM micro-drift residual magnitude (m) for catching
+    # sub-noise-floor gradual GPS drift (< 0.3 m/s). NOT in ML_FEATURES.
+    cusum_drift_m: float = 0.0
+    # ADDITIVE (2026-10-25; v2 2026-10-26): estimator state from EKF_STATUS_REPORT. NOT in
+    # ML_FEATURES. Gated / transition fixes: see the _EKF_* comment at the top of this module.
+    # ``ekf_flags`` / ``ekf_age_s``: the last report and its age at ``t``; None = never received.
+    # ``nav_solution``: the estimator state at the LATEST POSITION FIX (not at ``t``; before the
+    # first fix, at ``t``): True = horizontal solution, False = none (CONST_POS_MODE or no
+    # horizontal-position bit), None = unknown (no report, or older than _LINK_GAP_S at that fix).
+    # ``nav_gated``: the latest fix was gated (debounced no-solution state).
+    # ``pos_residual_nav_m``: ``pos_residual_m`` over the same window without the increments of
+    # gated fixes and of the transition fix; EXACTLY ``pos_residual_m`` when the window holds
+    # neither. None when no EKF_STATUS_REPORT was ever received (readers use ``pos_residual_m``).
+    # ``pos_step_max_m``: the largest unclamped residual increment |dp - v*dt| of a gated or
+    # transition fix in the window (not the raw displacement); 0.0 when there is none.
+    # ``pos_vel_shortfall_gated_m``: over the gated fixes in the window, the velocity-implied
+    # movement the position does NOT show. V = sum of v*dt, P = sum of the raw measured
+    # displacements of the same fixes; shortfall = |V| - (P projected on V, clamped to [0, |V|]),
+    # so 0 <= shortfall <= |V| (0 when |V| = 0, when P follows V, or when P overshoots along V).
+    # Displacement perpendicular to V is not measured. 0.0 when no gated fix is in the window.
+    ekf_flags: int | None = None
+    ekf_age_s: float | None = None
+    nav_solution: bool | None = None
+    nav_gated: bool = False
+    pos_residual_nav_m: float | None = None
+    pos_step_max_m: float = 0.0
+    pos_vel_shortfall_gated_m: float = 0.0
 
     @property
     def battery_v_rate_abs(self) -> float:
@@ -149,9 +203,19 @@ class FeatureExtractor:
         self._last_gps_t = -1e9
         self._gps_raw_seen = False
         self._expected_msgs = 0.0  # for loss estimate
+        self._last_ekf_t = -1e9
+        self._ekf_flags: int | None = None
+        self._nosol_since: float | None = None  # first report of the current no-solution run
 
         # navigation bookkeeping
         self._resid_incs: deque[tuple[float, float]] = deque(maxlen=_RESID_WINDOW)
+        self._cusum_incs: deque[tuple[float, float, float]] = deque(maxlen=60)  # (inc_n, inc_e, dt)
+        # per-increment estimator tags, aligned 1:1 with _resid_incs (appended together):
+        # (tag, raw unclamped residual magnitude, v_n*dt, v_e*dt, measured d_n, measured d_e);
+        # the last four are kept for gated increments only (0.0 otherwise)
+        self._resid_tags: deque[tuple[int, float, float, float, float, float]] = deque(maxlen=_RESID_WINDOW)
+        self._last_fix_gated = False
+        self._last_fix_nav: bool | None = None
         self._last_fix: tuple[float, float, float] | None = None  # (t, lat, lon)
         self._vel_hist: deque[tuple[float, float, float]] = deque(maxlen=6)  # (t, vx, vy)
         self._accel_prev: tuple[float, float] | None = None  # (t, accel)
@@ -193,9 +257,17 @@ class FeatureExtractor:
         name = msg.msgname
         f = msg.fields
         if name == "HEARTBEAT":
-            self._last_heartbeat_t = t
-            self.snapshot.armed = bool(f.get("base_mode", 0) & 128)
-            self.snapshot.flight_mode = MODE_NAMES.get(int(f.get("custom_mode", 0)), "UNKNOWN")
+            m_type = f.get("type", 0)
+            if m_type != 6:  # Ignore GCS heartbeats for vehicle state
+                self._last_heartbeat_t = t
+                self.snapshot.armed = bool(f.get("base_mode", 0) & 128)
+                cm = int(f.get("custom_mode", 0))
+                autopilot = f.get("autopilot", 0)
+                if autopilot == 12 or cm >= 65536:
+                    from ..sources.mavlink_live import decode_px4_mode
+                    self.snapshot.flight_mode = decode_px4_mode(cm)
+                else:
+                    self.snapshot.flight_mode = MODE_NAMES.get(cm, "UNKNOWN")
         elif name == "GLOBAL_POSITION_INT":
             self._last_gps_t = t
             lat = f["lat"] / 1e7
@@ -230,6 +302,14 @@ class FeatureExtractor:
             self.snapshot.satellites = int(f.get("satellites_visible", 0))
             self.snapshot.gps_fix_type = int(f.get("fix_type", 0))
             self.snapshot.hdop = f.get("eph", 0) / 100.0
+        elif name == "EKF_STATUS_REPORT" and "flags" in f:
+            flags = int(f["flags"])
+            if ekf_has_horizontal_solution(flags):
+                self._nosol_since = None
+            elif self._nosol_since is None or t - self._last_ekf_t > _LINK_GAP_S:
+                self._nosol_since = t  # a new no-solution run (first one, or after a report gap)
+            self._last_ekf_t = t
+            self._ekf_flags = flags
         elif name == "COMMAND_LONG":
             params = tuple(f.get(f"param{i}", 0.0) for i in range(1, 8))
             self._commands.append(
@@ -238,12 +318,32 @@ class FeatureExtractor:
 
     # -- navigation helpers ------------------------------------------------- #
 
+    def _nav_state(self, t: float) -> bool | None:
+        """Estimator horizontal-solution state at ``t`` (None = no report, or older than _LINK_GAP_S)."""
+        if self._ekf_flags is None or t - self._last_ekf_t > _LINK_GAP_S:
+            return None
+        return ekf_has_horizontal_solution(self._ekf_flags)
+
+    def _gated(self, t: float) -> bool:
+        """Debounced no-solution state at ``t`` (see the _EKF_* comment at the top of this module).
+        ``_nosol_since`` is set only while the latest report says no solution."""
+        return (
+            self._nosol_since is not None
+            and t - self._last_ekf_t <= _LINK_GAP_S
+            # 1e-9 s tolerance: reports meant to be exactly _LINK_GAP_S apart must not miss on float error
+            and self._last_ekf_t - self._nosol_since >= _LINK_GAP_S - 1e-9
+        )
+
     def _update_position_residual(self, t: float, lat: float, lon: float, vx: float, vy: float) -> None:
+        gated = self._gated(t)
+        # the first ungated fix after a gated one: its increment straddles the state change (an
+        # estimator reset as the solution returns), so it is tagged rather than read as drift
+        transition = self._last_fix_gated and not gated
         if self._last_fix is not None:
             t0, lat0, lon0 = self._last_fix
             dt = t - t0
             if dt > _LINK_GAP_S:
-                pass  # outage: constant-velocity assumption invalid; re-anchor on this fix
+                self._cusum_incs.clear()  # outage: re-anchor long-horizon CUSUM buffer
             elif dt > 1e-6:
                 # measured displacement (local NE metres)
                 dn = math.radians(lat - lat0) * EARTH_RADIUS_M
@@ -257,13 +357,51 @@ class FeatureExtractor:
                     inc_n *= scale
                     inc_e *= scale
                 self._resid_incs.append((inc_n, inc_e))
+                self._cusum_incs.append((inc_n, inc_e, dt))
+                if gated:
+                    self._resid_tags.append((_INC_GATED, mag, vx * dt, vy * dt, dn, de))
+                else:
+                    tag = _INC_TRANSITION if transition else _INC_NORMAL
+                    self._resid_tags.append((tag, mag, 0.0, 0.0, 0.0, 0.0))
         self._last_fix = (t, lat, lon)
+        self._last_fix_gated = gated
+        self._last_fix_nav = self._nav_state(t)
         self._vel_hist.append((t, vx, vy))
 
     def _position_residual(self) -> float:
         rn = sum(i[0] for i in self._resid_incs)
         re = sum(i[1] for i in self._resid_incs)
         return math.hypot(rn, re)
+
+    def _cusum_residual(self) -> float:
+        """2D telescoping Page-Hinkley / CUSUM residual over the extended horizon."""
+        if not self._cusum_incs:
+            return 0.0
+        rn = sum(i[0] for i in self._cusum_incs)
+        re = sum(i[1] for i in self._cusum_incs)
+        total_dt = sum(i[2] for i in self._cusum_incs)
+        mag = math.hypot(rn, re)
+        # Subtract telescoping GPS position endpoint jitter (~1.6m) + velocity slack (0.04 m/s)
+        slack = 1.6 + 0.04 * total_dt
+        return max(0.0, mag - slack)
+    def _estimator_aware_residual(self, pos_residual: float) -> tuple[float, float, float]:
+        """(pos_residual_nav_m, pos_step_max_m, pos_vel_shortfall_gated_m) over the current window."""
+        if self._ekf_flags is None:
+            return pos_residual, 0.0, 0.0  # no EKF_STATUS_REPORT ever: nothing below runs
+        if not any(g[0] != _INC_NORMAL for g in self._resid_tags):
+            return pos_residual, 0.0, 0.0  # nothing gated or transitional: exactly pos_residual_m
+        keep = [inc for inc, g in zip(self._resid_incs, self._resid_tags, strict=True) if g[0] == _INC_NORMAL]
+        nav = math.hypot(sum(i[0] for i in keep), sum(i[1] for i in keep))
+        step = max((g[1] for g in self._resid_tags if g[0] != _INC_NORMAL), default=0.0)
+        gated = [g[2:] for g in self._resid_tags if g[0] == _INC_GATED]
+        v_n, v_e = sum(g[0] for g in gated), sum(g[1] for g in gated)
+        p_n, p_e = sum(g[2] for g in gated), sum(g[3] for g in gated)
+        v_mag = math.hypot(v_n, v_e)
+        shortfall = 0.0
+        if v_mag > 0.0:
+            along = (p_n * v_n + p_e * v_e) / v_mag  # measured displacement along the velocity
+            shortfall = v_mag - min(v_mag, max(0.0, along))
+        return nav, step, shortfall
 
     # -- feature emission --------------------------------------------------- #
 
@@ -294,6 +432,10 @@ class FeatureExtractor:
 
         # ---- navigation / physics ----
         pos_residual = self._position_residual()
+        ekf_seen = self._ekf_flags is not None
+        pos_residual_nav, pos_step_max, pos_vel_shortfall_gated = self._estimator_aware_residual(pos_residual)
+        # the state at the latest fix; before the first fix, the state at t
+        nav_solution = self._last_fix_nav if self._last_fix is not None else self._nav_state(t)
         gps_speed = math.hypot(snap.vx or 0.0, snap.vy or 0.0)
         vfr_speed = snap.groundspeed or 0.0
         speed_diff = abs(gps_speed - vfr_speed)
@@ -350,6 +492,14 @@ class FeatureExtractor:
             heartbeat_seen=self._last_heartbeat_t > -1e8,
             gps_seen=self._last_gps_t > -1e8,
             gps_raw_seen=self._gps_raw_seen,
+            cusum_drift_m=self._cusum_residual(),
+            ekf_flags=self._ekf_flags,
+            ekf_age_s=max(0.0, t - self._last_ekf_t) if ekf_seen else None,
+            nav_solution=nav_solution,
+            nav_gated=self._last_fix_gated,
+            pos_residual_nav_m=pos_residual_nav if ekf_seen else None,
+            pos_step_max_m=pos_step_max,
+            pos_vel_shortfall_gated_m=pos_vel_shortfall_gated,
         )
 
     # -- small numeric helpers --------------------------------------------- #

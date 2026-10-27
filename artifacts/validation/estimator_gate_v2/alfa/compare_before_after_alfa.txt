@@ -1,0 +1,14 @@
+# compare_results.py json <baseline> <candidate> (exit 1)
+# baseline : artifacts/validation/estimator_gate_v2/alfa/before/alfa/results.json
+# candidate: artifacts/validation/estimator_gate_v2/alfa/after/alfa/results.json
+JSON non-timing leaves compared: 681, differing: 10
+  DIFF /categories/unlabelled/physics_consistency_trigger_rate: 0.007657494880663535 != 0.003381343245057044
+  DIFF /categories/unlabelled/predicted_classes/DOS: 116133 != 116122
+  DIFF /categories/unlabelled/predicted_classes/GPS_SPOOFING: 6 != 17
+  DIFF /categories/unlabelled/top_evidence/implausible acceleration 20.7 m/s²: key only in candidate
+  DIFF /categories/unlabelled/top_evidence/navigation: key only in candidate
+  DIFF /categories/unlabelled/top_evidence/position discontinuity 8117062.4 m in one fix: key only in candidate
+  DIFF /categories/unlabelled/top_evidence/position residual 12.2 m: key only in baseline
+  DIFF /categories/unlabelled/top_evidence/position residual 12.3 m: key only in baseline
+  DIFF /categories/unlabelled/top_evidence/position residual 13.0 m: key only in baseline
+  DIFF /wall_time_s: 677.5 != 547.7

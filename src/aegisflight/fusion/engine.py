@@ -118,12 +118,21 @@ class FusionEngine:
         confidence = round(threat_score * (0.5 + 0.5 * dominance), 4)
 
         # ---- evidence aggregation ----
+        # Stage-1 order (physics, protocol, integrity, anomaly), except that evidence from a
+        # PHYSICS result with score 0 is moved after the others. Only the estimator gate's
+        # degraded-navigation line produces score-0 physics evidence, so Stage-1 order is exact
+        # whenever no EKF_STATUS_REPORT gates a fix.
         evidence: list[str] = []
+        deferred: list[str] = []
         for det in (DetectorName.PHYSICS, DetectorName.PROTOCOL, DetectorName.INTEGRITY,
                     DetectorName.ANOMALY):
             r = by_name.get(det)
             if r and r.evidence:
-                evidence.extend(r.evidence)
+                if det is DetectorName.PHYSICS and r.score <= 0.0:
+                    deferred.extend(r.evidence)
+                else:
+                    evidence.extend(r.evidence)
+        evidence.extend(deferred)
         contributing = [r.detector.value for r in results if r.score > 0.1]
 
         # ---- alert de-duplication + clear hysteresis ----

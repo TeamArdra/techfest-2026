@@ -67,4 +67,12 @@ artifacts/ardupilot/*/downlink.tlog
 # Raw read-by-read captures from the probe (--raw): local evidence only, never committed.
 data/hardware/raw/*.rawbin
 
+# ---- Rust / Cargo build artifacts ----
+**/target/
+Cargo.lock
+
+# ---- Ephemeral analysis artifacts ----
+graphify-out/
+.agents/
+
 AEGISFLIGHT_STAGE2_ENGINEERING_BRIEF.md

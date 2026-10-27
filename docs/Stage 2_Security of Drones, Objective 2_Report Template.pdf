@@ -1,0 +1,661 @@
+           Drone Intrusion Detection System
+
+PUSHPAK Grand Challenge 3: Security of Drones, Objective 2
+
+Stage 2 -- Detailed Evidence-Supported IDS Report Template
+
+This template is intended for the Stage 2 detailed submission. Teams are expected to go
+beyond the Stage 1 proof of concept and provide validation evidence from actual flight
+operation, on real and traceable data, that builds confidence the intrusion detection system can
+be deployed on a UAV and subsequently tested in flight.
+
+Team and Submission Information
+
+                    Particular                            Details
+
+Team ID
+
+Team Name
+
+Date of Submission
+
+IDS Name / Version
+
+Report Structure and Section Weightage                      Weight
+                                                          5
+                                                 Section  8
+  1. Executive IDS Summary                                7
+  2. Stage 1 Baseline and Design Evolution
+  3. Updated/implemented Requirements and Architecture
+4. Integrated Methodology and Workflow            8
+
+5. Detection Methodology and Attack Coverage      18
+
+6. Data Sources, Features and Detection Analysis  12
+
+7. False-Alarm Behaviour and Alerting             8
+
+8. Validation, Testing and Reproducibility        14
+
+9. Compute, Integration, Usability and Reporting  8
+
+10. Final Deployable Package                      7
+
+11. References, Data Traceability and Integrity   5
+
+Total                                             100
+
+Submission note: Keep the main report concise and evidence-driven. Source code, test suites,
+flight logs and datasets, attack-injection scripts, ground-truth files, result files and the
+demonstration video must be included in the submitted archive; a link alone is not sufficient.
+Detailed results, extra plots and raw outputs may be attached as appendices. Results from
+actual flight operation carry full weight; results from simulated or generated data are treated as
+design evidence and carry limited weight. The emphasis is on traceable methodology, detectors
+that decide from telemetry and not from test labels, and results that come from the submitted
+code on the data described.
+
+1. Executive IDS Summary [5 Marks]
+
+Briefly summarise the final Stage 2 IDS, the major changes from Stage 1, and the level of
+confidence in the final result.
+               Parameter                               Final    Unit   Evidence /
+                                                                         Section
+                                                       Stage 2
+                                                                       Reference
+                                                       Value
+
+IDS name and version                                            --
+
+Attack classes covered (GPS spoofing, MAVLink                   count
+anomalies, command injection, telemetry
+manipulation, DoS, firmware integrity)
+
+Detection layers (rules, physics, statistics, learned           count
+model)
+
+Autopilot platforms tested (ArduPilot, PX4)                     count
+
+Placement (onboard, companion computer, ground                  --
+
+station, tap)
+
+Telemetry messages monitored                                    count
+
+Detection accuracy on data not used for tuning                  %
+
+False-alarm rate on benign flights                              per
+
+                                                                hour
+
+Benign flight time and distance tested                          h /
+
+                                                                km
+
+Median and 95th-percentile detection latency                    ms or
+                                                                s
+Target hardware used for resource measurement      --
+
+CPU use and memory on that hardware                %
+                                                   core /
+                                                   MB
+
+Tests included in the submitted archive / passing  count
+
+Real flight-log hours used                         h
+
+Alert integrity mechanism (signing, hash chain)    --
+
+Runs fully offline?                                Yes /
+                                                   No
+
+Top three reasons why the IDS is considered ready for extended flight trials:
+  1.
+  2.
+  3.
+
+Top three remaining uncertainties or risks:
+  1.
+  2.
+  3.
+
+2. Stage 1 Baseline and Design Evolution [8 Marks]
+Do not repeat the complete Stage 1 report. Summarise the baseline, state what changed, and
+justify each change using Stage 2 testing, validation or engineering judgement.
+
+Item                    Stage 1 Value / Stage 2 Value / Change  Reason /
+
+                        Approach  Approach  Made?               Evidence
+
+Attack classes covered                      Yes / No
+
+Detectors and layers                        Yes / No
+
+Platforms and                               Yes / No
+protocols
+
+Data used for                               Yes / No
+validation
+
+Detection accuracy                          Yes / No
+
+False-alarm rate and                        Yes / No
+benign exposure
+
+Detection latency                           Yes / No
+
+Compute footprint and                       Yes / No
+hardware
+
+Alerting and logging                        Yes / No
+
+Integration approach                        Yes / No
+
+Architecture                                Yes / No
+2.1 Stage 1 Claims Revisited
+
+List each capability claimed or planned in Stage 1 and state whether it is now demonstrated.
+
+Stage 1  Demonstrated / Partly / Withdrawn Reason Supporting Evidence
+ Claim
+
+2.2 Stage 1 Open Questions Addressed
+
+Include how the team interprets 'distance covered' and what it measured.
+
+Open Question from  How Addressed in   Result /                           Remaining
+         Stage 1           Stage 2    Evidence                            Uncertainty
+
+3. Updated/Implemented Requirements and Architecture [7
+Marks]
+Requireme    Challenge Target                                     Final   Status /
+nt / Target                                                       Team    Commen
+                                                                  Target
+                                                                               t
+
+Attack       Detect the six attack classes: GPS spoofing,
+coverage     MAVLink anomalies, command injection, telemetry
+             manipulation, denial of service, firmware integrity
+
+Detection    High detection across attack scenarios, including
+accuracy     subtle attacks
+
+False        Low false-alarm rate on benign flight
+alarms
+
+Latency      Timely alerts, fast enough to act on
+
+Compute      Low overhead on flight-compatible hardware
+
+Integration  Works with ArduPilot and PX4 and a ground station
+             without degrading flight
+
+Alert        Tamper-evident alerts and logs
+security
+
+Design       Validated, deployable IDS
+outcome
+
+Describe the final IDS architecture, including data sources and tap point, pre-processing,
+feature extraction, detection layers, fusion, alerting, logging, interfaces and where the IDS runs.
+State how the IDS avoids interfering with flight control.
+Insert final system architecture figure here
+
+4. Integrated Methodology and Workflow [8 Marks]
+
+This section should make the design process reproducible. Show how data sources, features,
+detectors, fusion, alerting and testing were linked. Include a logic-flow diagram.
+
+  Insert workflow / logic-flow diagram here (ingest, extract features, detect, fuse, alert, log,
+  evaluate)
+
+        Sub-domain         Tool / Code /       Main     Main   How Verified /
+                              Method          Inputs  Outputs     Checked
+Data ingestion and
+parsing
+Feature extraction
+Detection layers
+Fusion and alert policy
+Alerting and logging
+Attack injection and test
+generation
+Metric computation
+Explain how results from one stage affect the others, for example how false-alarm results
+changed a threshold, or how a missed attack class changed a detector.
+
+5. Detection Methodology and Attack Coverage [18 Marks]
+
+This is the most heavily weighted section. Detectors must decide from telemetry and
+commands, not from test labels, injected-attack flags or the attack generator's state. Attacks
+should include subtle cases near normal noise levels, not only large constant offsets.
+
+5.1 Methodology
+
+Item             Details Required
+
+Detectors per   Name each detector, the layer it belongs to and the attack class it
+attack class    addresses
+
+Inputs read by  List every message and field each detector uses; confirm that none
+each detector   reads ground truth, attack flags or labels
+
+Thresholds and  How thresholds were set, any training data, and the split between
+training        calibration, validation and test data
+
+Decision logic  Rules, statistics or model; persistence and fusion; what triggers an
+                alert
+
+Latency design  Where time is spent and what the minimum detection time is
+
+Baseline        A simple threshold or the autopilot's own checks, for comparison
+comparison
+Known blind spots Attacks the IDS does not detect, and why
+
+Limitations  Known limits of the methodology
+
+5.2 Attack Coverage and Test Matrix
+
+Attack       Scenarios (count,  Flight evidence               Injection   Detecte
+class        magnitude range,   used (flight log,           method and    d / total
+             including subtle)  live telemetry,             ground-truth
+
+                                      replay)                   source
+
+GPS
+spoofing
+
+MAVLink
+anomalies
+
+Command
+injection
+
+Telemetry
+manipulatio
+n
+
+Denial of
+service
+
+Firmware
+integrity
+
+5.3 Required Outputs
+      Output                                      Required Content
+               Per-class and overall results with counts and confidence intervals, on
+Detection      data not used for tuning
+accuracy       Detection against attack magnitude, including attacks close to the noise
+               level
+Subtle-attack  Distribution of time to first alert (median and 95th percentile) per class
+results
+               The IDS against a simple threshold or the autopilot's own checks
+Detection
+latency        Every missed attack listed and explained
+
+Baseline       Why the team trusts the detection results, and what it did not test
+comparison
+
+Missed
+detections
+
+Confidence
+statement
+
+Insert confusion matrix and per-class detection results here
+
+  Insert detection latency distribution and detection-versus-attack-magnitude plots here
+
+6. Data Sources, Features and Detection Analysis [12 Marks]
+
+Show which telemetry each detector depends on, and that every alert can be traced to the
+telemetry that caused it.
+
+6.1 Data Sources and Features
+Data source (message            Feature     Used by   Why it         Real-data
+           / field)             derived     detector  matters        evidence
+
+6.2 Detection Capabilities and Robustness
+
+                    Capability              Meth         Test   Res Limitati
+                                             od       evidence
+                                                                ult  on
+
+GPS spoofing
+
+MAVLink anomalies (replay, sequence, rate)
+
+Command injection
+
+Telemetry manipulation
+
+Denial of service
+
+Firmware integrity
+Handling of malformed, truncated or corrupted
+telemetry
+
+6.3 Traceability of Alerts
+
+For a sample of alerts, show the telemetry that caused each one.
+
+Ale Source message(s) and field                Detector and                How a reviewer
+                                                 threshold                     checks it
+rt  values
+
+Insert an example of alert evidence with the triggering telemetry here
+
+7. False-Alarm Behaviour and Alerting [8 Marks]
+
+Describe how the IDS behaves on normal flight and how alerts are raised and delivered.
+False-alarm results are only meaningful with enough varied benign flight, so state the exposure
+honestly.
+
+    Parameter                                  Val Unit                     Basis /
+                                               ue                          Evidence
+
+Benign flight time tested                                               h
+Benign distance tested (state the definition of 'distance         km
+covered' used)
+Number of separate benign flights                                 count
+False alarms observed                                             count
+False-alarm rate                                                  per
+                                                                  hour
+Upper 95% bound on false-alarm rate                               per
+                                                                  hour
+Alert persistence and suppression settings                        --
+Alert response policy (advisory or automatic)                     --
+
+7.1 Benign-Condition Matrix
+
+Benign condition                Source (flight log, live   Durat  Alerts  Assess
+                                        telemetry)          ion   raised   ment
+
+Normal cruise
+
+Aggressive manoeuvres and
+mode changes
+
+Wind or turbulence
+
+GPS glitch or EKF reset (real)
+Telemetry link loss and
+recovery
+
+Take-off and landing
+
+7.2 Alert Workflow and Integrity
+
+Alert Stage     Mechanism  Expected Behaviour       Evidence / Plot
+
+  Insert alert timeline from a benign flight and an attack flight here
+Explain how alerts and logs are made tamper-evident, and what happens if the IDS itself fails.
+
+8. Validation, Testing and Reproducibility [14 Marks]
+
+The committee will re-run the submitted tests on a clean machine. Results that the submitted
+code and data cannot reproduce will not be credited.
+
+8.1 Test Setup
+
+Item                              Details Required
+Test framework   Framework, number of tests, and where they are in the submitted
+and location     archive
+
+Data used        Flight logs and live telemetry from actual flights, with any generated
+                 data labelled separately, and the source, size and archive location of
+                 each; large files included or supplied with a checksum
+
+Data separation  Calibration, validation and test sets; how they were separated (by whole
+                 flight)
+
+Attack           How attacks were created, by whom, and whether the detector could
+generation       see how they were made
+
+Ground truth     How the correct label for each test was established
+
+Environment      Operating system, language and library versions, offline run
+
+Independent      Exact commands a reviewer can run to reproduce the results
+re-run
+instructions
+
+8.2 Results Summary
+
+Test Category               Cou Pass  Failed /  Cause of                       Eviden
+                                      Skipped   Failures                          ce
+                            nt  ed
+
+Unit tests
+
+Integration / end-to-end
+
+Replay of recorded flights
+Attack runs during flight
+operation
+
+Benign-flight runs
+
+Cross-platform (ArduPilot /
+PX4)
+
+8.3 Claims Traceability
+
+List every quantitative claim in this report (accuracy, false-alarm rate, latency, resource use,
+tests) and show where it can be reproduced.
+
+Claim in this  Where reproduced (file /  Command to  Resul
+    report                   test)        reproduce     t
+
+State the validation conclusion: which results are validated on real or independent data, which
+only on generated data, and which are not yet validated.
+
+9. Compute, Integration, Usability and Reporting [8 Marks]
+State where each measurement was taken. A measurement on a laptop or workstation must not
+be presented as a measurement on the target hardware.
+
+             Quantity                               Val Measured on (target / Basi
+
+                                                    ue  host)     s
+
+CPU use at sustained telemetry rate
+
+Peak memory
+
+Per-message processing time (median, 99th
+percentile)
+
+Sustained messages per second
+
+Headroom at the maximum telemetry rate
+
+Power draw and added mass
+
+                                  Item                  Selected  Evidenc
+                                                        Approach      e
+Tap point and method (passive tap, router, onboard
+code)
+Changes required to the flight stack
+Protocol support (MAVLink 1 and 2, signing)
+Autopilot support (ArduPilot, PX4)
+Ground station and dashboard integration
+Behaviour if the IDS fails or is overloaded
+Installation and configuration steps
+Alert delivery and operator view
+Demonstration video (screen recording of a real run)
+
+                                 Quantity                      Value   Unit  Basis
+Install time on a clean machine
+Time for an operator to interpret a typical alert                      min
+Total cost of the recommended kit
+                                                                       min
+
+                                                                       INR
+
+Insert integration diagram and a screenshot of the operator view here
+
+10. Final Deployable Package [7 Marks]
+
+Required Item                                      Submitted?          File Name / Section
+                                                     Yes / No                Reference
+
+Complete source code (in the archive)
+Installation and user guide                          Final Value / Status Evidence
+Test suite and instructions to run it
+Flight logs and datasets used, with licences
+Attack-injection scripts and ground-truth
+files
+Result files that reproduce the reported
+numbers
+Configuration files and thresholds
+Demonstration video (real run, not slides)
+Dependency list with licences; third-party
+code identified
+Risk register
+Known limitations and roadmap
+
+                         Readiness Item
+Detects all six attack classes in the team's tests?
+False-alarm rate within the team's stated target?
+  Detection latency within the stated target?
+  Compute within budget on the target hardware?
+  Runs on an unmodified ArduPilot or PX4 stack?
+  Alerts and logs tamper-evident?
+  Third-party code identified and licensed?
+  Operated in flight and ready for extended flight trials?
+Final readiness statement: Based on the validation completed, explain why this IDS
+should be selected for extended flight trials.
+
+11. References, Data Traceability and Integrity [5 Marks]
+
+No.  Reference / Source  Link / DOI / Datasheet  Application in the IDS
+
+1
+
+2
+
+3
+
+4
+5
+
+11.1 Software, Digital and AI Tools Used
+
+Tool Purpose   Nature / Extent of Use  Team Verification Performed
+
+11.2 Third-Party Code and Datasets
+
+Name  Licence  What Was Used           Where Credited in this Report
+
+11.3 Design Integrity Declaration
+
+We confirm that the IDS design, source code, test cases, attack scenarios, results and technical
+decisions presented in this report have been reviewed and verified by the team. Every result
+shown was produced by the submitted code on the data described. No detector reads
+ground-truth labels or attack flags, and no result has been copied, estimated or edited to
+resemble a measurement unless it is labelled as such. The team accepts responsibility for the
+technical accuracy, validity and integrity of the submitted work. The evaluation committee may
+request the source repository history, test logs, raw flight data, or other technical records, and
+may require the team to explain, reproduce, modify or defend the technical work presented in
+this report.
+                                     Particular                Details
+Team ID
+Team Name
+Team Leader Signature
+Date
+
+Stage 2 Evaluation Rubric
+
+Criterion         Wei                            Expectations
+
+                  ght
+
+Executive IDS 5        Clear final IDS and key evidence; concise statement of
+summary                confidence and limits
+
+Stage 1           8    Changes from Stage 1 are justified by testing, not arbitrary;
+                       Stage 1 claims are demonstrated or withdrawn
+traceability and
+
+design evolution
+
+Updated           7    Architecture is coherent, integrated and aligned with the
+                       challenge: detect the six attack classes in real time without
+requirements           disturbing flight
+
+and architecture
+
+Integrated        8    Logical workflow connecting data sources, features, detection,
+                       fusion, alerting and testing
+methodology
+
+and workflow
+Detection         18   All six classes addressed; detectors decide from telemetry and
+methodology
+and attack             do not read labels or attack flags; attacks include subtle cases,
+coverage
+                       not only gross constants; per-class results with counts and
+
+                       confidence intervals on untuned data; latency distribution;
+
+                       baseline comparison; misses explained
+
+Data sources,     12   Each detector's inputs are listed and justified; every alert traces
+
+features and           to the telemetry that caused it; malformed input handled safely;
+
+detection              limits documented
+
+analysis
+
+False-alarm       8    Benign exposure of meaningful length and variety on actual
+                       flight operation; false-alarm rate per hour with an upper bound;
+behaviour and          clear alert policy that cannot interfere with flight; tamper-evident
+                       alerts and logs
+alerting
+
+Validation,       14   Tests and data are in the archive and pass on the committee's
+
+testing and            re-run; result files reproduce the reported numbers; no copied or
+
+reproducibility        placeholder results; claims traceable; conclusions clear
+
+Compute,          8    Resource use measured on the stated target hardware, with
+
+integration,           host measurements labelled as such; tap point, protocol and
+
+usability and          autopilot support are credible; behaviour when the IDS fails is
+
+reporting              safe; an operator can run it and read the alerts
+
+Final             7    Source, guides, tests, datasets, injection scripts, result files,
+deployable
+package                video and risk register are complete and run on a clean machine
+
+References,       5    Sources traceable; third-party code credited and licensed; tool
+                       usage (including AI tools) declared and verified; integrity
+traceability and       declaration completed
+
+integrity
+
+Total             100
+Stage 2 Evaluation Philosophy
+
+         ● Stage 2 focuses on a validated, working IDS and the evidence for it, not on a list of
+              features.
+
+         ● Teams are expected to improve substantially beyond the Stage 1 proof of concept.
+         ● Validation effort should be significant but practical for a two-month team effort.
+         ● A smaller IDS with traceable results and defensible claims is preferred over a larger
+
+              one with unproven claims.
+         ● Results on attacks that are separable by construction carry little weight; subtle
+
+              attacks and honest benign data carry the most.
+         ● Evidence from actual flight operation carries full weight; results from simulated or
+
+              generated data are treated as design evidence and carry limited weight.
+         ● Anything that is not demonstrated is treated as design, not as capability.
+         ● Results that the submitted code and data cannot reproduce on the committee's
+
+              re-run will not be credited.
+         ● The final output should have the IDS which can proceed to extended flight trials.
+

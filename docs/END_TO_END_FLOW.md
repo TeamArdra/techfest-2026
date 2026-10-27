@@ -46,23 +46,29 @@ One telemetry tick, traced through the real code. (Diagram:
    score; weighted-vote attribution; severity band; cooldown/clear hysteresis →
    `ThreatAssessment` (with `latency_ms` stamped by the pipeline).
 
-10. **Persist alerts.**
+10. **Autonomous Mitigation & Prevention (Stage 2).**
+    If posture is `ACTIVE_IPS`, `mitigation/engine.py` evaluates the `ThreatAssessment`.
+    - In **Topology B** (Inline): `FrameSanitizer` drops rogue frames or clamps coordinates before they reach the autopilot ($0.0\text{ m}$ detour).
+    - In **Topology A** (Sidecar): `GoldenStateEstimator` dead-reckoning provides synthetic coordinates and issues `MAV_CMD_DO_REPOSITION` counter-commands.
+    - Safety-critical vetoes: `KillswitchGuard` immediately vetoes mid-air disarm and forced landing commands.
+    - Pilot GCS notification: `gcs_notifier.py` dispatches `STATUSTEXT` alert banners.
+
+11. **Persist alerts.**
     If `is_alert`, `logging/store.py` → `EventStore.log_event(a, run_id)` appends
-    a row to the per-run SHA-256 hash chain (live backend / `aegis simulate --db`).
+    a row to the per-run SHA-256 rolling block hash chain (live backend / `aegis simulate --db`).
 
-11. **Expose over REST.**
-    `backend/app.py` → `/api/status`, `/api/events`, `/api/metrics` read the
-    engine + store.
+12. **Expose over REST.**
+    `backend/app.py` → `/api/status`, `/api/events`, `/api/metrics`, `/api/topology`, `/api/defense-mode` read and control the engine + store.
 
-12. **Publish live.**
+13. **Publish live.**
     `backend/engine.py` → `LiveEngine._loop` broadcasts an update
-    `{telemetry, threat, attack_active, sim:true}` to every WebSocket subscriber.
+    `{telemetry, threat, attack_active, topology, topologyReasons, altHistory, sim:true}` to every WebSocket subscriber.
 
-13. **Render.**
+14. **Render.**
     `frontend/src/hooks/useLiveData.ts` receives the message and updates the
-    threat panel, evidence, detector bars, position track, sparkline, and (via
-    polling) the event history and metrics bar.
+    threat panel, defense HUD, position track, 44px vertical altitude profile strip,
+    detector contribution bars, and event history.
 
-**Benchmark path** (instead of 10–13): `benchmark/runner.py` →
+**Benchmark path** (instead of 10–14): `benchmark/runner.py` →
 `run_session` records a labelled `DecisionRecord` per decision; `metrics/scoring.py`
 → `evaluate` aggregates the confusion matrix and metrics.

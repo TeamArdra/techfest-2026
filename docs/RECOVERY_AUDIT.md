@@ -18,7 +18,7 @@ All source files carry timestamps between **23:36 and 23:39 on 2026-09-21** — 
 ~3-minute window. The last two files written were `configs/*.yaml` (23:39) and
 `src/aegisflight/simulator/__init__.py` (23:39). That `__init__.py` imports
 `FlightSimulator, SimulatorConfig` from a `.flight` module **that was never
-created**. 
+created**.
 
 **Conclusion:** the crash occurred at the very start of the build, immediately
 after the foundation layer (config + core types) was written and just as the

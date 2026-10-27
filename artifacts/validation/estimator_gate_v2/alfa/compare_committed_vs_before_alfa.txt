@@ -1,0 +1,40 @@
+# compare_results.py json <baseline> <candidate> (exit 1)
+# baseline : artifacts/external/alfa/results.json
+# candidate: artifacts/validation/estimator_gate_v2/alfa/before/alfa/results.json
+JSON non-timing leaves compared: 682, differing: 36
+  DIFF /categories/unlabelled/predicted_classes/DOS: 116208 != 116133
+  DIFF /categories/unlabelled/protocol_rule_trigger_rate: 0.999870941097517 != 0.9992256465851015
+  DIFF /categories/unlabelled/threat_rate: 0.9999139607316779 != 0.9992686662192625
+  DIFF /categories/unlabelled/top_evidence/GNSS fix lost: key only in baseline
+  DIFF /categories/unlabelled/top_evidence/GNSS fix never acquired: key only in candidate
+  DIFF /categories/unlabelled/top_evidence/GPS dropout 999.0s: key only in baseline
+  DIFF /categories/unlabelled/top_evidence/heading/course mismatch 26°: key only in candidate
+  DIFF /per_flight[0]/threat_rate: 1.0 != 0.9997917245209664
+  DIFF /per_flight[1]/threat_rate: 0.9999130132219902 != 0.9997390396659708
+  DIFF /per_flight[2]/threat_rate: 1.0 != 0.9997347480106101
+  DIFF /per_flight[3]/threat_rate: 1.0 != 0.9996860282574568
+  DIFF /per_flight[4]/threat_rate: 1.0 != 0.9996817988969029
+  DIFF /per_flight[5]/threat_rate: 1.0 != 0.9996800682521062
+  DIFF /per_flight[6]/threat_rate: 1.0 != 0.9996730245231608
+  DIFF /per_flight[7]/threat_rate: 1.0 != 0.9996725248335334
+  DIFF /per_flight[8]/threat_rate: 1.0 != 0.9996711247533435
+  DIFF /per_flight[9]/threat_rate: 1.0 != 0.999639379733141
+  DIFF /per_flight[10]/threat_rate: 1.0 != 0.9690721649484536
+  DIFF /per_flight[11]/threat_rate: 0.9942857142857143 != 0.9914285714285714
+  DIFF /per_flight[13]/threat_rate: 1.0 != 0.9995798319327731
+  DIFF /per_flight[14]/threat_rate: 0.9996406109613657 != 0.9994609164420485
+  DIFF /per_flight[15]/threat_rate: 1.0 != 0.9964200477326969
+  DIFF /per_flight[16]/threat_rate: 1.0 != 0.9993540051679587
+  DIFF /per_flight[17]/threat_rate: 1.0 != 0.9558823529411765
+  DIFF /per_flight[18]/threat_rate: 1.0 != 0.9993324432576769
+  DIFF /per_flight[24]/threat_rate: 1.0 != 0.999007279947055
+  DIFF /per_flight[25]/threat_rate: 1.0 != 0.9956958393113343
+  DIFF /per_flight[26]/threat_rate: 1.0 != 0.9986178299930891
+  DIFF /per_flight[27]/threat_rate: 0.999208547685002 != 0.9976256430550059
+  DIFF /per_flight[28]/threat_rate: 1.0 != 0.9985652797704447
+  DIFF /per_flight[29]/threat_rate: 0.9973474801061007 != 0.9893899204244032
+  DIFF /per_flight[30]/threat_rate: 0.9705882352941176 != 0.9558823529411765
+  DIFF /per_flight[31]/threat_rate: 1.0 != 0.996832101372756
+  DIFF /per_flight[33]/threat_rate: 1.0 != 0.997364953886693
+  DIFF /python: '3.13.11' != '3.13.15'
+  DIFF /wall_time_s: 1116.9 != 677.5

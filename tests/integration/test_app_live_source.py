@@ -122,10 +122,17 @@ class Device:
     """127.0.0.1 TCP server. Accepts ONE client, sends ``frames`` at original pace, then either holds the connection
     open for ``hold_s`` or (``drop=True``) closes the connection AND the listener (like an unplugged device). Every
     byte the client sends is counted in ``received`` (must stay 0: the app is receive-only). ``peer_closed`` is set
-    when the CLIENT closes its end; ``peer_close_kind`` says how ("eof" = orderly FIN, "reset" = RST/abort)."""
+    when the CLIENT closes its end; ``peer_close_kind`` says how ("eof" = orderly FIN, "reset" = RST/abort).
 
-    def __init__(self, frames: list[tuple[float, bytes]], *, hold_s: float = 0.0, drop: bool = False) -> None:
-        self.frames, self.hold_s, self.drop = frames, hold_s, drop
+    ``start``: if given, the stream (and its clock) waits after the accept until the event is set. Without it the
+    first frames race the client's port open: pyserial's ``socket://`` ``open()`` ends with ``reset_input_buffer()``,
+    which silently discards whatever already arrived, so a client scheduled late loses the head of the stream
+    before the framer can count it. Tests that assert on the head of the stream (exact counts, or presence of a
+    low-rate message such as the 1 Hz HEARTBEAT) use :func:`start_when_port_open`."""
+
+    def __init__(self, frames: list[tuple[float, bytes]], *, hold_s: float = 0.0, drop: bool = False,
+                 start: threading.Event | None = None) -> None:
+        self.frames, self.hold_s, self.drop, self.start = frames, hold_s, drop, start
         self.received = 0
         self.sent = 0
         self.done_sending = threading.Event()
@@ -169,10 +176,13 @@ class Device:
         except OSError:
             return
         conn.settimeout(0.005)
-        start = time.monotonic()
+        if self.start is not None:
+            while not self.start.wait(0.02) and not self._stop.is_set():
+                self._drain(conn)
+        t0 = time.monotonic()
         try:
             for t, f in self.frames:
-                while (wait := start + t - time.monotonic()) > 0 and not self._stop.is_set():
+                while (wait := t0 + t - time.monotonic()) > 0 and not self._stop.is_set():
                     self._drain(conn)
                     time.sleep(min(wait, 0.02))
                 if self._stop.is_set():
@@ -246,6 +256,15 @@ def poll(client: TestClient, pred: Callable[[dict], bool], timeout_s: float,
 
 def link(st: dict) -> dict:
     return st["link"]
+
+
+def start_when_port_open(client: TestClient, dev: Device, timeout_s: float = 10.0) -> None:
+    """Release ``dev``'s gated stream once /api/status reports the transport connected. ``connected`` is set only
+    after pyserial's ``open()`` (and its input purge) has returned, so every byte sent afterwards reaches the framer."""
+    assert dev.start is not None, "Device was built without a start gate"
+    st, _ = poll(client, lambda s: (link(s).get("transport") or {}).get("connected") is True, timeout_s=timeout_s)
+    assert (link(st).get("transport") or {}).get("connected") is True, link(st)
+    dev.start.set()
 
 
 def assert_live_implies_fresh(history: list[dict]) -> None:
@@ -349,11 +368,20 @@ def test_alerts_reach_event_store_and_api_events(tmp_path, which):
 # --------------------------------------------------------------------------- #
 
 def test_api_status_events_health_and_ws_shapes(tmp_path):
-    dev = Device(synthetic_stream(4.0), hold_s=6.0)  # SYNTHETIC
+    # SYNTHETIC; gated: `frames > 20` arrives before the second (t = 1 s) HEARTBEAT, so the first one must not be purged
+    dev = Device(synthetic_stream(4.0), hold_s=6.0, start=threading.Event())
     try:
         with serve(make_engine(tmp_path, serial_spec(dev))) as client:
-            st, _ = poll(client, lambda s: link(s)["frames"] > 20 and link(s)["gps"]["fix_type"] is not None,
-                         timeout_s=15)
+            start_when_port_open(client, dev)
+            st, _ = poll(
+                client,
+                lambda s: (
+                    link(s)["frames"] > 20
+                    and link(s)["gps"]["fix_type"] is not None
+                    and "HEARTBEAT" in link(s)["messages"]
+                ),
+                timeout_s=15,
+            )
             health = client.get("/health").json()
             ev = client.get("/api/events?limit=5").json()
             with client.websocket_connect("/ws/telemetry") as ws:
@@ -399,6 +427,36 @@ def test_replay_source_finishes_as_ended(tmp_path):
     ended_at = next(i for i, s in enumerate(hist) if link(s)["state"] == "ended")
     assert all(link(s)["state"] == "ended" for s in hist[ended_at:])
     assert_live_implies_fresh(hist + after)
+
+
+def test_replay_telemetry_is_shown_as_received_and_never_thinned(tmp_path):
+    """Integration review 2026-10-27: the dashboard twin and the 'compact telemetry' skip are SIM-only. A recorded
+    stream with alerts (mitigation leaves NOMINAL) is broadcast tick by tick with the pipeline's own telemetry."""
+    tlog = _bad_fix_tlog(tmp_path)  # SYNTHETIC: GNSS-rule DOS alerts move the mitigation state off NOMINAL
+    engine = make_engine(tmp_path, replay_spec(tlog))
+    processed, broadcast = [0], []
+    orig_process, orig_broadcast = engine._process, engine._broadcast
+
+    async def counting_process(tick):
+        processed[0] += 1
+        await orig_process(tick)
+
+    async def recording_broadcast(msg):
+        broadcast.append(msg)
+        await orig_broadcast(msg)
+
+    engine._process, engine._broadcast = counting_process, recording_broadcast
+    with serve(engine) as client:
+        st, _ = poll(client, lambda s: link(s)["state"] == "ended", timeout_s=30)
+    assert link(st)["state"] == "ended"
+    assert engine.mitigation.action_history, "the stream should have driven the mitigation state machine"
+    updates = broadcast[:-1]  # the last broadcast is the end-of-feed state
+    assert len(updates) == processed[0] > 0  # one broadcast per tick, none skipped
+    assert engine._cp_lat is None  # the twin never ran
+    final = engine.pipeline._telemetry_dict()
+    shown = broadcast[-1]["telemetry"]
+    for key in ("lat", "lon", "alt_msl", "rel_alt", "groundspeed", "flight_mode", "armed"):
+        assert shown.get(key) == final.get(key), (key, shown.get(key), final.get(key))
 
 
 # --------------------------------------------------------------------------- #
@@ -703,10 +761,11 @@ def test_malformed_bytes_over_socket_are_rejected_without_events(tmp_path):
     # SYNTHETIC: garbage + CRC-corrupted copies interleaved with a healthy 5.1 s stream (it ends on a heartbeat at
     # t = 5.0 s, so the measurement below happens well inside the 3 s heartbeat timeout)
     chunks, injected = malformed_stream(synthetic_stream(5.1))
-    dev = Device(chunks, hold_s=8.0)
+    dev = Device(chunks, hold_s=8.0, start=threading.Event())  # exact counts: the stream waits for the port open
     eng = make_engine(tmp_path, serial_spec(dev))
     try:
         with serve(eng) as client:
+            start_when_port_open(client, dev)
             assert dev.done_sending.wait(15)
             st, hist = poll(client, lambda s: link(s)["frames"] >= injected["valid"], timeout_s=5)
             m = client.get("/api/metrics").json()

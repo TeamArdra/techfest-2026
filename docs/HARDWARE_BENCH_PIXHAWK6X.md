@@ -542,3 +542,185 @@ counters do not rule it out. Earlier opens (005–007, run 001) showed no observ
 **Verdicts it can give:** *telemetry-ingestion PASS* when steps 3–4 meet the pass and expected rows above. It is **not** a GPS
 validation (no receiver reported, or no sky view) and **not** attack detection. The `PHYSICALLY CLOSED` verdict for telemetry
 core requires this pass on the tree it ran (record the hash).
+
+### 6.10 GNSS receiver connected: GPS connectivity sprint (2026-10-25)
+**Environment `BENCH`; claim class none.** This section describes the receiver's reports and the IDS's behaviour on them. No attack
+was made, nothing was injected into the board, and the vehicle was disarmed and stationary. It is **not** GPS spoofing
+detection evidence. The §6.9 procedure was followed, with these deviations:
+* Capture 008 hit two §6.9 stop conditions: the port was busy, then the device disappeared. The session resumed after the
+  operator re-plugged the radio, and 009 is the clean capture.
+* The §6.9 step-4 expectations ("GNSS fix never acquired" alerts) assumed no receiver, so they do not apply here.
+
+**Setup and provenance.**
+* *Operator statement (no artifact):* a GNSS receiver is connected, and Mission Planner showed a 3D fix.
+* *Board:* ArduPilot (`autopilot` 3), QUADROTOR, sysid/compid 1/1, MAVLink 1, unsigned, STANDBY, disarmed, `custom_mode` 0.
+  **The firmware version was not determined:** no `AUTOPILOT_VERSION` or `STATUSTEXT` arrived, and requesting one would need a
+  transmit.
+* *Port:* the only serial device Windows listed was the CP210x radio on **COM7** (`Get-PnpDevice -Class Ports -PresentOnly`).
+  The board's own USB port (COM5 before) was not enumerated. The baud was **115200** (§6.9 step 2), confirmed by 0 CRC rejects.
+* *Code:* `HEAD` `75dc7a6` for every hardware run below, with `src` and `configs` unchanged and the tracked scripts unmodified.
+  `git diff HEAD -- src configs | sha256sum` gives `e3b0c442…b855`, the hash of an empty diff. Python 3.13.15, pymavlink 2.4.50, pyserial 3.5, Windows 11 (probe provenance).
+  Stage-1 `configs/`, ML off.
+* *Mission Planner held COM7 at first:* at 16:55:05Z the probe could not open COM7 (`PermissionError(13)`, exit 2, nothing sent).
+  The operator then disconnected Mission Planner, which stayed running but unconnected.
+  * Because Mission Planner had been connected over COM7 during this power-up, its RAM-only stream request (S2) very likely still
+    applied.
+  * The stream now also carries the RAW_SENS, RC_CHAN and EXTRA3 groups (`EKF_STATUS_REPORT`, `SYSTEM_TIME`, `RC_CHANNELS`,
+    `VIBRATION` …), at about 57 frames/s against 27 in capture 007. So **these rates are probably not the stored `SR1_*`
+    alone** (compare §6.7).
+  * That inference assumes the stored values have not changed since capture 007; they were not re-read.
+  * 008 and 009 are from one boot (the host-minus-`time_boot_ms` offset is identical), so no reboot cleared a RAM request
+    between them.
+
+| Run (UTC) | Command (all receive-only) | Result |
+|---|---|---|
+| Capture **008**, 16:56:12Z, 90 s requested | `pixhawk_passive_probe.py --port COM7 --baud 115200 --duration 90 --json artifacts/hardware/telemetry_radio_probe_008.json --tlog …/telemetry_radio_008.tlog --raw …/telemetry_radio_008.rawbin` | **62.3 s** of stream, then COM7 **vanished from Windows** (1 disconnect, 27 open failures). The operator then re-plugged it and reports having "moved things" (unspecified). 3,562 frames, 105,804 B; 0 CRC/header rejects, 0 garbage bytes, 0 sequence gaps (also per `scripts/sitl/tlog_stats.py`); `bytes_sent` 0. sha256: tlog `c8774324…eb9b`, rawbin `d545485b…597f` (both git-ignored) |
+| IDS run **`serial_ids_com7_002`**, 17:10:12Z, 60 s | §6.9 step 4 command with `--out-dir artifacts/hardware/serial_ids_com7_002` | Exit 0. 3,420 frames, 0 CRC rejects, 0 garbage, 0 disconnects. **301 decisions, 0 threats, 0 alerts.** `telemetry_coverage`: all three seen, `decisions_without_global_position` 1. `bytes_sent` 0. `aegis verify-log`: chain OK (0 events). Latency mean 0.30 ms, p99 0.62 ms; CPU 2.21 % of one core; RSS 55.4 MB. `events.sqlite` sha256 `0a9ce9c7…1162` (git-ignored). The runner saves no input bytes, so the GNSS state during this run is **not recorded**; capture 009 followed it |
+| Capture **009**, 17:15:13Z, 60 s | as 008 with `--duration 60` and `_009` paths | 59.8 s, 3,418 frames, 0 errors, 0 gaps, `bytes_sent` 0. sha256: tlog `e6926675…c867`, rawbin `1144070b…bed2` (git-ignored) |
+| Dashboard backend, 17:17:00Z, about 125 s | `aegis serve --source serial --serial-port COM7 --baud 115200 --no-reconnect --port 8766 --db <scratch>` (binds 127.0.0.1) | See "Dashboard" below. 7,117 frames, 211,394 B, 0 CRC rejects, 33 garbage bytes (all at port open), 0 disconnects, `bytes_sent` 0. *Session record (console and API output); there is no committed artifact. Only the event store survives, git-ignored.* |
+
+**GNSS state** (`scripts/hardware/gnss_tlog_summary.py` → `artifacts/hardware/gnss_summary_00{8,9}.json`; positions only as metres
+from the first fix):
+
+| | 008 (62 s) | 009 (60 s) |
+|---|---|---|
+| `GPS_RAW_INT.fix_type` | 3D 61, DGPS 16, 2D 36, NO_FIX 12 (of 125) | 3D 33, DGPS 87 (of 120) |
+| Valid per the GNSS rule (fix ≥ 3 and ≥ 5 satellites) | 68/125: the first ~34 s, then 3D with 4 satellites → 2D with 3 → NO_FIX with 0 | 120/120 |
+| Satellites / HDOP (median) | 0–7 (5) / 3.57–99.99 (5.54) | 6–7 (6) / 2.8–4.9 (4.9) |
+| Raw position offset from the first fix, max / altitude range | 21.6 m / 40.3 m | 7.2 m / 8.0 m |
+| `GPS_RAW_INT.vel` max | 3.24 m/s | 0.41 m/s |
+| `GLOBAL_POSITION_INT` vx/vy speed max vs speed implied by its successive positions | 0.108 vs **17.75** m/s | 0.02 vs 1.41 m/s |
+| `GPS_RAW_INT` vs `GLOBAL_POSITION_INT` horizontal | median 0 m (max 15.3 m) | 0 m in every pair |
+| `SYS_STATUS` GPS present / enabled / healthy | 125 / 125 / **0** | 120 / 120 / **0** |
+| `EKF_STATUS_REPORT.flags` | `0xa7` in all: constant-position mode, **no absolute horizontal position** | same |
+| `time_usec` / `time_boot_ms` | non-zero and monotonic; no `lat = lon = 0` | same |
+
+What this shows, and what it does not:
+* **A receiver is now attached and reported.** In capture 007 the board reported none (`fix_type` 0, GPS sensor bits clear; §6.9).
+* **A 3D fix is confirmed, but not as a steady state.** 009 held 3D/DGPS throughout. 008 lost it after ~34 s; the cause was not
+  recorded. COM7 vanished at ~62 s, and the operator later reported re-plugging it and moving things, at an unspecified time. In pymavlink 2.4.50, `GPS_FIX_TYPE` 0 means NO_GPS, 1 NO_FIX, 2 2D, 3 3D and 4 DGPS.
+* **GPS messages reach the laptop fresh:** `GPS_RAW_INT` arrives about every 0.5 s on the host clock (max 0.52 s), and
+  `time_usec` increases.
+* **The EKF was not using GPS for horizontal position.**
+  * The GPS health bit was 0, and the EKF flags (`0xa7`) show constant-position mode with neither absolute nor relative
+    horizontal position.
+  * Why was not established. It is consistent with the weak geometry (HDOP ~5), but no parameter or pre-arm message was read.
+  * On this board `GLOBAL_POSITION_INT` repeats the receiver's position while the fix is valid (in 008 the two were up to
+    15.3 m apart after the fix degraded), while its velocity is the EKF's zero.
+  * So the two messages are **not independent position sources**, and position and velocity are **not one coherent navigation
+    solution**.
+* **A 3D fix, the satellite count or the DOP says nothing about whether the coordinates are authentic.**
+
+**IDS behaviour on this receiver** (Stage-1 configs, ML off, unchanged code):
+* *Replay 008* (`artifacts/hardware/replay_gnss_008/replay_noml.json`): 313 decisions, 146 threats, **9 alerts**.
+  * 7 `DOS` "GNSS fix lost …". This is correct: a valid fix was seen and then degraded. The streak never reset because the fix
+    did not return.
+  * 1 `GPS_SPOOFING`, "position residual 12.1 m" at 33.4 s, as the fix degraded.
+  * 1 `TELEMETRY_MANIPULATION` at 43.8 s: "GPS/baro altitude mismatch 19.2 m" and "implausible altitude rate −96.0 m/s".
+    * The autopilot's own altitude stepped −19.2 m. `VFR_HUD` showed the step at 43.72 s and `GLOBAL_POSITION_INT` at 44.01 s.
+    * The mismatch is the 0.29 s skew between two views of one AHRS altitude (S6), not two independent sensors.
+    * The rate alert is that altitude itself stepping 19.2 m within one 0.2 s decision.
+  * The alert and step times come from an offline tlog analysis; they are not stored in `replay_noml.json`.
+* *Replay 009* (`artifacts/hardware/replay_gnss_009/replay_noml.json`): 300 decisions, **0 threats, 0 alerts**. This agrees with
+  the live run `serial_ids_com7_002` (0 alerts), a separate session about 4 min earlier.
+* *Dashboard session:* **11 `GPS_SPOOFING` alerts** in the first ~56 s (3 CRITICAL, 1 HIGH, 7 SUSPICIOUS), none afterwards.
+  * They fired at t = 12.2 … 52.8 s with "position residual" 12.8–42.4 m.
+  * The stored alert snapshots show 5–6 satellites, but `fix_type` is not stored per alert.
+  * `/api/status`, sampled once, showed 3D, 5 satellites and `valid_fix: true`. Whether the fix stayed valid at every alert is
+    not recorded.
+* **Finding: position-residual false alarms on a stationary board (operator statement) with a reported-valid but weak fix.**
+  * The rule assumes that position and velocity come from one coherent navigation solution, and it is not gated on GNSS
+    quality.
+  * Here the position is raw GNSS wander and the velocity is the EKF's zero, so the wander reads as a track diverging from
+    its velocity.
+  * The code behaves as specified: the rule's assumption simply does not hold in ArduCopter's constant-position mode.
+  * It was **not changed.** A GNSS-quality gate is a detector-policy decision, and a spoofer can report good DOP.
+  * The mechanism is illustrated by a synthetic fixture whose amplitude was chosen, not fitted to the bench data:
+    `tests/unit/test_gps_scenarios_fused.py::test_stationary_gnss_wander_with_a_valid_fix_raises_false_gps_spoofing_alerts`.
+
+**Dashboard** (the live session above; read through the API and the rendered page text, with no screenshot so no map position
+was captured):
+* `/health` reports `sim: false, environment: BENCH`.
+* `/api/status` reports `source.kind: serial` on COM7/115200, `physical: true`, link `live`, per-message counts and ages, and a
+  `gps` block (`fix_type` 3 `3D_FIX`, 5 satellites, `valid_fix: true`, `gps_raw_age_s` 0.0, `position_age_s` 0.1,
+  `position_zero: false`).
+* `POST /api/simulation/attack` and `/start` return **HTTP 409**, "simulation-only; the source is BENCH (read-only)".
+* The page title reads "(BENCH)". The header shows "GPS report · 7 sats · valid fix", and the panels are labelled "bench
+  telemetry · not flight data".
+* The incident history lists the same **11** events as `/api/events` and the event store. `aegis verify-log` on the store gives
+  11 events, chain OK.
+* The store is kept locally, git-ignored because its telemetry snapshots hold the position, at
+  `artifacts/hardware/serve_bench_com7_001/events.sqlite` (sha256 `df379f88…87b8`).
+* `aegis serve` saves no input bytes, so this session cannot be replayed.
+* The "distance covered" panel showed 196 m for a board that, per the operator, never moved; that number is GNSS wander.
+
+**Receive-only:**
+* `bytes_sent` 0 and `write_errors` 0 in every capture, the IDS run and the dashboard session.
+* On the serial path, `send()` exists only on the transport and is never called. The other `send` callers are SITL/UDP-only:
+  the UDP transport's heartbeat and signing helpers in `sources/mavlink_live.py`, and the MITM proxy in `proxy/transport.py`.
+  None is reachable from the serial path.
+* The DTR/RTS side effect at port open is still unmeasured (§6.9).
+
+**Not established:**
+* the firmware version;
+* which stream rates come from stored `SR1_*` and which from Mission Planner's RAM request;
+* what the operator changed during 008, and why COM7 disappeared;
+* why the GPS health bit was 0;
+* the sky view;
+* any false-alarm *rate* (a few minutes of one board);
+* anything about attack detection. Synthetic GPS scenarios are SIM evidence: `docs/VALIDATION_EVIDENCE.md` §2.
+
+**Regression for this change set** (no `src`/`configs` change; tests, one offline script and docs only; scratch outputs, not
+committed):
+* `pytest -p no:cacheprovider` on the final tree: **746 passed, 3 skipped (Windows PTY), 0 failed**. This includes the 17 tests
+  in `test_gps_scenarios_fused.py`.
+* `ruff check src tests scripts backend`: clean.
+* `aegis benchmark --out <scratch> --no-figures`: TP/FP/TN/FN **6535 / 4 / 16826 / 65**, model used. All 42 rows × 9
+  non-timing columns of `results.csv` and the per-attack table are identical to `artifacts/benchmarks/`.
+* Replays 005/007 are byte-identical to `artifacts/hardware/replay_p1p2_00{5,7}/replay_noml.json`.
+* ALFA was not re-run: there is no detector or feature change.
+
+**Regenerate** (offline, from the git-ignored tlogs):
+`.venv/Scripts/python.exe scripts/hardware/gnss_tlog_summary.py data/hardware/raw/telemetry_radio_00N.tlog --json artifacts/hardware/gnss_summary_00N.json`
+and `.venv/Scripts/python.exe -W ignore scripts/ardupilot/replay_ap_tlog.py data/hardware/raw/telemetry_radio_00N.tlog --no-ml --json artifacts/hardware/replay_gnss_00N/replay_noml.json`.
+
+**Update 2026-10-26: estimator gate v2 (GPS iteration 2).** This is an addition. The 2026-10-25 text above, including
+"It was **not changed**", describes the code at `75dc7a6` and stays as written.
+* **What changed.** The position-residual rule now reads ArduPilot's `EKF_STATUS_REPORT.flags`
+  (`physics.estimator_gate: true`).
+  * A `GLOBAL_POSITION_INT` fix is *gated* when fresh reports have said "no horizontal solution" for at least 2 s. A
+    gated fix's position-vs-velocity residual is not used as spoofing evidence.
+  * Movement the velocity implies but the position does not show, and a single residual step of 30 m or more, still
+    alert.
+  * Without any `EKF_STATUS_REPORT`, the Stage-1 rule is unchanged.
+  * Design and limitations: `docs/DETECTION.md`, "Estimator-aware position residual".
+  * Status: uncommitted on `90b9aa2`, `src`+`configs` diff sha256 `b4d434e3…7eaf`. Reading the report extends a frozen
+    contract; the user confirmed this on 2026-10-26 (`docs/HANDOFF.md`).
+* **What the bench captures show** (`REPLAY` of `BENCH`; claim class none; ML off; **in-sample**, because the gate was
+  designed from these two captures):
+  * Both captures report no horizontal solution in every `EKF_STATUS_REPORT`: 125 and 120 reports, matching the `0xa7`
+    flags above.
+  * *Replay 008* (`artifacts/hardware/replay_gnss_008_estimator_gate/`): **`GPS_SPOOFING` 1 → 0**. The 7 `DOS` "GNSS
+    fix lost" alerts and the 1 `TELEMETRY_MANIPULATION` altitude-step alert remain: 9 → 8 alerts, 146 → 138 threats, of
+    313 decisions. 7 of the 8 alert decisions also carry a score-0 "navigation: estimator reports no horizontal position
+    solution …" line.
+  * *Replay 009* (`artifacts/hardware/replay_gnss_009_estimator_gate/`): 0 threats, as before. The output is
+    byte-identical to `replay_gnss_009/replay_noml.json`.
+  * Both READMEs give the provenance. One caveat applies to both: the JSON label `config_dir: "configs (Stage-1
+    default)"` is hard-coded by the replay script and is inaccurate for this tree.
+* **What it does not show.**
+  * Whether the gate would clear the dashboard session's 11 `GPS_SPOOFING` alerts. That session saved no input bytes
+    and no EKF flags, so this is **unknown**.
+  * Any false-alarm *rate*. n = 1 alert was removed, on the design data.
+  * Behaviour on links that send no `EKF_STATUS_REPORT`, or send it at under 0.5 Hz. The Stage-1 rule, and so this
+    false alarm, apply there.
+  * The first 2 s of a no-solution period: the debounce leaves them to the Stage-1 rule.
+  * ML-on behaviour. The ML detector is not gated, and with ML on it still flags wander through `ml_anomaly` (SIM).
+  * Anything about attacks. `EKF_STATUS_REPORT` is unauthenticated, so an in-path attacker who forges or injects it gains
+    the capabilities listed in `docs/DETECTION.md` (SIM evidence only). Only MAVLink-2 signing closes that.
+* **Regression on the same tree:** `artifacts/validation/estimator_gate_v2/README.md`.
+  * Stage-1 benchmark identical (6535 / 4 / 16826 / 65).
+  * ALFA changes only in the unlabelled category: physics trigger rate and attack-type labels change, threat rates do
+    not.
+  * 44 of 44 earlier replays (none containing `EKF_STATUS_REPORT`) byte-identical, including 005/007.
+  * Full test suite: 809 passed, 3 skipped (lead, 2026-10-26).

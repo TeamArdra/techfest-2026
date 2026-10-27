@@ -1,0 +1,19 @@
+# compare_results.py json <baseline> <candidate> (exit 1)
+# baseline : artifacts/validation/estimator_gate_v2/alfa/before/alfa_calibrated/results.json
+# candidate: artifacts/validation/estimator_gate_v2/alfa/after/alfa_calibrated/results.json
+JSON non-timing leaves compared: 511, differing: 15
+  DIFF /categories/unlabelled/physics_consistency_trigger_rate: 0.00783809922485096 != 0.0033344400017321766
+  DIFF /categories/unlabelled/predicted_classes/DOS: 4012 != 4109
+  DIFF /categories/unlabelled/predicted_classes/GPS_SPOOFING: 261 != 164
+  DIFF /categories/unlabelled/top_evidence/GNSS fix lost: key only in candidate
+  DIFF /categories/unlabelled/top_evidence/heading/course mismatch 29°: key only in candidate
+  DIFF /categories/unlabelled/top_evidence/heading/course mismatch 37°: key only in candidate
+  DIFF /categories/unlabelled/top_evidence/implausible acceleration 21.9 m/s²: key only in candidate
+  DIFF /categories/unlabelled/top_evidence/navigation: key only in candidate
+  DIFF /categories/unlabelled/top_evidence/position discontinuity 8117062.4 m in one fix: key only in candidate
+  DIFF /categories/unlabelled/top_evidence/position residual 12.1 m: key only in baseline
+  DIFF /categories/unlabelled/top_evidence/position residual 12.2 m: key only in baseline
+  DIFF /categories/unlabelled/top_evidence/position residual 12.3 m: key only in baseline
+  DIFF /categories/unlabelled/top_evidence/position residual 13.0 m: key only in baseline
+  DIFF /categories/unlabelled/top_evidence/position residual 13.1 m: key only in baseline
+  DIFF /categories/unlabelled/top_evidence/position residual 28.9 m: key only in baseline

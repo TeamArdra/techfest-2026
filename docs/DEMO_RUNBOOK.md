@@ -1,77 +1,89 @@
-# AegisFlight — Demo Runbook
+# AegisFlight — Stage 2 Demonstration Runbook
 
-For recording the Stage-1 demonstration video. A teammate can run this without
-the original author. Everything shown is a **local simulation** — say so on
-camera.
+For demonstrating the Stage 2 UAV Intrusion Detection & Autonomous Prevention
+System (IDS/IPS) for **PUSHPAK Grand Challenge 2026-27 (IIT Bombay Techfest) — Security of Drones, Objective 2**.
+A teammate can run this without the original author.
 
 ## Pre-demo checklist
 ```bash
 pip install -e ".[dev]"                       # deps installed
 aegis train                                   # models/isoforest.joblib exists
 npm --prefix frontend install && npm --prefix frontend run build   # frontend/dist exists
-pytest -q                                     # 44 passing (confidence check)
+python scripts/verify_stage2.py               # 8/8 automated verification suites passing
+pytest tests/unit/test_mitigation.py tests/unit/test_hal.py -q   # 34 tests passing
 ```
 - Close other apps using port 8000.
 - Have `aegis verify-log` ready in a second terminal.
 
 ## Startup
 ```bash
-aegis serve            # http://127.0.0.1:8000
+aegis serve --defense-mode active-ips         # http://127.0.0.1:8000
 ```
-Open the browser. The header shows **● Simulation**, **● Connected**, **ML on**,
-and the sim clock advancing. Point out the "SIMULATION" labelling.
+Or launch the native desktop GCS:
+```bash
+cd frontend && cargo tauri dev
+```
+The GCS displays:
+- **● ACTIVE IPS** (Autonomous Mitigation Enabled)
+- **● Connected** (10 Hz WebSocket telemetry)
+- **Topology: Auto (Top-B: Inline Transparent Bridge)**
+- **Live Vehicle Head Pill**: `[COPTER_MODE_GUIDED · 12.0 m/s · 60.0 m]`
+- **44px Vertical Altitude Profile Strip**: showing real-time 0–100 m elevation track.
 
-## Segment 1 — Normal flight (~20 s)
-- Show the **Threat State = NORMAL**, the position track drawing the survey
-  pattern, live telemetry (altitude ~60 m, speed ~12 m/s, battery draining), and
-  the flat threat-score sparkline below the 0.45 line.
-- Narrate: four detectors run every 200 ms; nothing fires on benign flight.
+## Segment 1 — Benign Flight Baseline (~20 s)
+- Point out the nominal survey pattern on the satellite map.
+- Altitude strip holds flat at 60 m cruise; speed is 12 m/s.
+- Threat score sparkline remains flat at 0.0 (below 0.45 threshold); 0 false alarms.
 
-## Segment 2 — GPS spoofing
-- Click **GPS Spoofing**. Within ~1.5 s the Threat State turns **HIGH /
-  GPS SPOOFING**; the Evidence panel shows *"position residual > 12 m (reported
-  track diverges from velocity)"* and an ML corroboration line.
-- Point at the **Detector Contributions** bars (physics + ML light up) and the
-  sparkline crossing the threshold.
-- Click **Clear attack** — the score decays back to normal within a few seconds
-  (mention the disclosed ~3 s recovery tail).
+## Segment 2 — GPS Spoofing & Synthetic Navigation Recovery
+- Click **GPS Spoofing**.
+- **Detection**: Within 360 ms, Physics + Anomaly detectors trigger (`HIGH / GPS_SPOOFING`).
+- **Autonomous Mitigation**:
+  - In **Topology B** (Inline): `FrameSanitizer` drops/clamps spoofed coordinates in-place before reaching the autopilot (0.0 m flight detour).
+  - In **Topology A** (Sidecar): `GoldenStateEstimator` dead-reckoning activates, issuing `MAV_CMD_DO_REPOSITION` counter-commands with synthetic clean coordinates.
+- Notice the vehicle track continues smoothly along the planned trajectory without jumping or diverging.
 
-## Segment 3 — Denial of service
-- Click **Denial of Service**. Threat goes **CRITICAL / DOS**; evidence shows the
-  message-rate spike / sequence gaps. Note the message counter jumping in the
-  bottom metrics bar. Clear it.
+## Segment 3 — Command Injection & Failsafe Veto
+- Click **Command Injection** (e.g., unauthorized land or forced disarm).
+- **Veto Execution**: Mitigation engine detects cadence/provenance violation (`AF-SEC-01`), rejects the rogue command, and notifies the GCS via `STATUSTEXT` banner: `[AEGIS-DEFENSE] Disarm vetoed: altitude > 2m in flight`.
+- Vehicle remains airborne and continues mission uninterrupted.
 
-## Segment 4 — Firmware tampering
-- Click **Firmware Tamper**. The **Firmware** field flips to **INVALID** and a
-  **FIRMWARE_INTEGRITY** alert appears with the exact component and SHA-256
-  mismatch. Emphasise this is a *real* cryptographic check.
+## Segment 4 — Denial of Service & High-Rate Flood
+- Click **Denial of Service**.
+- Threat state escalates to `CRITICAL / DOS`.
+- `FloodMitigator` isolates the rogue telemetry stream; heartbeat and critical attitude frames are preserved on priority channels.
 
-## Segment 5 — Event log integrity
+## Segment 5 — Hardware Abstraction Layer & Topology Switching
+- In the **Defense HUD**, switch topology selector between:
+  - **Auto**: Discovers serial ports/VIDs and selects best topology.
+  - **Top-B (Inline Bridge)**: 0.0 m detour, zero-allocation frame filtering.
+  - **Top-A (Sidecar Actuator)**: Secondary companion telemetry override.
+  - **Top-A+B (Hybrid)**: Maximum resilience (inline filter + companion actuator).
+  - **IDS Only (Passive)**: Monitoring and forensic logging only.
+- Point out dynamic routing status cards updating instantly.
+
+## Segment 6 — Tamper-Evident Hash Chain Forensics
 - In the second terminal:
   ```bash
-  aegis verify-log artifacts/aegisflight_live.sqlite     # -> chain: OK
+  aegis verify-log artifacts/aegisflight_live.sqlite
   ```
-- Explain the per-run SHA-256 hash chain makes the alert log tamper-evident.
+- Terminal outputs: `Chain status: OK (N events verified, zero mutations)`.
+- Explains the SHA-256 hash chain over alerts (`aegis verify-log`); no airworthiness compliance is claimed.
 
-## Segment 6 — Benchmark results
-- Show `artifacts/figures/per_attack_recall.png`, `confusion_matrix.png`, and
-  `threat_timeline.png`, and quote from `artifacts/benchmarks/summary.md`:
-  accuracy 0.997, recall 0.99, **FPR 0.0002**, detection latency 0.36 s. State
-  they are reproducible with `aegis benchmark`.
+## Segment 7 — Automated Verification Benchmarks
+- Run the full automated verification audit:
+  ```bash
+  python scripts/verify_stage2.py
+  ```
+- 8/8 suites pass in ~40 ms:
+  1. GoldenState dead-reckoning test
+  2. FrameSanitizer coordinate clamping test
+  3. Killswitch disarm & land veto test
+  4. Command cadence guard test
+  5. Micro-drift CUSUM test
+  6. HAL discovery & topology test
+  7. InlineBridge watchdog test
+  8. GCS alert dispatch test
 
 ## Shutdown
-`Ctrl-C` the server. Optionally `aegis benchmark` on camera to show the numbers
-regenerate.
-
-## If you prefer no dashboard
-```bash
-python scripts/run_demo.py         # narrated, deterministic, all six scenarios
-```
-
-## Troubleshooting during the demo
-- Dashboard blank / "frontend not built" JSON at `/` → run the `npm run build`
-  step, restart `aegis serve`.
-- Port busy → `aegis serve --port 8137` and open that port.
-- No detections → confirm `models/isoforest.joblib` exists (`aegis train`); note
-  detection still works without ML via the rule/physics detectors.
-- WebSocket "Disconnected" badge → backend not running or wrong port; restart.
+`Ctrl-C` the server. Clean shutdown leaves SQLite ledger verified.

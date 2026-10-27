@@ -1,0 +1,904 @@
+{
+  "experiment": "E2 ALFA real MAVLink telemetry -> full AegisFlight pipeline (production config, ML on)",
+  "exclusions": [
+    {
+      "file": "telemetry/telemetry/2018-07-30/flight6/flight.tlog",
+      "reason": "no decodable MAVLink frames"
+    },
+    {
+      "file": "telemetry/telemetry/2018-10-18/flight1/flight.tlog",
+      "reason": "no decodable MAVLink frames"
+    },
+    {
+      "file": "telemetry/telemetry/2018-10-18/flight2/flight.tlog",
+      "reason": "no decodable MAVLink frames"
+    },
+    {
+      "file": "telemetry/telemetry/2018-10-18/flight3/flight.tlog",
+      "reason": "no decodable MAVLink frames"
+    },
+    {
+      "file": "telemetry/telemetry/2018-10-18/flight4/flight.tlog",
+      "reason": "no decodable MAVLink frames"
+    },
+    {
+      "file": "telemetry/telemetry/2018-10-18/flight6/flight.tlog",
+      "reason": "no decodable MAVLink frames"
+    }
+  ],
+  "dataset_manifest": "data/external/manifests/alfa.json",
+  "n_tlogs": 35,
+  "decisions_after_dedup": 137926,
+  "overlapping_duplicate_decisions_dropped": 56702,
+  "total_decision_hours": 7.662555555555556,
+  "n_sequences_indexed": 47,
+  "sequence_kinds": {
+    "no_failure": 10,
+    "fault": 36,
+    "no_ground_truth": 1
+  },
+  "categories": {
+    "benign_gt": {
+      "n_decisions": 17989,
+      "threat_rate": 1.0,
+      "protocol_rule_trigger_rate": 1.0,
+      "physics_consistency_trigger_rate": 0.0009450219578631386,
+      "ml_anomaly_trigger_rate": 1.0,
+      "predicted_classes": {
+        "DOS": 17989
+      },
+      "top_evidence": {
+        "message-rate spike": 17989,
+        "ML anomaly score 1.00": 17989,
+        "implausible acceleration 25.6 m/s\u00b2": 3,
+        "heading/course mismatch 27\u00b0": 2,
+        "implausible acceleration 26.7 m/s\u00b2": 2,
+        "implausible acceleration 24.3 m/s\u00b2": 2,
+        "implausible acceleration 29.1 m/s\u00b2": 2,
+        "implausible acceleration 21.5 m/s\u00b2": 1
+      }
+    },
+    "fault": {
+      "n_decisions": 3711,
+      "threat_rate": 1.0,
+      "protocol_rule_trigger_rate": 1.0,
+      "physics_consistency_trigger_rate": 0.005658852061438965,
+      "ml_anomaly_trigger_rate": 1.0,
+      "predicted_classes": {
+        "DOS": 3711
+      },
+      "top_evidence": {
+        "message-rate spike": 3711,
+        "ML anomaly score 1.00": 3711,
+        "heading/course mismatch 26\u00b0": 13,
+        "heading/course mismatch 27\u00b0": 8,
+        "heading/course mismatch 25\u00b0": 4,
+        "heading/course mismatch 28\u00b0": 3,
+        "heading/course mismatch 33\u00b0": 2,
+        "rogue telemetry source": 1
+      }
+    },
+    "unlabelled": {
+      "n_decisions": 116226,
+      "threat_rate": 0.9992686662192625,
+      "protocol_rule_trigger_rate": 0.9992256465851015,
+      "physics_consistency_trigger_rate": 0.003381343245057044,
+      "ml_anomaly_trigger_rate": 0.9954227109252662,
+      "predicted_classes": {
+        "DOS": 116122,
+        "GPS_SPOOFING": 17,
+        "TELEMETRY_MANIPULATION": 2
+      },
+      "top_evidence": {
+        "message-rate spike": 116018,
+        "ML anomaly score 1.00": 115694,
+        "navigation": 4574,
+        "GNSS fix never acquired": 4435,
+        "message flood": 113,
+        "position discontinuity 8117062.4 m in one fix": 19,
+        "heading/course mismatch 26\u00b0": 17,
+        "implausible acceleration 20.7 m/s\u00b2": 17
+      }
+    }
+  },
+  "categories_airborne": {
+    "benign_gt": {
+      "n_decisions": 14926,
+      "threat_rate": 1.0,
+      "protocol_rule_trigger_rate": 1.0,
+      "physics_consistency_trigger_rate": 0.0011389521640091116,
+      "ml_anomaly_trigger_rate": 1.0,
+      "predicted_classes": {
+        "DOS": 14926
+      },
+      "top_evidence": {
+        "message-rate spike": 14926,
+        "ML anomaly score 1.00": 14926,
+        "implausible acceleration 25.6 m/s\u00b2": 3,
+        "heading/course mismatch 27\u00b0": 2,
+        "implausible acceleration 26.7 m/s\u00b2": 2,
+        "implausible acceleration 24.3 m/s\u00b2": 2,
+        "implausible acceleration 29.1 m/s\u00b2": 2,
+        "implausible acceleration 21.5 m/s\u00b2": 1
+      }
+    },
+    "fault": {
+      "n_decisions": 2836,
+      "threat_rate": 1.0,
+      "protocol_rule_trigger_rate": 1.0,
+      "physics_consistency_trigger_rate": 0.007404795486600846,
+      "ml_anomaly_trigger_rate": 1.0,
+      "predicted_classes": {
+        "DOS": 2836
+      },
+      "top_evidence": {
+        "message-rate spike": 2836,
+        "ML anomaly score 1.00": 2836,
+        "heading/course mismatch 26\u00b0": 13,
+        "heading/course mismatch 27\u00b0": 8,
+        "heading/course mismatch 25\u00b0": 4,
+        "heading/course mismatch 28\u00b0": 3,
+        "heading/course mismatch 33\u00b0": 2,
+        "heading/course mismatch 32\u00b0": 1
+      }
+    },
+    "unlabelled": {
+      "n_decisions": 27191,
+      "threat_rate": 1.0,
+      "protocol_rule_trigger_rate": 1.0,
+      "physics_consistency_trigger_rate": 0.011327277407965871,
+      "ml_anomaly_trigger_rate": 1.0,
+      "predicted_classes": {
+        "DOS": 27191
+      },
+      "top_evidence": {
+        "message-rate spike": 27191,
+        "ML anomaly score 1.00": 27191,
+        "implausible acceleration 20.7 m/s\u00b2": 17,
+        "implausible acceleration 20.1 m/s\u00b2": 16,
+        "implausible acceleration 21.9 m/s\u00b2": 15,
+        "implausible acceleration 21.7 m/s\u00b2": 13,
+        "implausible acceleration 22.4 m/s\u00b2": 12,
+        "GNSS fix lost": 12
+      }
+    }
+  },
+  "fault_events": [
+    {
+      "sequence": "carbonZ_2018-07-18-15-53-31_1_engine_failure",
+      "fault": "1_engine_failure",
+      "pre_onset_decisions": 581,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 79,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.0961008071899414,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-07-18-15-53-31_2_engine_failure",
+      "fault": "2_engine_failure",
+      "pre_onset_decisions": 367,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 76,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.09610223770141602,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.013157894736842105,
+      "time_to_first_physics_s": 10.696102380752563
+    },
+    {
+      "sequence": "carbonZ_2018-07-18-16-22-01_engine_failure_with_emr_traj",
+      "fault": "engine_failure_with_emr_traj",
+      "pre_onset_decisions": 582,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 79,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.000690460205078125,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-07-18-16-37-39_2_engine_failure_with_emr_traj",
+      "fault": "2_engine_failure_with_emr_traj",
+      "pre_onset_decisions": 570,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 81,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.1906418800354004,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-07-30-16-29-45_engine_failure_with_emr_traj",
+      "fault": "engine_failure_with_emr_traj",
+      "pre_onset_decisions": 615,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 95,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.14391303062438965,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-07-30-16-39-00_1_engine_failure",
+      "fault": "1_engine_failure",
+      "pre_onset_decisions": 584,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 73,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.1730971336364746,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-07-30-16-39-00_2_engine_failure",
+      "fault": "2_engine_failure",
+      "pre_onset_decisions": 458,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 73,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.1783764362335205,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-07-30-17-10-45_engine_failure_with_emr_traj",
+      "fault": "engine_failure_with_emr_traj",
+      "pre_onset_decisions": 586,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 78,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.17100763320922852,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-07-30-17-20-01_engine_failure_with_emr_traj",
+      "fault": "engine_failure_with_emr_traj",
+      "pre_onset_decisions": 438,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 94,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.12807488441467285,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-07-30-17-36-35_engine_failure_with_emr_traj",
+      "fault": "engine_failure_with_emr_traj",
+      "pre_onset_decisions": 666,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 117,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.12110757827758789,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-07-30-17-46-31_engine_failure_with_emr_traj",
+      "fault": "engine_failure_with_emr_traj",
+      "pre_onset_decisions": 451,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 111,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.001516103744506836,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-09-11-11-56-30_engine_failure",
+      "fault": "engine_failure",
+      "pre_onset_decisions": 517,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 104,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.056014060974121094,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-09-11-14-22-07_1_engine_failure",
+      "fault": "1_engine_failure",
+      "pre_onset_decisions": 524,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 46,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.09404921531677246,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-09-11-14-22-07_2_engine_failure",
+      "fault": "2_engine_failure",
+      "pre_onset_decisions": 249,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 62,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.09350109100341797,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-09-11-14-41-51_elevator_failure",
+      "fault": "elevator_failure",
+      "pre_onset_decisions": 589,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 53,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.017771244049072266,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-09-11-14-52-54_left_aileron__right_aileron__failure",
+      "fault": "left_aileron__right_aileron__failure",
+      "pre_onset_decisions": 525,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 641,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.025980710983276367,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-09-11-15-05-11_1_elevator_failure",
+      "fault": "1_elevator_failure",
+      "pre_onset_decisions": 317,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 63,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.1561756134033203,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-09-11-15-06-34_1_rudder_right_failure",
+      "fault": "1_rudder_right_failure",
+      "pre_onset_decisions": 278,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 73,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.17256879806518555,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-09-11-15-06-34_2_rudder_right_failure",
+      "fault": "2_rudder_right_failure",
+      "pre_onset_decisions": 259,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 86,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.07739877700805664,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-09-11-15-06-34_3_rudder_left_failure",
+      "fault": "3_rudder_left_failure",
+      "pre_onset_decisions": 300,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 46,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.07598233222961426,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-09-11-17-27-13_1_rudder_zero__left_aileron_failure",
+      "fault": "1_rudder_zero__left_aileron_failure",
+      "pre_onset_decisions": 582,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 135,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.1788344383239746,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-09-11-17-27-13_2_both_ailerons_failure",
+      "fault": "2_both_ailerons_failure",
+      "pre_onset_decisions": 329,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 179,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.07905840873718262,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-09-11-17-55-30_1_right_aileron_failure",
+      "fault": "1_right_aileron_failure",
+      "pre_onset_decisions": 559,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 106,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.14570283889770508,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-09-11-17-55-30_2_left_aileron_failure",
+      "fault": "2_left_aileron_failure",
+      "pre_onset_decisions": 249,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 157,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.15166211128234863,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-10-05-14-34-20_2_right_aileron_failure_with_emr_traj",
+      "fault": "2_right_aileron_failure_with_emr_traj",
+      "pre_onset_decisions": 761,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 49,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.11650204658508301,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-10-05-14-37-22_2_right_aileron_failure",
+      "fault": "2_right_aileron_failure",
+      "pre_onset_decisions": 367,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 357,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.0736236572265625,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-10-05-14-37-22_3_left_aileron_failure",
+      "fault": "3_left_aileron_failure",
+      "pre_onset_decisions": 361,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 120,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.07451701164245605,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-10-05-15-52-12_3_engine_failure_with_emr_traj",
+      "fault": "3_engine_failure_with_emr_traj",
+      "pre_onset_decisions": 245,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 87,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.07454037666320801,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-10-05-15-55-10_engine_failure_with_emr_traj",
+      "fault": "engine_failure_with_emr_traj",
+      "pre_onset_decisions": 500,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 65,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.1386570930480957,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.03076923076923077,
+      "time_to_first_physics_s": 11.738656997680664
+    },
+    {
+      "sequence": "carbonZ_2018-10-05-16-04-46_engine_failure_with_emr_traj",
+      "fault": "engine_failure_with_emr_traj",
+      "pre_onset_decisions": 381,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 79,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.14007997512817383,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-10-18-11-03-57_engine_failure_with_emr_traj",
+      "fault": "engine_failure_with_emr_traj",
+      "pre_onset_decisions": 520,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 61,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.03075432777404785,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-10-18-11-04-00_engine_failure_with_emr_traj",
+      "fault": "engine_failure_with_emr_traj",
+      "pre_onset_decisions": 555,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 57,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.021467924118041992,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-10-18-11-04-08_1_engine_failure_with_emr_traj",
+      "fault": "1_engine_failure_with_emr_traj",
+      "pre_onset_decisions": 501,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 70,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.1788330078125,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.2571428571428571,
+      "time_to_first_physics_s": 7.578833103179932
+    },
+    {
+      "sequence": "carbonZ_2018-10-18-11-04-08_2_engine_failure_with_emr_traj",
+      "fault": "2_engine_failure_with_emr_traj",
+      "pre_onset_decisions": 491,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 97,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.18095946311950684,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-10-18-11-04-35_engine_failure_with_emr_traj",
+      "fault": "engine_failure_with_emr_traj",
+      "pre_onset_decisions": 506,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 39,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.171586275100708,
+      "pre_onset_physics_rate": 0.021739130434782608,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    },
+    {
+      "sequence": "carbonZ_2018-10-18-11-06-06_engine_failure_with_emr_traj",
+      "fault": "engine_failure_with_emr_traj",
+      "pre_onset_decisions": 513,
+      "pre_onset_threat_rate": 1.0,
+      "post_onset_decisions": 69,
+      "post_onset_threat_rate": 1.0,
+      "time_to_first_threat_s": 0.11512446403503418,
+      "pre_onset_physics_rate": 0.0,
+      "post_onset_physics_rate": 0.0,
+      "time_to_first_physics_s": null
+    }
+  ],
+  "fault_event_summary": {
+    "n_with_telemetry": 36,
+    "detected_any_threat": 36,
+    "detected_by_physics": 3,
+    "mean_pre_onset_threat_rate": 1.0,
+    "mean_post_onset_threat_rate": 1.0
+  },
+  "real_link_stats_airborne": {
+    "msg_rate_hz": {
+      "n": 14926,
+      "p50": 200.0,
+      "p95": 213.0,
+      "p99": 219.0,
+      "max": 234.0,
+      "mean": 199.73006833712984
+    },
+    "interarrival_jitter_ms": {
+      "n": 14926,
+      "p50": 7.914465028740505,
+      "p95": 9.109203561847655,
+      "p99": 9.802917001006787,
+      "max": 11.656696721754404,
+      "mean": 7.959603187094187
+    },
+    "max_seq_gap": {
+      "n": 14926,
+      "p50": 0.0,
+      "p95": 0.0,
+      "p99": 1.0,
+      "max": 26.0,
+      "mean": 0.06324534369556478
+    },
+    "loss_ratio": {
+      "n": 14926,
+      "p50": 0.0,
+      "p95": 0.0,
+      "p99": 0.02,
+      "max": 0.52,
+      "mean": 0.0012649068739112959
+    },
+    "n_sources": {
+      "n": 14926,
+      "p50": 1.0,
+      "p95": 2.0,
+      "p99": 3.0,
+      "max": 3.0,
+      "mean": 1.4104917593461075
+    }
+  },
+  "source_ids_seen": {
+    "1/1": 137877,
+    "255/190": 27993,
+    "255/0": 27523,
+    "0/0": 6
+  },
+  "per_flight": [
+    {
+      "file": "telemetry/telemetry/2018-09-11/flight6/flight.tlog",
+      "date": "2018-09-11",
+      "segments": 1,
+      "decisions_kept": 14404,
+      "threat_rate": 0.9997917245209664
+    },
+    {
+      "file": "telemetry/telemetry/2018-09-11/flight3/flight.tlog",
+      "date": "2018-09-11",
+      "segments": 1,
+      "decisions_kept": 11496,
+      "threat_rate": 0.9997390396659708
+    },
+    {
+      "file": "telemetry/telemetry/2018-09-11/flight4/flight.tlog",
+      "date": "2018-09-11",
+      "segments": 1,
+      "decisions_kept": 11310,
+      "threat_rate": 0.9997347480106101
+    },
+    {
+      "file": "telemetry/telemetry/2018-09-11/flight9/flight.tlog",
+      "date": "2018-09-11",
+      "segments": 1,
+      "decisions_kept": 9555,
+      "threat_rate": 0.9996860282574568
+    },
+    {
+      "file": "telemetry/telemetry/2018-07-18/flight2/flight.tlog",
+      "date": "2018-07-18",
+      "segments": 1,
+      "decisions_kept": 9428,
+      "threat_rate": 0.9996817988969029
+    },
+    {
+      "file": "telemetry/telemetry/2018-07-30/flight1/flight.tlog",
+      "date": "2018-07-30",
+      "segments": 1,
+      "decisions_kept": 9377,
+      "threat_rate": 0.9996800682521062
+    },
+    {
+      "file": "telemetry/telemetry/2018-10-05/flight1/flight.tlog",
+      "date": "2018-10-05",
+      "segments": 1,
+      "decisions_kept": 9175,
+      "threat_rate": 0.9996730245231608
+    },
+    {
+      "file": "telemetry/telemetry/2018-07-18/flight8/flight.tlog",
+      "date": "2018-07-18",
+      "segments": 1,
+      "decisions_kept": 9161,
+      "threat_rate": 0.9996725248335334
+    },
+    {
+      "file": "telemetry/telemetry/2018-07-30/flight4/flight.tlog",
+      "date": "2018-07-30",
+      "segments": 1,
+      "decisions_kept": 9122,
+      "threat_rate": 0.9996711247533435
+    },
+    {
+      "file": "telemetry/telemetry/2018-10-18/flight9/flight.tlog",
+      "date": "2018-10-18",
+      "segments": 1,
+      "decisions_kept": 8319,
+      "threat_rate": 0.999639379733141
+    },
+    {
+      "file": "telemetry/telemetry/2018-09-11/flight5/flight.tlog",
+      "date": "2018-09-11",
+      "segments": 1,
+      "decisions_kept": 97,
+      "threat_rate": 0.9690721649484536
+    },
+    {
+      "file": "telemetry/telemetry/2018-09-11/flight8/flight.tlog",
+      "date": "2018-09-11",
+      "segments": 2,
+      "decisions_kept": 350,
+      "threat_rate": 0.9914285714285714
+    },
+    {
+      "file": "telemetry/telemetry/2018-10-18/flight7/flight.tlog",
+      "date": "2018-10-18",
+      "segments": 1,
+      "decisions_kept": 0,
+      "threat_rate": null
+    },
+    {
+      "file": "telemetry/telemetry/2018-10-05/flight3/flight.tlog",
+      "date": "2018-10-05",
+      "segments": 1,
+      "decisions_kept": 7140,
+      "threat_rate": 0.9995798319327731
+    },
+    {
+      "file": "telemetry/telemetry/2018-10-05/flight2/flight.tlog",
+      "date": "2018-10-05",
+      "segments": 2,
+      "decisions_kept": 5565,
+      "threat_rate": 0.9994609164420485
+    },
+    {
+      "file": "telemetry/telemetry/2018-10-05/flight4/flight.tlog",
+      "date": "2018-10-05",
+      "segments": 1,
+      "decisions_kept": 838,
+      "threat_rate": 0.9964200477326969
+    },
+    {
+      "file": "telemetry/telemetry/2018-07-18/flight7/flight.tlog",
+      "date": "2018-07-18",
+      "segments": 1,
+      "decisions_kept": 4644,
+      "threat_rate": 0.9993540051679587
+    },
+    {
+      "file": "telemetry/telemetry/2018-10-18/flight10/flight.tlog",
+      "date": "2018-10-18",
+      "segments": 1,
+      "decisions_kept": 68,
+      "threat_rate": 0.9558823529411765
+    },
+    {
+      "file": "telemetry/telemetry/2018-09-11/flight10/flight.tlog",
+      "date": "2018-09-11",
+      "segments": 1,
+      "decisions_kept": 4494,
+      "threat_rate": 0.9993324432576769
+    },
+    {
+      "file": "telemetry/telemetry/2018-09-11/flight7/flight.tlog",
+      "date": "2018-09-11",
+      "segments": 1,
+      "decisions_kept": 0,
+      "threat_rate": null
+    },
+    {
+      "file": "telemetry/telemetry/2018-07-18/flight3/flight.tlog",
+      "date": "2018-07-18",
+      "segments": 1,
+      "decisions_kept": 0,
+      "threat_rate": null
+    },
+    {
+      "file": "telemetry/telemetry/2018-10-18/flight12/flight.tlog",
+      "date": "2018-10-18",
+      "segments": 1,
+      "decisions_kept": 1,
+      "threat_rate": 1.0
+    },
+    {
+      "file": "telemetry/telemetry/2018-10-18/flight8/flight.tlog",
+      "date": "2018-10-18",
+      "segments": 1,
+      "decisions_kept": 0,
+      "threat_rate": null
+    },
+    {
+      "file": "telemetry/telemetry/2018-10-18/flight11/flight.tlog",
+      "date": "2018-10-18",
+      "segments": 1,
+      "decisions_kept": 0,
+      "threat_rate": null
+    },
+    {
+      "file": "telemetry/telemetry/2018-07-30/flight2/flight.tlog",
+      "date": "2018-07-30",
+      "segments": 1,
+      "decisions_kept": 3022,
+      "threat_rate": 0.999007279947055
+    },
+    {
+      "file": "telemetry/telemetry/2018-09-11/flight1/flight.tlog",
+      "date": "2018-09-11",
+      "segments": 1,
+      "decisions_kept": 697,
+      "threat_rate": 0.9956958393113343
+    },
+    {
+      "file": "telemetry/telemetry/2018-07-30/flight5/flight.tlog",
+      "date": "2018-07-30",
+      "segments": 1,
+      "decisions_kept": 2894,
+      "threat_rate": 0.9986178299930891
+    },
+    {
+      "file": "telemetry/telemetry/2018-07-30/flight3/flight.tlog",
+      "date": "2018-07-30",
+      "segments": 2,
+      "decisions_kept": 2527,
+      "threat_rate": 0.9976256430550059
+    },
+    {
+      "file": "telemetry/telemetry/2018-07-30/flight7/flight.tlog",
+      "date": "2018-07-30",
+      "segments": 1,
+      "decisions_kept": 2091,
+      "threat_rate": 0.9985652797704447
+    },
+    {
+      "file": "telemetry/telemetry/2018-07-18/flight4/flight.tlog",
+      "date": "2018-07-18",
+      "segments": 1,
+      "decisions_kept": 377,
+      "threat_rate": 0.9893899204244032
+    },
+    {
+      "file": "telemetry/telemetry/2018-10-18/flight5/flight.tlog",
+      "date": "2018-10-18",
+      "segments": 1,
+      "decisions_kept": 68,
+      "threat_rate": 0.9558823529411765
+    },
+    {
+      "file": "telemetry/telemetry/2018-07-18/flight6/flight.tlog",
+      "date": "2018-07-18",
+      "segments": 1,
+      "decisions_kept": 947,
+      "threat_rate": 0.996832101372756
+    },
+    {
+      "file": "telemetry/telemetry/2018-07-18/flight5/flight.tlog",
+      "date": "2018-07-18",
+      "segments": 1,
+      "decisions_kept": 0,
+      "threat_rate": null
+    },
+    {
+      "file": "telemetry/telemetry/2018-07-18/flight1/flight.tlog",
+      "date": "2018-07-18",
+      "segments": 1,
+      "decisions_kept": 759,
+      "threat_rate": 0.997364953886693
+    },
+    {
+      "file": "telemetry/telemetry/2018-09-11/flight2/flight.tlog",
+      "date": "2018-09-11",
+      "segments": 1,
+      "decisions_kept": 0,
+      "threat_rate": null
+    }
+  ],
+  "python": "3.13.15",
+  "wall_time_s": 547.7
+}
