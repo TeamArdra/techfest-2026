@@ -1,0 +1,16 @@
+{
+  "name": "AegisFlight UAV GCS Defense Console",
+  "short_name": "AegisFlight",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0e13",
+  "theme_color": "#0e141c",
+  "description": "Cross-platform UAV Intrusion Detection, Prevention and Autonomous Recovery Ground Control Station",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

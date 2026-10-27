@@ -1,0 +1,10 @@
+[package]
+name = "aegis_fastpath"
+version = "0.1.0"
+edition = "2021"
+description = "Zero-allocation Rust native MAVLink CRC and packet sanitizer core for AegisFlight"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]

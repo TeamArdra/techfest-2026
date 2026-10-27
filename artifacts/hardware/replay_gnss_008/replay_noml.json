@@ -1,0 +1,76 @@
+{
+  "tlog": "data/hardware/raw/telemetry_radio_008.tlog",
+  "config_dir": "configs (Stage-1 default)",
+  "ml_enabled": false,
+  "clock_offset_s_used_for_phases": 0.0,
+  "decisions": 313,
+  "threat_decisions": 146,
+  "alert_decisions": 9,
+  "alert_rate_per_decision": 0.02875,
+  "by_phase": {
+    "boot": {
+      "decisions": 313,
+      "threat": 146,
+      "alerts": 9
+    }
+  },
+  "detector_ge_0.5": {
+    "physics_consistency": 12,
+    "protocol_rule": 138
+  },
+  "alert_types": {
+    "GPS_SPOOFING": 1,
+    "DOS": 7,
+    "TELEMETRY_MANIPULATION": 1
+  },
+  "alert_evidence_top": [
+    [
+      "position residual 12.1 m > 12 m (reported track diverges from velocity)",
+      1
+    ],
+    [
+      "position residual 12.6 m > 12 m (reported track diverges from velocity)",
+      1
+    ],
+    [
+      "GNSS fix lost: fix_type=2, satellites=3 for 5 decisions",
+      1
+    ],
+    [
+      "GNSS fix lost: fix_type=2, satellites=3 for 25 decisions",
+      1
+    ],
+    [
+      "GNSS fix lost: fix_type=2, satellites=3 for 45 decisions",
+      1
+    ],
+    [
+      "GPS/baro altitude mismatch 19.2 m > 8 m",
+      1
+    ],
+    [
+      "implausible altitude rate -96.0 m/s",
+      1
+    ],
+    [
+      "GNSS fix lost: fix_type=2, satellites=3 for 49 decisions",
+      1
+    ],
+    [
+      "GNSS fix lost: fix_type=2, satellites=3 for 65 decisions",
+      1
+    ],
+    [
+      "GNSS fix lost: fix_type=2, satellites=3 for 85 decisions",
+      1
+    ],
+    [
+      "GNSS fix lost: fix_type=2, satellites=3 for 105 decisions",
+      1
+    ],
+    [
+      "GNSS fix lost: fix_type=1, satellites=0 for 125 decisions",
+      1
+    ]
+  ]
+}

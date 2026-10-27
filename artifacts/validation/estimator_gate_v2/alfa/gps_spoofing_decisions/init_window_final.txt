@@ -1,0 +1,43 @@
+2018-07-18 1531929162.89 threat DOS phys=0.00 pos_res=6.1 | message-rate spike: 164 msg/s > 3×nominal (84)
+2018-07-18 1531929163.09 threat DOS phys=1.00 pos_res=31.5 | position discontinuity 8116935.8 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-07-18 1531929163.29 threat GPS_SPOOFING phys=1.00 pos_res=31.5 | position discontinuity 8116935.8 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-07-18 1531929163.49 threat GPS_SPOOFING phys=1.00 pos_res=30.0 | position discontinuity 8116935.8 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-07-18 1531929163.69 threat TELEMETRY_MANIPULATION phys=1.00 pos_res=29.9 | position discontinuity 8116935.8 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-07-18 1531929163.89 threat GPS_SPOOFING phys=1.00 pos_res=29.5 | position discontinuity 8116935.8 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-07-18 1531929164.09 threat GPS_SPOOFING phys=1.00 pos_res=28.9 | position discontinuity 8116935.8 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-07-18 1531929164.29 threat GPS_SPOOFING phys=1.00 pos_res=28.0 | position discontinuity 8116935.8 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-07-18 1531929164.49 threat GPS_SPOOFING phys=1.00 pos_res=27.9 | position discontinuity 8116935.8 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-07-18 1531929164.69 threat GPS_SPOOFING phys=1.00 pos_res=27.3 | position discontinuity 8116935.8 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-07-18 1531929164.89 threat GPS_SPOOFING phys=1.00 pos_res=27.3 | position discontinuity 8116935.8 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-07-18 1531929165.09 threat GPS_SPOOFING phys=1.00 pos_res=27.3 | position discontinuity 8116935.8 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-07-18 1531929165.29 threat GPS_SPOOFING phys=1.00 pos_res=27.0 | position discontinuity 8116935.8 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-07-18 1531929165.49 threat GPS_SPOOFING phys=1.00 pos_res=27.0 | position discontinuity 8116935.8 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-07-18 1531929165.69 threat GPS_SPOOFING phys=1.00 pos_res=27.1 | position discontinuity 8116935.8 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-07-18 1531929165.89 threat GPS_SPOOFING phys=1.00 pos_res=27.1 | position discontinuity 8116935.8 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-07-18 1531929166.09 threat GPS_SPOOFING phys=1.00 pos_res=27.3 | position discontinuity 8116935.8 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-07-18 1531929166.29 threat GPS_SPOOFING phys=1.00 pos_res=27.4 | position discontinuity 8116935.8 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-07-18 1531929166.49 threat DOS phys=0.00 pos_res=7.8 | message-rate spike: 161 msg/s > 3×nominal (84)
+2018-07-18 1531929166.69 threat DOS phys=0.00 pos_res=6.0 | message-rate spike: 163 msg/s > 3×nominal (84)
+2018-10-05 1538765084.97 threat DOS phys=0.00 pos_res=0.0 | message-rate spike: 154 msg/s > 3×nominal (84)
+2018-10-05 1538765085.17 threat DOS phys=0.00 pos_res=0.0 | message-rate spike: 151 msg/s > 3×nominal (84)
+2018-10-05 1538765085.37 threat GPS_SPOOFING phys=1.00 pos_res=30.0 | position discontinuity 8117062.4 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-10-05 1538765085.57 threat GPS_SPOOFING phys=1.00 pos_res=30.2 | position discontinuity 8117062.4 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-10-05 1538765085.77 threat GPS_SPOOFING phys=1.00 pos_res=30.2 | position discontinuity 8117062.4 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-10-05 1538765085.97 threat GPS_SPOOFING phys=1.00 pos_res=30.3 | position discontinuity 8117062.4 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-10-05 1538765086.17 threat TELEMETRY_MANIPULATION phys=1.00 pos_res=30.2 | position discontinuity 8117062.4 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-10-05 1538765086.37 threat TELEMETRY_MANIPULATION phys=1.00 pos_res=30.1 | position discontinuity 8117062.4 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-10-05 1538765086.57 threat GPS_SPOOFING phys=1.00 pos_res=30.0 | position discontinuity 8117062.4 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-10-05 1538765086.77 threat GPS_SPOOFING phys=1.00 pos_res=30.0 | position discontinuity 8117062.4 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-10-05 1538765086.97 threat GPS_SPOOFING phys=1.00 pos_res=30.0 | position discontinuity 8117062.4 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-10-05 1538765087.17 threat GPS_SPOOFING phys=1.00 pos_res=29.9 | position discontinuity 8117062.4 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-10-05 1538765087.37 threat GPS_SPOOFING phys=1.00 pos_res=29.9 | position discontinuity 8117062.4 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-10-05 1538765087.57 threat GPS_SPOOFING phys=1.00 pos_res=29.9 | position discontinuity 8117062.4 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-10-05 1538765087.77 threat GPS_SPOOFING phys=1.00 pos_res=29.9 | position discontinuity 8117062.4 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-10-05 1538765087.97 threat GPS_SPOOFING phys=1.00 pos_res=29.9 | position discontinuity 8117062.4 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-10-05 1538765088.17 threat GPS_SPOOFING phys=1.00 pos_res=29.9 | position discontinuity 8117062.4 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-10-05 1538765088.37 threat GPS_SPOOFING phys=1.00 pos_res=29.9 | position discontinuity 8117062.4 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-10-05 1538765088.57 threat GPS_SPOOFING phys=1.00 pos_res=30.0 | position discontinuity 8117062.4 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-10-05 1538765088.77 threat GPS_SPOOFING phys=1.00 pos_res=30.0 | position discontinuity 8117062.4 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-10-05 1538765088.97 threat GPS_SPOOFING phys=1.00 pos_res=30.0 | position discontinuity 8117062.4 m in one fix ≥ hard 30 m (at or leaving an estimator stat
+2018-10-05 1538765089.17 threat DOS phys=0.00 pos_res=0.0 | message-rate spike: 159 msg/s > 3×nominal (84)
+2018-10-05 1538765089.37 threat DOS phys=0.00 pos_res=0.1 | message-rate spike: 156 msg/s > 3×nominal (84)

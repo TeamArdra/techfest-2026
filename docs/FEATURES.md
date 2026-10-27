@@ -30,6 +30,22 @@ apply thresholds and the "expected source" policy.
 | `accel_ms2` / `jerk_ms3` | m/s²,³ | horizontal accel/jerk from velocity history | physics, ML |
 | `battery_v_rate` / `battery_v_rise` | V/s | battery-voltage derivative / upward part | physics (**not** ML*) |
 | `yaw_course_diff_deg` | ° | `|attitude yaw − course-over-ground|` (frozen-attitude signal) | physics, ML |
+| `ekf_flags` / `ekf_age_s` | — / s | last `EKF_STATUS_REPORT.flags` and its age at `t`; `None` = never received | physics (**not** ML) |
+| `nav_solution` | bool / None | estimator state at the **latest position fix** (not at `t`; before the first fix, at `t`): True = horizontal solution, False = none (`CONST_POS_MODE`, or no `POS_HORIZ_ABS/REL`), None = unknown (no report, or older than 2 s at that fix) | diagnostic only (**not** ML) |
+| `nav_gated` | bool | the latest fix was *gated*: fresh no-solution report **and** no-solution reported continuously for ≥ 2 s (a solution report or a > 2 s report gap restarts the run); `False` by default; the latest-fix state, so it goes stale if `GLOBAL_POSITION_INT` stops | physics (**not** ML) |
+| `pos_residual_nav_m` | m | `pos_residual_m` over the same 15-fix window without the increments of gated fixes and of the gated → ungated transition fix; **exactly** `pos_residual_m` when the window holds neither; `None` if `EKF_STATUS_REPORT` was never received | physics (**not** ML) |
+| `pos_step_max_m` | m | largest unclamped residual increment \|Δp − v·dt\| of a gated or transition fix in the window (the step the reported velocity does not account for, not the raw displacement); 0 when there is none | physics (**not** ML) |
+| `pos_vel_shortfall_gated_m` | m | over the gated fixes in the window, the velocity-implied movement the position does not show: \|V\| − (P projected on V, clamped to [0, \|V\|]), with V = Σ v·dt and P = Σ raw measured displacement of those fixes; 0 ≤ value ≤ \|V\|; movement perpendicular to V is not measured; 0 when no gated fix is in the window | physics (**not** ML) |
+
+**Contract extension (2026-10-25; authorisation recorded in `docs/HANDOFF.md`, "Do NOT change casually").** `EKF_STATUS_REPORT` (ardupilotmega id 193)
+is a new message read by the extractor. This is an additive extension of the "MAVLink field
+mappings" frozen contract:
+* Only `flags` is read, with bit values taken from the installed pymavlink dialect.
+* The Stage-1 codec does not encode the message, so SIM streams are unchanged.
+* `ML_FEATURES` and the computation of every existing feature are unchanged, so no retraining was
+  needed.
+* Hand-built frames get `None` / `False` / `0.0` defaults. Migration note: `docs/HANDOFF.md`.
+* Rules that read these fields: `docs/DETECTION.md`, "Estimator-aware position residual".
 
 \* `battery_v_rate` is intentionally excluded from `ML_FEATURES`: it is ~0 in
 steady flight (near-zero variance), so throttle transitions read as extreme

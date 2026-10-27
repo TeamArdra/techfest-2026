@@ -1,0 +1,27 @@
+# compare_results.py json <baseline> <candidate> (exit 1)
+# baseline : artifacts/external/alfa_calibrated/results.json
+# candidate: artifacts/validation/estimator_gate_v2/alfa/before/alfa_calibrated/results.json
+JSON non-timing leaves compared: 515, differing: 23
+  DIFF /categories/unlabelled/predicted_classes/DOS: 4050 != 4012
+  DIFF /categories/unlabelled/protocol_rule_trigger_rate: 0.060048789641583784 != 0.05950026704389624
+  DIFF /categories/unlabelled/threat_rate: 0.06338322964331597 != 0.06283470704562842
+  DIFF /categories/unlabelled/top_evidence/GNSS fix lost: key only in baseline
+  DIFF /categories/unlabelled/top_evidence/GNSS fix never acquired: key only in candidate
+  DIFF /categories/unlabelled/top_evidence/GPS dropout 999.0s: key only in baseline
+  DIFF /categories/unlabelled/top_evidence/position residual 12.1 m: key only in candidate
+  DIFF /per_flight[0]/threat_rate: 0.002638156067758956 != 0.002429880588725354
+  DIFF /per_flight[1]/threat_rate: 0.0037404314544189285 != 0.0035664578983994433
+  DIFF /per_flight[2]/threat_rate: 0.0023872679045092837 != 0.002122015915119363
+  DIFF /per_flight[3]/threat_rate: 0.0057561486132914706 != 0.005442176870748299
+  DIFF /per_flight[4]/threat_rate: 0.41198910081743867 != 0.4116621253405994
+  DIFF /per_flight[5]/threat_rate: 0.007332612092799616 != 0.006971991825940618
+  DIFF /per_flight[6]/threat_rate: 0.061855670103092786 != 0.030927835051546393
+  DIFF /per_flight[7]/threat_rate: 0.9857142857142858 != 0.9828571428571429
+  DIFF /per_flight[9]/threat_rate: 0.0021008403361344537 != 0.0016806722689075631
+  DIFF /per_flight[10]/threat_rate: 0.004492362982929021 != 0.00431266846361186
+  DIFF /per_flight[11]/threat_rate: 0.007159904534606206 != 0.003579952267303103
+  DIFF /per_flight[12]/threat_rate: 0.08823529411764706 != 0.04411764705882353
+  DIFF /per_flight[13]/threat_rate: 0.002447708055184691 != 0.0017801513128615932
+  DIFF /per_flight[18]/threat_rate: 0.011477761836441894 != 0.007173601147776184
+  DIFF /per_flight[19]/threat_rate: 0.058823529411764705 != 0.04411764705882353
+  DIFF /python: '3.13.11' != '3.13.15'

@@ -167,6 +167,16 @@ numbers, and the PX4 SITL calibration profile should not be assumed to transfer 
 All are measured at this transport. **None measures loss below the driver** (UART FIFO overruns,
 USB drops, radio loss before `read()` returned the bytes); there is deliberately no such counter.
 
+**Open-time purge (uncounted).** pyserial 3.5 clears the input buffer as the last step of `open()` on every
+backend: `socket://` reads and discards, Windows uses `PurgeComm`, POSIX uses `tcflush`. Bytes that arrived
+before `open()` returned never reach the framer and are in no counter. This happens at the first open and at
+every reconnect. On a live link they are just the stale head of a continuous stream. A test device that starts
+streaming on `accept` therefore races the client's `open()`, and can lose its first frames (any number, including
+a partial burst) if the client thread is scheduled late. A test that asserts on the head of the stream must wait
+for `connected` before it streams (`tests/integration/test_app_live_source.py`, `Device(start=...)`). That
+includes exact counts, and the presence of a low-rate message such as the 1 Hz HEARTBEAT. The behaviour is pinned
+by `test_virtual_port_bytes_that_arrive_before_open_returns_are_purged_uncounted`.
+
 | Counter | Meaning |
 |---|---|
 | `bytes_received`, `reads` | bytes / `read()` calls that returned data |

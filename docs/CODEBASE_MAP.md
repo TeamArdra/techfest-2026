@@ -7,10 +7,12 @@ anything else in the package.
 ```
 aegisflight/
 ├── core/            # shared vocabulary — types, enums, geo math (NO deps)
+├── hal/             # Hardware Abstraction Layer & inline bridge (Stage 2)
+├── mitigation/      # autonomous prevention engine & golden state twin (Stage 2)
 ├── config.py        # typed config: YAML-over-defaults deep-merge
 ├── simulator/       # deterministic UAV flight -> clean FlightState
-├── mavlink/         # genuine MAVLink v2 encode/decode (pymavlink) + noise
-├── attacks/         # 6 safe local attack scenarios (value/stream/integrity)
+├── mavlink/         # genuine MAVLink v2 encode/decode, signing & GCS notifier
+├── attacks/         # 20 safe attack scenarios (value/stream/integrity)
 ├── integrity/       # SHA-256 firmware manifest verifier
 ├── sources/         # SimulatedTelemetrySource: sim->encode->attack->decode
 ├── features/        # online FeatureExtractor -> FeatureFrame
@@ -23,14 +25,15 @@ aegisflight/
 ├── backend/         # FastAPI app + LiveEngine (REST + WebSocket)
 └── cli/             # `aegis` CLI (simulate/benchmark/train/serve/verify-log)
 
-frontend/            # Vite + React + TS dashboard (builds to frontend/dist)
-scripts/             # train_models.py, benchmark.py, run_demo.py
+frontend/            # React 19 + TS dashboard + Tauri 2.0 Rust desktop GCS
+rust/aegis_fastpath/ # zero-allocation Rust MAVLink frame sanitizer
+scripts/             # verify_stage2.py, train_models.py, benchmark.py, run_demo.py
 configs/             # simulation.yaml, detector.yaml, attacks.yaml
-tests/               # unit / integration / e2e
+tests/               # unit / integration / e2e tests (`pytest -q` prints the count)
 backend/tests/       # FastAPI API tests
 artifacts/           # benchmark results.json/csv/summary.md + figures (committed)
 models/              # isoforest.joblib (regenerable; gitignored)
-docs/                # this documentation set
+docs/                # comprehensive documentation set
 ```
 
 ## Dependency direction (who imports whom)
@@ -38,9 +41,11 @@ docs/                # this documentation set
 | Module | Imports | Imported by |
 |---|---|---|
 | `core/` | (stdlib only) | everything |
+| `hal/` | core, mavlink, mitigation | backend, cli |
+| `mitigation/` | core, mavlink | backend, hal, pipeline |
 | `config.py` | `pyyaml` | simulator, sources, pipeline, backend, benchmark, cli |
 | `simulator/` | core | sources, benchmark |
-| `mavlink/` | core, pymavlink | attacks, sources |
+| `mavlink/` | core, pymavlink | attacks, sources, mitigation, hal |
 | `integrity/` | core | attacks, detectors, pipeline |
 | `attacks/` | core, mavlink, integrity | sources, backend, benchmark |
 | `sources/` | config, core, simulator, mavlink, attacks | pipeline, benchmark, backend |
@@ -51,7 +56,7 @@ docs/                # this documentation set
 | `metrics/` | core, psutil | benchmark |
 | `pipeline.py` | config, detectors, features, fusion, integrity, sources | backend, benchmark |
 | `benchmark/` | everything above | cli, scripts |
-| `backend/` | config, pipeline, sources, attacks, logging | cli |
+| `backend/` | config, pipeline, sources, attacks, logging, mitigation, hal | cli |
 | `cli/` | (lazy) most modules | `aegis` entry point |
 
 ## Architectural rules (keep it from becoming spaghetti)

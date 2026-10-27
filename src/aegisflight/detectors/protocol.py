@@ -35,6 +35,9 @@ class ProtocolDetector(Detector):
         self.sensitive = set(p.get("sensitive_commands", []))
         self.burst_max = int(p.get("command_burst_max", 4))
         self.require_signing = bool(p.get("require_signing", False))
+        self.cadence_guard_enabled = bool(p.get("cadence_guard_enabled", False))
+        self.cadence_min_interval_s = float(p.get("cadence_min_interval_s", 1.5))
+        self._last_cmd_seen: dict[tuple[int, int], float] = {}
         # GNSS fix loss (jamming / receiver denial): fix_type < min_fix_type or
         # satellites < min_satellites for >= gnss_loss_ticks consecutive decisions.
         self.min_fix_type = int(p.get("min_gnss_fix_type", 3))
@@ -225,6 +228,35 @@ class ProtocolDetector(Detector):
             evidence.append(ev)
         signals["cmd_rate_hz"] = frame.cmd_rate_hz
 
+        # ---- state-aware command cadence guard (unsigned replay & mid-air disarm protection) ----
+        if self.cadence_guard_enabled and frame.commands_recent:
+            high_risk_cmds = {400, 176, 20, 21}  # ARM_DISARM, DO_SET_MODE, RTL, LAND
+            seen_in_window: dict[tuple[int, int], float] = {}
+            for c in frame.commands_recent:
+                if c.command not in high_risk_cmds:
+                    continue
+                key = (c.sysid, c.command)
+                last = self._last_cmd_seen.get(key)
+                if last is not None and c.recv_time <= last:
+                    continue  # already evaluated on an earlier decision (commands_recent is a sliding window)
+                prev_t = seen_in_window.get(key, last)
+                if prev_t is not None and 0.0 < (c.recv_time - prev_t) < self.cadence_min_interval_s:
+                    bump(AttackType.COMMAND_INJECTION, 0.90)
+                    evidence.append(
+                        f"duplicate high-risk command {command_name_from_id(c.command)} "
+                        f"from sys{c.sysid} violates operator cadence "
+                        f"(Δt={c.recv_time - prev_t:.2f}s < {self.cadence_min_interval_s:.1f}s)"
+                    )
+                if c.command == 400 and (not c.params or c.params[0] == 0.0):
+                    if (snap.groundspeed or 0.0) > 1.0 and snap.armed:
+                        bump(AttackType.COMMAND_INJECTION, 0.95)
+                        evidence.append(
+                            f"state-aware cadence guard: mid-air motor disarm (sys{c.sysid}) "
+                            f"at groundspeed={snap.groundspeed:.1f} m/s"
+                        )
+                seen_in_window[key] = c.recv_time
+                self._last_cmd_seen[key] = c.recv_time
+
         # ---- signing policy ----
         if self.require_signing and frame.signed_ratio < 1.0:
             bump(AttackType.MAVLINK_ANOMALY, 0.5)
@@ -255,3 +287,4 @@ class ProtocolDetector(Detector):
         self._gnss_bad = 0
         self._gnss_ever_valid = False
         self._t0 = None
+        self._last_cmd_seen.clear()

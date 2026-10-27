@@ -1,0 +1,235 @@
+{
+ "verbatim_copies": {
+  "tools/compare_results.py": {
+   "source": "<scratch>/compare_results.py",
+   "sha256": "9ad748ec145dd85bc9b997e83b154becd0e86d6c6e6a26c1f38d29a70d9c0eee"
+  },
+  "stage1_regression/summary.md": {
+   "source": "<scratch>/bench_final/summary.md",
+   "sha256": "c01320728fcd33cced0f1ac1669dc3eda762f689e711e30f31bb1a94b1c6bde6"
+  },
+  "stage1_regression/results.csv": {
+   "source": "<scratch>/bench_final/results.csv",
+   "sha256": "c8855c005ace7946fb4ca24f7542599625d58c7630dd2fb0523b19916f0c8081"
+  },
+  "stage1_regression/results.json": {
+   "source": "<scratch>/bench_final/results.json",
+   "sha256": "996493e235fbdc555424ac5ac6813c868dbfb953c18ac2ebb726f88109ddba3a"
+  },
+  "alfa/before/alfa/results.json": {
+   "source": "<scratch>/alfa_head/alfa/results.json",
+   "sha256": "0257000a872ca6549b782a4b945b2d1f5b9713b033d85322f3ae359a1514e15c"
+  },
+  "alfa/before/alfa/summary.md": {
+   "source": "<scratch>/alfa_head/alfa/summary.md",
+   "sha256": "d26d95f736a923b187ab68937a297cc52ca003252632131091c7be9b5841e5ee"
+  },
+  "alfa/before/alfa_calibrated/results.json": {
+   "source": "<scratch>/alfa_head/alfa_calibrated/results.json",
+   "sha256": "c41801c396353b8ba8c0559f5ebcedd5c7ce0aed74357534c70e0e29ebd9df4f"
+  },
+  "alfa/before/alfa_calibrated/summary.md": {
+   "source": "<scratch>/alfa_head/alfa_calibrated/summary.md",
+   "sha256": "956215ffbf631242febc2b8896f52edd982c09c9ba4757298417a7932d52d453"
+  },
+  "alfa/after/alfa/results.json": {
+   "source": "<scratch>/alfa_final/alfa/results.json",
+   "sha256": "e5ef262bb963a5aff67cf3f067b41cb7cce6a117ec8b6878a492e18b021cd1fc"
+  },
+  "alfa/after/alfa/summary.md": {
+   "source": "<scratch>/alfa_final/alfa/summary.md",
+   "sha256": "027a5170832fb81a3dc06920a5df454a904ab43e65c32b2eb5fb89ef0bfa0c83"
+  },
+  "alfa/after/alfa_calibrated/results.json": {
+   "source": "<scratch>/alfa_final/alfa_calibrated/results.json",
+   "sha256": "c9c51edca2afe529cc0ceebce696dba5b3e60b68dd0b7d9089a49c617aacb09f"
+  },
+  "alfa/after/alfa_calibrated/summary.md": {
+   "source": "<scratch>/alfa_final/alfa_calibrated/summary.md",
+   "sha256": "d07fade10681f117ddd8555048b5fb7c66ad99db6583d66028e5a8bb0ae98a64"
+  }
+ },
+ "redacted_copies": {
+  "alfa/gps_spoofing_decisions/alfa_gps_head.json": {
+   "source": "<scratch>/alfa_gps_head.json",
+   "source_sha256": "dace662cbea21aa0b120815bc1bb38227d098070b58cae1c1d892eb005934ec4",
+   "sha256": "aa107c4a15ad463cead5bd7cea3634bc7e1a7a52d68824a119627fdb968459b1",
+   "changed_field": "code (absolute local path -> placeholder)",
+   "rows": 8,
+   "n_tlogs": 41
+  },
+  "alfa/gps_spoofing_decisions/alfa_gps_final.json": {
+   "source": "<scratch>/alfa_gps_final.json",
+   "source_sha256": "db9cd0562554dec0ade5ce8c06151d042fbae1f160239e45e0f416b2dd9e86de",
+   "sha256": "7a98898a2350adb02317d63df00f55700a0232152669348ead4b9a1c369e89b1",
+   "changed_field": "code (absolute local path -> placeholder)",
+   "rows": 32,
+   "n_tlogs": 41
+  },
+  "tools/alfa_gps_probe.py": {
+   "source": "<scratch>/alfa_gps_probe.py",
+   "sha256": "21e41e69418527c2bf13213970611fe489ff6a7d330eee711a5f8acb03b4fb92",
+   "change": "lead 2026-10-26: hard-coded local repo path replaced by Path(__file__).resolve().parents[4]; logic unchanged"
+  },
+  "tools/alfa_init_probe.py": {
+   "source": "<scratch>/alfa_init_probe.py",
+   "sha256": "3e8da086a250e8afe5c38fde2ead3aa9649c64135bd6ba2443c4e91fffc45434",
+   "change": "lead 2026-10-26: hard-coded local repo path replaced by Path(__file__).resolve().parents[4]; logic unchanged; imports split and %-format replaced by f-strings (ruff); output format unchanged"
+  }
+ },
+ "comparisons": {
+  "stage1_regression/compare_vs_committed_baseline.txt": {
+   "mode": "bench",
+   "exit": 1
+  },
+  "alfa/compare_before_after_alfa.txt": {
+   "mode": "json",
+   "exit": 1
+  },
+  "alfa/compare_before_after_alfa_calibrated.txt": {
+   "mode": "json",
+   "exit": 1
+  },
+  "alfa/compare_committed_vs_before_alfa.txt": {
+   "mode": "json",
+   "exit": 1
+  },
+  "alfa/compare_committed_vs_before_alfa_calibrated.txt": {
+   "mode": "json",
+   "exit": 1
+  }
+ },
+ "coordinate_scan": {
+  "alfa/after/alfa/results.json": 0,
+  "alfa/after/alfa_calibrated/results.json": 0,
+  "alfa/before/alfa/results.json": 0,
+  "alfa/before/alfa_calibrated/results.json": 0,
+  "alfa/gps_spoofing_decisions/alfa_gps_final.json": 0,
+  "alfa/gps_spoofing_decisions/alfa_gps_head.json": 0,
+  "replay_identity/ekf_presence.json": 0,
+  "replay_identity/identity.json": 0,
+  "stage1_regression/results.json": 0
+ },
+ "bundle_files": {
+  "alfa/after/alfa/results.json": {
+   "bytes": 30377,
+   "sha256": "e5ef262bb963a5aff67cf3f067b41cb7cce6a117ec8b6878a492e18b021cd1fc"
+  },
+  "alfa/after/alfa/summary.md": {
+   "bytes": 6737,
+   "sha256": "027a5170832fb81a3dc06920a5df454a904ab43e65c32b2eb5fb89ef0bfa0c83"
+  },
+  "alfa/after/alfa_calibrated/results.json": {
+   "bytes": 23194,
+   "sha256": "c9c51edca2afe529cc0ceebce696dba5b3e60b68dd0b7d9089a49c617aacb09f"
+  },
+  "alfa/after/alfa_calibrated/summary.md": {
+   "bytes": 6084,
+   "sha256": "d07fade10681f117ddd8555048b5fb7c66ad99db6583d66028e5a8bb0ae98a64"
+  },
+  "alfa/before/alfa/results.json": {
+   "bytes": 30352,
+   "sha256": "0257000a872ca6549b782a4b945b2d1f5b9713b033d85322f3ae359a1514e15c"
+  },
+  "alfa/before/alfa/summary.md": {
+   "bytes": 6737,
+   "sha256": "d26d95f736a923b187ab68937a297cc52ca003252632131091c7be9b5841e5ee"
+  },
+  "alfa/before/alfa_calibrated/results.json": {
+   "bytes": 23166,
+   "sha256": "c41801c396353b8ba8c0559f5ebcedd5c7ce0aed74357534c70e0e29ebd9df4f"
+  },
+  "alfa/before/alfa_calibrated/summary.md": {
+   "bytes": 6084,
+   "sha256": "956215ffbf631242febc2b8896f52edd982c09c9ba4757298417a7932d52d453"
+  },
+  "alfa/compare_before_after_alfa.txt": {
+   "bytes": 1119,
+   "sha256": "a6d20703c6c3d1db0674db1871353db3666f34069fad0b0ee5ff657333770d6f"
+  },
+  "alfa/compare_before_after_alfa_calibrated.txt": {
+   "bytes": 1644,
+   "sha256": "232677db9dbab05fee1494083d9588fba2b6a2bf3b48809bcba50275b5f51145"
+  },
+  "alfa/compare_committed_vs_before_alfa.txt": {
+   "bytes": 2667,
+   "sha256": "7b45511f7255937bdbd374a95761a3d3347a42832bfb9c19659523d5d0bf7172"
+  },
+  "alfa/compare_committed_vs_before_alfa_calibrated.txt": {
+   "bytes": 2103,
+   "sha256": "4f9f04c799ff8e4d60b3b181467e437d8fe73e3a4158e264d832437663b0b013"
+  },
+  "alfa/gps_spoofing_decisions/alfa_gps_final.json": {
+   "bytes": 16207,
+   "sha256": "7a98898a2350adb02317d63df00f55700a0232152669348ead4b9a1c369e89b1"
+  },
+  "alfa/gps_spoofing_decisions/alfa_gps_head.json": {
+   "bytes": 3426,
+   "sha256": "aa107c4a15ad463cead5bd7cea3634bc7e1a7a52d68824a119627fdb968459b1"
+  },
+  "alfa/gps_spoofing_decisions/init_window_final.txt": {
+   "bytes": 6688,
+   "sha256": "dbb747a8080043b8f4e2afd39c8503bd79d70b3cdf2b9c4a598f29ea2350057b"
+  },
+  "alfa/gps_spoofing_decisions/init_window_head.txt": {
+   "bytes": 5353,
+   "sha256": "8f64a5e7c64d96f9e6cf385fcf122cb3c5ea43969783ecd12290a54f7ad50df4"
+  },
+  "README.md": {
+   "bytes": 14288,
+   "sha256": "1af135ca2a1790503b0a15fd88b56ea952333c3027264ae0faf238cf88559e93"
+  },
+  "replay_identity/ekf_presence.json": {
+   "bytes": 11761,
+   "sha256": "f50925ea3cbbf3dcd1cfe80fac04f6eb33556b05349bf4d3e004405c91042020"
+  },
+  "replay_identity/identity.json": {
+   "bytes": 47008,
+   "sha256": "b41f98a19173508eef33f0c5be82fc37280d94a4de5afd6f83b7db85b89b99aa"
+  },
+  "replay_identity/identity.md": {
+   "bytes": 5822,
+   "sha256": "5bc5c334c8d2c3331c34b16c94487b85c454ca37bc27f9678470e26eb7cd462a"
+  },
+  "stage1_regression/compare_vs_committed_baseline.txt": {
+   "bytes": 1486,
+   "sha256": "c14aced486773dbcbd14871b3849a3286986b8ac2b9986d25f20d0ecbfc5669d"
+  },
+  "stage1_regression/results.csv": {
+   "bytes": 3486,
+   "sha256": "c8855c005ace7946fb4ca24f7542599625d58c7630dd2fb0523b19916f0c8081"
+  },
+  "stage1_regression/results.json": {
+   "bytes": 5131,
+   "sha256": "996493e235fbdc555424ac5ac6813c868dbfb953c18ac2ebb726f88109ddba3a"
+  },
+  "stage1_regression/summary.md": {
+   "bytes": 1264,
+   "sha256": "c01320728fcd33cced0f1ac1669dc3eda762f689e711e30f31bb1a94b1c6bde6"
+  },
+  "tools/alfa_gps_probe.py": {
+   "bytes": 1744,
+   "sha256": "21e41e69418527c2bf13213970611fe489ff6a7d330eee711a5f8acb03b4fb92"
+  },
+  "tools/alfa_init_probe.py": {
+   "bytes": 987,
+   "sha256": "3e8da086a250e8afe5c38fde2ead3aa9649c64135bd6ba2443c4e91fffc45434"
+  },
+  "tools/compare_results.py": {
+   "bytes": 3266,
+   "sha256": "9ad748ec145dd85bc9b997e83b154becd0e86d6c6e6a26c1f38d29a70d9c0eee"
+  },
+  "tools/ekf_presence.py": {
+   "bytes": 3281,
+   "sha256": "066f1d83ded04cbfec26921137fe7d5c8fa3b9f51a4e388fc0b5589082084b45"
+  },
+  "tools/import_scratch.py": {
+   "bytes": 6551,
+   "sha256": "cd3777b1d7399ac28e4b876a7f509cc6781e870ce4e91e9dce9dc0365a22042b"
+  },
+  "tools/replay_identity.py": {
+   "bytes": 9354,
+   "sha256": "86b465b737f065ed7f7f5c760be2379125514a56ea2b900f24ae14715be55e2c"
+  }
+ }
+}

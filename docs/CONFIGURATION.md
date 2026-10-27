@@ -32,7 +32,17 @@ feature distribution → **retrain the ML model** (`aegis train`) and re-benchma
 - `physics.*` — `gps_pos_residual_m` (12) + hard (30), `gps_speed_consistency_ms`
   (5), `alt_consistency_m` (8), `alt_jump_ms` (25), `max_accel_ms2` (20),
   `battery_rise_v` (0.4), `battery_drop_rate_v_s` (2), `hysteresis_ticks` (2),
-  `yaw_course_deg` (25; optional key - previously a hard-coded constant).
+  `yaw_course_deg` (25; optional key - previously a hard-coded constant),
+  `estimator_gate` (true; optional key, 2026-10-25, v2 2026-10-26). It is inert only while no
+  `EKF_STATUS_REPORT` is received; the report is unauthenticated, so an injected one can activate
+  it (it needs ≥ 2 s of sustained no-solution reports). A fix is gated when a fresh report says no
+  horizontal solution and the reports have said so continuously for ≥ 2 s. At gated fixes the
+  position residual is degraded navigation, not spoofing; velocity-implied movement the position
+  does not show uses the residual thresholds, and one residual increment |Δp − v·dt| ≥ the hard
+  threshold (a step the velocity does not account for) alerts.
+  Other fixes use the Stage-1 rule. No new threshold. It needs reports at least every 2 s; slower
+  links never gate. `false` = the Stage-1 rule
+  (`docs/DETECTION.md`, "Estimator-aware position residual").
 - `anomaly.*` — `model_path`, `score_threshold` (0.62), `contamination` (0.02),
   `n_estimators` (200), `warmup_ticks` (20).
 - `fusion.*` — `weights` (protocol 0.30 / physics 0.34 / ml 0.16 / firmware

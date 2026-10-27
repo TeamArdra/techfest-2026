@@ -18,6 +18,7 @@ from __future__ import annotations
 import itertools
 import os
 import random
+import select
 import socket
 import sys
 import threading
@@ -1309,6 +1310,37 @@ def test_virtual_port_connect_sends_nothing(vport):
         collect(tr, 1)
         time.sleep(0.2)
     assert bytes(vport.received) == b"" and tr.bytes_sent == 0
+
+
+def test_virtual_port_bytes_that_arrive_before_open_returns_are_purged_uncounted(vport, monkeypatch):
+    """KNOWN LIMITATION, pinned. pyserial's ``socket://`` ``Serial.open()`` ends with ``reset_input_buffer()``, which
+    discards whatever has already arrived. A frame the device sends between the TCP accept and the end of ``open()``
+    never reaches the framer and is in NO transport counter (the open-time analogue of loss below the driver).
+    The race is forced deterministically: the purge runs only once that frame is in the receive buffer. A device
+    harness that streams on accept must wait for ``connected`` (tests/integration/test_app_live_source.py,
+    ``Device(start=...)``); ``start()`` opens synchronously, so the other tests here never race."""
+    from serial.urlhandler import protocol_socket
+
+    early, late = hb(1), att(2)
+    real_reset = protocol_socket.Serial.reset_input_buffer
+    purges = []
+
+    def reset_after_early_frame(self):
+        purges.append(1)
+        vport.send(early)  # waits for the accept; the frame lands before open() has returned
+        assert select.select([self._socket], [], [], 5.0)[0], "early frame never arrived"
+        real_reset(self)
+
+    monkeypatch.setattr(protocol_socket.Serial, "reset_input_buffer", reset_after_early_frame)
+    tr = SerialMavlinkTransport(vport.url, allow_url=True, reconnect=False)
+    with tr:
+        assert tr.connected
+        assert purges == [1], "open() no longer purges: this pin is stale, re-check the open-time loss"
+        vport.send(late)
+        got = collect(tr, 1)  # TCP is ordered: a surviving early frame would be read first
+    assert [d for _, d in got] == [late]
+    assert tr.bytes_received == len(late) and tr.datagrams_received == 1
+    assert tr.garbage_bytes == 0 and tr.crc_rejects == 0 and tr.partial_timeouts == 0
 
 
 def test_virtual_port_unreachable_with_reconnect_disabled_raises():

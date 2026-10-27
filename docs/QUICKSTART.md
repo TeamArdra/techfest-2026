@@ -44,27 +44,34 @@ python scripts/run_demo.py                # narrated all-scenarios demo
 aegis benchmark             # -> artifacts/benchmarks/summary.md + artifacts/figures/*.png
 ```
 
-## 5. Tests
+## 5. Automated Verification & Tests
 ```bash
-pytest                      # 545 passed, 3 skipped (~1 min)
-pytest tests/unit -q        # fast subset
-ruff check src tests        # lint
+python scripts/verify_stage2.py   # runs full 8/8 Stage 2 audit suites in ~40 ms
+pytest tests/unit -q             # fast unit subset (hundreds of tests)
+pytest                           # full verification suite (`pytest -q` prints the count)
+ruff check src tests scripts     # lint (0 errors)
 ```
 
-## 6. Live dashboard (backend + frontend)
-Build the frontend once, then serve (FastAPI hosts the built dashboard):
+## 6. Live GCS Dashboard & Desktop Application
+Build the web UI once, then serve via FastAPI (or run the native desktop GCS):
 ```bash
 npm --prefix frontend install
 npm --prefix frontend run build
-aegis serve                 # http://127.0.0.1:8000
-```
-Open http://127.0.0.1:8000 — the simulation auto-starts. Click an attack button
-to inject it live.
 
-**Dev mode (hot-reload UI):** in two terminals —
+# Start the Stage 2 autonomous defense backend:
+aegis serve --defense-mode active-ips   # http://127.0.0.1:8000
+```
+Open http://127.0.0.1:8000 — the simulation auto-starts with live cyber-physical twin, real-time MAVLink telemetry, altitude profile strip, and autonomous defense HUD.
+
+**Running the Native Tauri Desktop App:**
 ```bash
-aegis serve                          # backend on :8000
-npm --prefix frontend run dev        # UI on :5173 (proxies /api and /ws to :8000)
+cd frontend && cargo tauri dev    # launches native cross-platform Rust GCS
+```
+
+**Dev mode (hot-reload web UI):** in two terminals —
+```bash
+aegis serve --defense-mode active-ips   # backend on :8000
+npm --prefix frontend run dev           # UI on :5173 (proxies /api and /ws to :8000)
 ```
 
 ## Expected output

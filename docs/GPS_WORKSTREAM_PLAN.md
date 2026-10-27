@@ -1,5 +1,40 @@
 # GPS workstream: readiness plan (Stage 2, Objective 2)
 
+**Status (2026-10-26, GPS iteration 2):** the estimator-aware position residual (gate v2, `physics.estimator_gate: true`)
+is implemented in the working tree on `90b9aa2` and is **not committed**. It is outside increments G1–G7, and those are
+still not implemented. Live status, review findings and every number: `docs/GPS_WORKSTREAM_PROGRESS.md`.
+* **Landed (uncommitted):**
+  * the extractor reads `EKF_STATUS_REPORT.flags` (a frozen-contract extension the user confirmed on 2026-10-26,
+    `docs/HANDOFF.md`);
+  * a debounced "no horizontal solution" state;
+  * the Stage-1 rule on links that never send the report;
+  * 79 tests in `tests/unit/test_gps_scenarios_fused.py`.
+  * Design and limitations: `docs/DETECTION.md`, "Estimator-aware position residual".
+* **Evidence:** `artifacts/validation/estimator_gate_v2/README.md`, `docs/VALIDATION_EVIDENCE.md` (2026-10-26 rows).
+  * Stage-1 benchmark identical (`SIM`).
+  * ALFA changes only in the unlabelled category (`REPLAY`).
+  * 44 of 44 earlier replays byte-identical; none of them contains `EKF_STATUS_REPORT`.
+  * Bench 008 `GPS_SPOOFING` 1 → 0 (`REPLAY` of `BENCH`, in-sample).
+* **Still open:**
+  * the 2026-10-25 dashboard alerts (no bytes saved, effect unknown);
+  * links without `EKF_STATUS_REPORT` (PX4), where the Stage-1 rule applies unchanged;
+  * the ML detector, which is not gated;
+  * the attacker capability under forged or injected status. It is disclosed and SIM-only, and only MAVLink-2 signing
+    closes it;
+  * the commit itself, which waits for the user;
+  * P3 and G1–G7, unchanged.
+
+**Update (2026-10-25, GPS connectivity sprint):** none of the increments G1–G7 is implemented. P3 (a user decision) is still open;
+nothing in this sprint requires deciding it. What changed:
+* A GNSS receiver is now attached to the bench Pixhawk 6X. Its receive-only telemetry was verified end to end, through the IDS
+  and the dashboard (`docs/HARDWARE_BENCH_PIXHAWK6X.md` §6.10).
+* New finding: **position-residual false `GPS_SPOOFING` alerts on a board that was stationary (operator statement), with a
+  reported-valid but weak fix.** The cause is
+  GNSS wander while ArduCopter's EKF reports zero velocity. It is not fixed; it is a policy decision, recorded in
+  `docs/VALIDATION_EVIDENCE.md` §3. *(2026-10-26: partly addressed by iteration 2, see the status above.)*
+* Synthetic GPS-content scenarios (discontinuity, velocity mismatch, the drift-rate floor, recovery, wander) are now pinned by
+  `tests/unit/test_gps_scenarios_fused.py` (SIM).
+
 **Status (2026-10-20): plan only. Nothing in this document is implemented.** It records what the code does today,
 the facts established offline this sprint, one open user decision (P3), and the smallest testable increments for
 the GPS spoofing / jamming workstream. Environment of every fact below: code inspection, `SIM`, or offline `REPLAY`
@@ -258,6 +293,9 @@ the alert ends silently.
   estimator compromise via sensor/failure injection (with approval). Not RF, not a real receiver.
 * **Indoor bench (current Pixhawk 6X)**: telemetry ingestion only. It reports **no GPS receiver**, so it cannot show
   fix acquisition, loss, jamming, spoofing or any GPS detection.
+  *(2026-10-25: a receiver is now attached. The bench shows real fix acquisition and degradation, plus receiver-side false
+  alarms (§6.10). It still cannot show jamming, spoofing or any GPS detection, because nothing is injected into a physical
+  vehicle.)*
 * **Hardware prerequisites for GPS bench work:**
   * a GNSS receiver confirmed attached and configured, read-only parameter check by a person;
   * sky view, outdoors or with a window antenna;

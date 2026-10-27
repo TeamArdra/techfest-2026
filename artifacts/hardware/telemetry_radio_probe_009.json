@@ -1,0 +1,381 @@
+{
+  "schema": "pixhawk_passive_probe/1",
+  "environment": "BENCH (physical flight controller on a desk, USB, disarmed, no props, no airframe)",
+  "claim_class": "none (stream description only; not detection evidence)",
+  "provenance": {
+    "git_commit": "75dc7a61f4016531715bc4780518f9e6a4d1e518",
+    "python": "3.13.15",
+    "pymavlink": "2.4.50",
+    "pyserial": "3.5",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "command": "scripts/hardware/pixhawk_passive_probe.py --port COM7 --baud 115200 --duration 60 --json artifacts/hardware/telemetry_radio_probe_009.json --tlog data/hardware/raw/telemetry_radio_009.tlog --raw data/hardware/raw/telemetry_radio_009.rawbin",
+    "unix_time_start": 1792948513.353423
+  },
+  "port": "COM7",
+  "baud_arg": 115200,
+  "duration_requested_s": 60.0,
+  "first_frame_s": 0.2061772,
+  "first_heartbeat_s": 0.2061772,
+  "stream_span_s": 59.793,
+  "frames": 3418,
+  "frame_bytes": 101516,
+  "mean_frame_rate_hz": 57.16,
+  "mean_byte_rate_Bps": 1697.8,
+  "mavlink_versions": {
+    "v1": 3418
+  },
+  "signed_frames": 0,
+  "frames_without_envelope": 0,
+  "parser_stats": {
+    "datagrams_received": 3418,
+    "frames_received": 3418,
+    "bad_frames": 0,
+    "sig_valid": 0,
+    "sig_invalid": 0,
+    "unverified_frames": 0,
+    "ticks_emitted": 0,
+    "late_ticks": 0,
+    "late_frames": 0,
+    "dropped_overflow": 0,
+    "dropped_overflow_bytes": 0
+  },
+  "transport_stats": {
+    "connected": true,
+    "reader_running": true,
+    "reads": 5457,
+    "bytes_received": 101524,
+    "frames_received": 3418,
+    "garbage_bytes": 0,
+    "resync_events": 0,
+    "header_rejects": 0,
+    "crc_rejects": 0,
+    "unverifiable_rejects": 0,
+    "unverified_accepted": 0,
+    "unverifiable_ids": {},
+    "unverifiable_id_overflow": 0,
+    "crc_bytes_checked": 94680,
+    "partial_timeouts": 0,
+    "reader_faults": 0,
+    "dropped_overflow": 0,
+    "dropped_overflow_bytes": 0,
+    "queue_high_water": 4,
+    "max_poll_gap_s": 0.0231066,
+    "max_frames_per_read": 3,
+    "disconnects": 0,
+    "reconnects": 0,
+    "open_failures": 0,
+    "discarded_on_disconnect_bytes": 0,
+    "bytes_sent": 0,
+    "write_errors": 0,
+    "last_error": null,
+    "raw_tap_errors": 0,
+    "raw_tap_disabled": false,
+    "raw_tap_last_error": null
+  },
+  "transport_state_sampled": "connected/reader_running sampled just before transport.close(); all other transport_stats are final values read after close",
+  "raw_capture": {
+    "path": "data\\hardware\\raw\\telemetry_radio_009.rawbin",
+    "format": "pixhawk_raw_reads/1",
+    "records": 5457,
+    "file_bytes": 167008,
+    "data_bytes": 101524,
+    "max_bytes": 16777216,
+    "cap_hit": false,
+    "reads_not_recorded": 0,
+    "bytes_not_recorded": 0,
+    "sha256": "1144070bccca81fa6148eca68cdf9fdace1152e427050684b2630da9896abed2",
+    "mono_ns_at_start": 139109330451700
+  },
+  "passive_check": {
+    "bytes_sent": 0,
+    "write_errors": 0,
+    "passed": true
+  },
+  "pipeline_message_coverage": {
+    "HEARTBEAT": {
+      "seen": true,
+      "rate_hz": 1.003
+    },
+    "SYS_STATUS": {
+      "seen": true,
+      "rate_hz": 2.007
+    },
+    "GPS_RAW_INT": {
+      "seen": true,
+      "rate_hz": 2.007
+    },
+    "GLOBAL_POSITION_INT": {
+      "seen": true,
+      "rate_hz": 2.007
+    },
+    "ATTITUDE": {
+      "seen": true,
+      "rate_hz": 3.997
+    },
+    "VFR_HUD": {
+      "seen": true,
+      "rate_hz": 3.997
+    }
+  },
+  "messages": {
+    "HEARTBEAT": {
+      "msgid": 0,
+      "count": 60,
+      "rate_hz": 1.003,
+      "interarrival_ms_median": 998.46,
+      "interarrival_ms_p95": 1008.93,
+      "interarrival_ms_max": 1009.05
+    },
+    "SYS_STATUS": {
+      "msgid": 1,
+      "count": 120,
+      "rate_hz": 2.007,
+      "interarrival_ms_median": 494.45,
+      "interarrival_ms_p95": 518.49,
+      "interarrival_ms_max": 518.8
+    },
+    "SYSTEM_TIME": {
+      "msgid": 2,
+      "count": 120,
+      "rate_hz": 2.007,
+      "interarrival_ms_median": 504.06,
+      "interarrival_ms_p95": 504.55,
+      "interarrival_ms_max": 504.72
+    },
+    "GPS_RAW_INT": {
+      "msgid": 24,
+      "count": 120,
+      "rate_hz": 2.007,
+      "interarrival_ms_median": 495.51,
+      "interarrival_ms_p95": 517.98,
+      "interarrival_ms_max": 518.55
+    },
+    "RAW_IMU": {
+      "msgid": 27,
+      "count": 120,
+      "rate_hz": 2.007,
+      "interarrival_ms_median": 504.13,
+      "interarrival_ms_p95": 504.56,
+      "interarrival_ms_max": 504.93
+    },
+    "SCALED_PRESSURE": {
+      "msgid": 29,
+      "count": 120,
+      "rate_hz": 2.007,
+      "interarrival_ms_median": 504.01,
+      "interarrival_ms_p95": 504.67,
+      "interarrival_ms_max": 504.76
+    },
+    "ATTITUDE": {
+      "msgid": 30,
+      "count": 239,
+      "rate_hz": 3.997,
+      "interarrival_ms_median": 245.24,
+      "interarrival_ms_p95": 418.11,
+      "interarrival_ms_max": 418.62
+    },
+    "GLOBAL_POSITION_INT": {
+      "msgid": 33,
+      "count": 120,
+      "rate_hz": 2.007,
+      "interarrival_ms_median": 494.55,
+      "interarrival_ms_p95": 518.08,
+      "interarrival_ms_max": 518.59
+    },
+    "RC_CHANNELS_RAW": {
+      "msgid": 35,
+      "count": 120,
+      "rate_hz": 2.007,
+      "interarrival_ms_median": 504.09,
+      "interarrival_ms_p95": 504.57,
+      "interarrival_ms_max": 507.03
+    },
+    "SERVO_OUTPUT_RAW": {
+      "msgid": 36,
+      "count": 120,
+      "rate_hz": 2.007,
+      "interarrival_ms_median": 504.1,
+      "interarrival_ms_p95": 504.56,
+      "interarrival_ms_max": 504.87
+    },
+    "MISSION_CURRENT": {
+      "msgid": 42,
+      "count": 120,
+      "rate_hz": 2.007,
+      "interarrival_ms_median": 494.92,
+      "interarrival_ms_p95": 518.42,
+      "interarrival_ms_max": 518.75
+    },
+    "NAV_CONTROLLER_OUTPUT": {
+      "msgid": 62,
+      "count": 120,
+      "rate_hz": 2.007,
+      "interarrival_ms_median": 504.1,
+      "interarrival_ms_p95": 504.57,
+      "interarrival_ms_max": 504.82
+    },
+    "RC_CHANNELS": {
+      "msgid": 65,
+      "count": 120,
+      "rate_hz": 2.007,
+      "interarrival_ms_median": 494.43,
+      "interarrival_ms_p95": 518.34,
+      "interarrival_ms_max": 518.78
+    },
+    "VFR_HUD": {
+      "msgid": 74,
+      "count": 239,
+      "rate_hz": 3.997,
+      "interarrival_ms_median": 247.17,
+      "interarrival_ms_p95": 420.58,
+      "interarrival_ms_max": 422.68
+    },
+    "SCALED_IMU2": {
+      "msgid": 116,
+      "count": 120,
+      "rate_hz": 2.007,
+      "interarrival_ms_median": 504.13,
+      "interarrival_ms_p95": 504.53,
+      "interarrival_ms_max": 504.83
+    },
+    "POWER_STATUS": {
+      "msgid": 125,
+      "count": 120,
+      "rate_hz": 2.007,
+      "interarrival_ms_median": 504.13,
+      "interarrival_ms_p95": 504.67,
+      "interarrival_ms_max": 504.89
+    },
+    "SCALED_IMU3": {
+      "msgid": 129,
+      "count": 120,
+      "rate_hz": 2.007,
+      "interarrival_ms_median": 494.7,
+      "interarrival_ms_p95": 518.05,
+      "interarrival_ms_max": 518.6
+    },
+    "TERRAIN_REPORT": {
+      "msgid": 136,
+      "count": 120,
+      "rate_hz": 2.007,
+      "interarrival_ms_median": 494.76,
+      "interarrival_ms_p95": 518.0,
+      "interarrival_ms_max": 518.71
+    },
+    "SCALED_PRESSURE2": {
+      "msgid": 137,
+      "count": 120,
+      "rate_hz": 2.007,
+      "interarrival_ms_median": 494.59,
+      "interarrival_ms_p95": 518.51,
+      "interarrival_ms_max": 518.75
+    },
+    "BATTERY_STATUS": {
+      "msgid": 147,
+      "count": 120,
+      "rate_hz": 2.007,
+      "interarrival_ms_median": 504.15,
+      "interarrival_ms_p95": 504.55,
+      "interarrival_ms_max": 505.39
+    },
+    "MEMINFO": {
+      "msgid": 152,
+      "count": 120,
+      "rate_hz": 2.007,
+      "interarrival_ms_median": 504.13,
+      "interarrival_ms_p95": 504.67,
+      "interarrival_ms_max": 504.89
+    },
+    "AHRS": {
+      "msgid": 163,
+      "count": 120,
+      "rate_hz": 2.007,
+      "interarrival_ms_median": 494.67,
+      "interarrival_ms_p95": 518.46,
+      "interarrival_ms_max": 518.58
+    },
+    "RANGEFINDER": {
+      "msgid": 173,
+      "count": 120,
+      "rate_hz": 2.007,
+      "interarrival_ms_median": 494.7,
+      "interarrival_ms_p95": 518.5,
+      "interarrival_ms_max": 518.85
+    },
+    "AHRS2": {
+      "msgid": 178,
+      "count": 240,
+      "rate_hz": 4.014,
+      "interarrival_ms_median": 96.47,
+      "interarrival_ms_p95": 422.06,
+      "interarrival_ms_max": 422.38
+    },
+    "EKF_STATUS_REPORT": {
+      "msgid": 193,
+      "count": 120,
+      "rate_hz": 2.007,
+      "interarrival_ms_median": 504.08,
+      "interarrival_ms_p95": 504.66,
+      "interarrival_ms_max": 504.95
+    },
+    "VIBRATION": {
+      "msgid": 241,
+      "count": 120,
+      "rate_hz": 2.007,
+      "interarrival_ms_median": 504.05,
+      "interarrival_ms_p95": 504.53,
+      "interarrival_ms_max": 504.81
+    }
+  },
+  "sequence_accounting": {
+    "per_sysid_compid": {
+      "1/1": {
+        "frames": 3418,
+        "inferred_lost": 0,
+        "non_forward_steps": 0,
+        "loss_ratio": 0.0
+      }
+    },
+    "per_sysid": {
+      "1": {
+        "frames": 3418,
+        "inferred_lost": 0,
+        "non_forward_steps": 0,
+        "loss_ratio": 0.0
+      }
+    },
+    "whole_link": {
+      "frames": 3418,
+      "inferred_lost": 0,
+      "non_forward_steps": 0,
+      "loss_ratio": 0.0
+    }
+  },
+  "stream_gaps_over_s": {
+    "threshold_s": 2.5,
+    "events": [],
+    "count": 0
+  },
+  "heartbeats": {
+    "1/1": [
+      {
+        "state": {
+          "autopilot": 3,
+          "base_mode": 81,
+          "custom_mode": 0,
+          "mavlink_version": 3,
+          "system_status": 3,
+          "type": 2,
+          "type_name": "QUADROTOR",
+          "autopilot_name": "ARDUPILOTMEGA",
+          "system_status_name": "STANDBY",
+          "armed": false
+        },
+        "count": 60
+      }
+    ]
+  },
+  "statustext": [],
+  "autopilot_version_message": null,
+  "tlog": "data/hardware/raw/telemetry_radio_009.tlog"
+}

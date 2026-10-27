@@ -1,0 +1,120 @@
+{
+ "schema": "aegisflight.gnss_tlog_summary/1",
+ "tlog": "data/hardware/raw/telemetry_radio_008.tlog",
+ "claim_class": "none (receiver reports, no detection claim)",
+ "redaction": "positions only as metres from the first GPS_RAW_INT fix; no absolute coordinates",
+ "GPS_RAW_INT": {
+  "n": 125,
+  "fix_type": {
+   "1 GPS_FIX_TYPE_NO_FIX": 12,
+   "2 GPS_FIX_TYPE_2D_FIX": 36,
+   "3 GPS_FIX_TYPE_3D_FIX": 61,
+   "4 GPS_FIX_TYPE_DGPS": 16
+  },
+  "fix_ge_3_and_sats_ge_5": 68,
+  "satellites_visible": {
+   "n": 125,
+   "min": 0,
+   "median": 5,
+   "max": 7
+  },
+  "eph_hdop": {
+   "n": 125,
+   "min": 3.57,
+   "median": 5.54,
+   "max": 99.99
+  },
+  "epv_vdop": {
+   "n": 125,
+   "min": 1.0,
+   "median": 6.23,
+   "max": 99.99
+  },
+  "h_acc_m": null,
+  "vel_ms": {
+   "n": 125,
+   "min": 0.02,
+   "median": 0.54,
+   "max": 3.24
+  },
+  "lat_lon_zero": 0,
+  "time_usec_zero": 0,
+  "time_usec_step_s": {
+   "n": 124,
+   "min": 0.0,
+   "median": 0.4,
+   "max": 0.6
+  },
+  "time_usec_backsteps": 0,
+  "host_interval_s": {
+   "n": 124,
+   "min": 0.48,
+   "median": 0.499,
+   "max": 0.519
+  },
+  "offset_from_first_fix_m": {
+   "n": 125,
+   "min": 0.0,
+   "median": 5.214,
+   "max": 21.61
+  },
+  "alt_msl_range_m": 40.32
+ },
+ "GLOBAL_POSITION_INT": {
+  "n": 125,
+  "lat_lon_zero": 0,
+  "offset_from_first_fix_m": {
+   "n": 125,
+   "min": 0.0,
+   "median": 5.327,
+   "max": 12.553
+  },
+  "speed_ms": {
+   "n": 125,
+   "min": 0.0,
+   "median": 0.0,
+   "max": 0.108
+  },
+  "vz_ms": {
+   "n": 125,
+   "min": -0.03,
+   "median": 0.0,
+   "max": 0.03
+  },
+  "time_boot_ms_backsteps": 0
+ },
+ "gps_raw_vs_global_position_m": {
+  "n": 125,
+  "min": 0.0,
+  "median": 0.0,
+  "max": 15.319
+ },
+ "global_position_implied_speed_ms": {
+  "n": 124,
+  "min": 0.0,
+  "median": 0.341,
+  "max": 17.75
+ },
+ "SYS_STATUS_gps_sensor": {
+  "n": 125,
+  "present": 125,
+  "enabled": 125,
+  "healthy": 0
+ },
+ "EKF_STATUS_REPORT": {
+  "n": 125,
+  "flags": {
+   "0xa7": 125
+  },
+  "pos_horiz_abs": 0,
+  "pos_horiz_rel": 0,
+  "const_pos_mode": 125,
+  "gps_glitching": 0
+ },
+ "VFR_HUD_groundspeed_ms": {
+  "n": 250,
+  "min": 0.0,
+  "median": 0.007,
+  "max": 0.182
+ }
+}

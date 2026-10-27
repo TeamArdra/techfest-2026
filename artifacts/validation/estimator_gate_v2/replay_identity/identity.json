@@ -1,0 +1,1507 @@
+{
+  "provenance": {
+    "generated_utc": "2026-10-26T13:17:45+00:00",
+    "command": "python artifacts/validation/estimator_gate_v2/tools/replay_identity.py --before-src <wt_head>/src --raw-dir <raw> --out artifacts/validation/estimator_gate_v2/replay_identity",
+    "head": "90b9aa247fdcda2f95d0096c1e0f486b9d030aed",
+    "src_configs_diff_sha256_start": "b4d434e3dffed2ab646bb4d9aed963e0a4fb44e636353901b963a59d15967eaf",
+    "before_worktree_head": "90b9aa247fdcda2f95d0096c1e0f486b9d030aed",
+    "before_worktree_dirty_files": 0,
+    "before_import": {
+      "aegisflight_file": "<wt_head>\\src\\aegisflight\\__init__.py",
+      "config_dir": "<wt_head>\\configs"
+    },
+    "after_import": {
+      "aegisflight_file": "<repo>\\src\\aegisflight\\__init__.py",
+      "config_dir": "<repo>\\configs"
+    },
+    "python": "3.13.15",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "replay_script_sha256": "c4555af3fb75470a254723758dee54c49d0a59ddd747d9b4115cbc74ba40e822",
+    "ml": "off (--no-ml)",
+    "execution": "sequential, one replay process at a time (before then after, per file)",
+    "src_configs_diff_sha256_end": "b4d434e3dffed2ab646bb4d9aed963e0a4fb44e636353901b963a59d15967eaf"
+  },
+  "n_files": 44,
+  "n_identical": 44,
+  "different": [],
+  "files": [
+    {
+      "tlog": "data/ardupilot/raw/ap_attack_drift_001.clean.tlog",
+      "tlog_sha256": "6ecb13be96aef550e55bb88e6908c29fe48b84d06d23062df7c6a7d2aee15628",
+      "tlog_bytes": 174301,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.67,
+      "seconds_after": 0.66,
+      "before_sha256": "8dae0808704458dd42129aac64a13f9e71029fae8006ecd7c506c7094eed7dc9",
+      "after_sha256": "8dae0808704458dd42129aac64a13f9e71029fae8006ecd7c506c7094eed7dc9",
+      "identical": true,
+      "before": {
+        "decisions": 696,
+        "threat_decisions": 55,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 696,
+        "threat_decisions": 55,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_attack_drift_001.observed.tlog",
+      "tlog_sha256": "5d70608f45ebf94cb2c9e7bdfe1af7a20cdd3be26bfb59e9050979fa75d6f6b9",
+      "tlog_bytes": 174301,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.69,
+      "seconds_after": 0.69,
+      "before_sha256": "bc0eb629cfecac451072d2f25dc2f96759ef0fc461a53fcdf191220f80ca7cd0",
+      "after_sha256": "bc0eb629cfecac451072d2f25dc2f96759ef0fc461a53fcdf191220f80ca7cd0",
+      "identical": true,
+      "before": {
+        "decisions": 696,
+        "threat_decisions": 183,
+        "alert_decisions": 11,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 8
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 696,
+        "threat_decisions": 183,
+        "alert_decisions": 11,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 8
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_attack_drift_002.clean.tlog",
+      "tlog_sha256": "882d7ebe711ede830bd0262feefb3e0122942295dc3fc35799b9a3cd72da057e",
+      "tlog_bytes": 174308,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.67,
+      "seconds_after": 0.66,
+      "before_sha256": "c1028e285366d32282b75f5ce16a85277637d9140457335fd3923e92f15dd9b9",
+      "after_sha256": "c1028e285366d32282b75f5ce16a85277637d9140457335fd3923e92f15dd9b9",
+      "identical": true,
+      "before": {
+        "decisions": 696,
+        "threat_decisions": 55,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 696,
+        "threat_decisions": 55,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_attack_drift_002.observed.tlog",
+      "tlog_sha256": "8d10fc0e4f436383efb7e67b1cdd4c67ead4aa493df33c10fdd3b5e92d7972d2",
+      "tlog_bytes": 174308,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.65,
+      "seconds_after": 0.7,
+      "before_sha256": "87cac633567f3b467f2ee964e942c5418967f6a5ef4aabcc3b3ef73aace3939d",
+      "after_sha256": "87cac633567f3b467f2ee964e942c5418967f6a5ef4aabcc3b3ef73aace3939d",
+      "identical": true,
+      "before": {
+        "decisions": 696,
+        "threat_decisions": 182,
+        "alert_decisions": 11,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 8
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 696,
+        "threat_decisions": 182,
+        "alert_decisions": 11,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 8
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_attack_drift_003.clean.tlog",
+      "tlog_sha256": "22eda595614755220b54598834fcfa413b854935f39aba88800c6c3585f6b5a8",
+      "tlog_bytes": 174304,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.66,
+      "seconds_after": 0.67,
+      "before_sha256": "969d0174f223b849eb0430e1620e6d5958eae0fbdb358fcc3a40fe9329e8cfab",
+      "after_sha256": "969d0174f223b849eb0430e1620e6d5958eae0fbdb358fcc3a40fe9329e8cfab",
+      "identical": true,
+      "before": {
+        "decisions": 695,
+        "threat_decisions": 55,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 695,
+        "threat_decisions": 55,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_attack_drift_003.observed.tlog",
+      "tlog_sha256": "bc3cd84c25170418a31fbfa680f5afeb2399746a92bc4b4dafc9abd2477476b8",
+      "tlog_bytes": 174304,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.65,
+      "seconds_after": 0.67,
+      "before_sha256": "392c7f7d50fc75b36e326075235cb3dfa68c4988c0902f112444e1e7a9052faa",
+      "after_sha256": "392c7f7d50fc75b36e326075235cb3dfa68c4988c0902f112444e1e7a9052faa",
+      "identical": true,
+      "before": {
+        "decisions": 695,
+        "threat_decisions": 183,
+        "alert_decisions": 11,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 8
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 695,
+        "threat_decisions": 183,
+        "alert_decisions": 11,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 8
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_attack_final_drift_001.clean.tlog",
+      "tlog_sha256": "a9e768758e5522f1bbaef592f5278b13ad1858d71e8f9aa38542b0cb6f46e17e",
+      "tlog_bytes": 174493,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.68,
+      "seconds_after": 0.67,
+      "before_sha256": "2b2f9c945323437e80a93dc252f12fc2fa252ca0985a42a227f975963c2f40ac",
+      "after_sha256": "2b2f9c945323437e80a93dc252f12fc2fa252ca0985a42a227f975963c2f40ac",
+      "identical": true,
+      "before": {
+        "decisions": 642,
+        "threat_decisions": 49,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 642,
+        "threat_decisions": 49,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_attack_final_drift_001.observed.tlog",
+      "tlog_sha256": "666aeb348a6ea0e46ddda49e4db19f64874327c63c69a214f696b2b9ad2bf9fa",
+      "tlog_bytes": 174493,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.64,
+      "seconds_after": 0.67,
+      "before_sha256": "b83df9905a362b36df34c468337178112c2abba19655edc43880f22a4dc961e3",
+      "after_sha256": "b83df9905a362b36df34c468337178112c2abba19655edc43880f22a4dc961e3",
+      "identical": true,
+      "before": {
+        "decisions": 642,
+        "threat_decisions": 176,
+        "alert_decisions": 11,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 8
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 642,
+        "threat_decisions": 176,
+        "alert_decisions": 11,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 8
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_attack_final_drift_002.clean.tlog",
+      "tlog_sha256": "aecf18cabd4c512ba0e28f03fea21874610cf7b25e24876cb40d76c656f40850",
+      "tlog_bytes": 174500,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.67,
+      "seconds_after": 0.68,
+      "before_sha256": "c372bdfe940d008fee41e308be242f4031122f82f45536a90d88e23424631bc0",
+      "after_sha256": "c372bdfe940d008fee41e308be242f4031122f82f45536a90d88e23424631bc0",
+      "identical": true,
+      "before": {
+        "decisions": 642,
+        "threat_decisions": 49,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 642,
+        "threat_decisions": 49,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_attack_final_drift_002.observed.tlog",
+      "tlog_sha256": "48aba5c6f0dd4fba622f90f41b5ce71e5b437d7c15b38a3751cc6285fc81d6bb",
+      "tlog_bytes": 174500,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.66,
+      "seconds_after": 0.68,
+      "before_sha256": "9f9b77402f2c9569e0d19087584664baf3dff9400fb02b65828a424b2cf07eee",
+      "after_sha256": "9f9b77402f2c9569e0d19087584664baf3dff9400fb02b65828a424b2cf07eee",
+      "identical": true,
+      "before": {
+        "decisions": 642,
+        "threat_decisions": 176,
+        "alert_decisions": 11,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 8
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 642,
+        "threat_decisions": 176,
+        "alert_decisions": 11,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 8
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_attack_final_drift_003.clean.tlog",
+      "tlog_sha256": "e418e068555b34e33a827927af8ddfd3254c59a160f62c9411969e983b47f9ce",
+      "tlog_bytes": 174495,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.66,
+      "seconds_after": 0.66,
+      "before_sha256": "1179aff41696825ce68b871f3320c4a53c97490bc18335c82d21c63d9fcf3c07",
+      "after_sha256": "1179aff41696825ce68b871f3320c4a53c97490bc18335c82d21c63d9fcf3c07",
+      "identical": true,
+      "before": {
+        "decisions": 642,
+        "threat_decisions": 49,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 642,
+        "threat_decisions": 49,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_attack_final_drift_003.observed.tlog",
+      "tlog_sha256": "174dbdb85018c6d960f36b505eaaaf30759e10eee2512155f0a20b956c6590c2",
+      "tlog_bytes": 174495,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.65,
+      "seconds_after": 0.67,
+      "before_sha256": "02651b31425d5bd7e20cb2be94b092c79166a844358d9dd74ae5e5088954a7b0",
+      "after_sha256": "02651b31425d5bd7e20cb2be94b092c79166a844358d9dd74ae5e5088954a7b0",
+      "identical": true,
+      "before": {
+        "decisions": 642,
+        "threat_decisions": 176,
+        "alert_decisions": 11,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 8
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 642,
+        "threat_decisions": 176,
+        "alert_decisions": 11,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 8
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_benign_final_noml_001.clean.tlog",
+      "tlog_sha256": "b508a97c7b309ccb2dca6cae6dfbe56ea07ec3e4caec07b35cafc2cac84a5454",
+      "tlog_bytes": 174487,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.67,
+      "seconds_after": 0.65,
+      "before_sha256": "3340ada4fe3471f4d8a2682667b17f42e4130af1bcbe4d5873b4540584b3af62",
+      "after_sha256": "3340ada4fe3471f4d8a2682667b17f42e4130af1bcbe4d5873b4540584b3af62",
+      "identical": true,
+      "before": {
+        "decisions": 642,
+        "threat_decisions": 49,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 642,
+        "threat_decisions": 49,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_benign_final_noml_001.observed.tlog",
+      "tlog_sha256": "b508a97c7b309ccb2dca6cae6dfbe56ea07ec3e4caec07b35cafc2cac84a5454",
+      "tlog_bytes": 174487,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.69,
+      "seconds_after": 0.68,
+      "before_sha256": "e52ff4b616eb970f4c955af4b8a66323933bbd13627adf4d6191f6d878d39fe5",
+      "after_sha256": "e52ff4b616eb970f4c955af4b8a66323933bbd13627adf4d6191f6d878d39fe5",
+      "identical": true,
+      "before": {
+        "decisions": 642,
+        "threat_decisions": 49,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 642,
+        "threat_decisions": 49,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_benign_final_noml_002.clean.tlog",
+      "tlog_sha256": "bbab67debe6b365caac9ebf0e48425694b144e320f1f2fa717f9e12a619a0e01",
+      "tlog_bytes": 174499,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.67,
+      "seconds_after": 0.66,
+      "before_sha256": "33b8a9695c6ed9c25b8b2c1c8d7a8ca316c009352b46c055d15130a1cf86065e",
+      "after_sha256": "33b8a9695c6ed9c25b8b2c1c8d7a8ca316c009352b46c055d15130a1cf86065e",
+      "identical": true,
+      "before": {
+        "decisions": 642,
+        "threat_decisions": 49,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 642,
+        "threat_decisions": 49,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_benign_final_noml_002.observed.tlog",
+      "tlog_sha256": "bbab67debe6b365caac9ebf0e48425694b144e320f1f2fa717f9e12a619a0e01",
+      "tlog_bytes": 174499,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.66,
+      "seconds_after": 0.68,
+      "before_sha256": "68c09cae069ae6708f60de05870b6b3f60e18aaf8331521303e0521213fcafa8",
+      "after_sha256": "68c09cae069ae6708f60de05870b6b3f60e18aaf8331521303e0521213fcafa8",
+      "identical": true,
+      "before": {
+        "decisions": 642,
+        "threat_decisions": 49,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 642,
+        "threat_decisions": 49,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_benign_groups_001.clean.tlog",
+      "tlog_sha256": "fe081ee6037d3f4cc206f93a21712a6a69198ffd0ffbc950495b867e71f5c02a",
+      "tlog_bytes": 422496,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.76,
+      "seconds_after": 0.73,
+      "before_sha256": "7c597e17e6a8a90a7db7b1fa0e69cfd59e94e4c5ca8bbdd2d8cd8240b8fd482f",
+      "after_sha256": "7c597e17e6a8a90a7db7b1fa0e69cfd59e94e4c5ca8bbdd2d8cd8240b8fd482f",
+      "identical": true,
+      "before": {
+        "decisions": 700,
+        "threat_decisions": 53,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 700,
+        "threat_decisions": 53,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_benign_groups_001.observed.tlog",
+      "tlog_sha256": "fe081ee6037d3f4cc206f93a21712a6a69198ffd0ffbc950495b867e71f5c02a",
+      "tlog_bytes": 422496,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.76,
+      "seconds_after": 0.75,
+      "before_sha256": "c1be01b5eee9493246e34335c01a58fda18d8f05a020ef0e2f6020a6ced83c90",
+      "after_sha256": "c1be01b5eee9493246e34335c01a58fda18d8f05a020ef0e2f6020a6ced83c90",
+      "identical": true,
+      "before": {
+        "decisions": 700,
+        "threat_decisions": 53,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 700,
+        "threat_decisions": 53,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_benign_six_001.clean.tlog",
+      "tlog_sha256": "1bcc6caa1598bbfd91aaed55852b9241edf769f1ed4ae86e5bf92b4a760c4b76",
+      "tlog_bytes": 174305,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.65,
+      "seconds_after": 0.68,
+      "before_sha256": "2cc192b13f2ec6f0d19bb72159fb5ce4b689043ca2f474535fe2573d95e428dc",
+      "after_sha256": "2cc192b13f2ec6f0d19bb72159fb5ce4b689043ca2f474535fe2573d95e428dc",
+      "identical": true,
+      "before": {
+        "decisions": 695,
+        "threat_decisions": 54,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 695,
+        "threat_decisions": 54,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_benign_six_001.observed.tlog",
+      "tlog_sha256": "1bcc6caa1598bbfd91aaed55852b9241edf769f1ed4ae86e5bf92b4a760c4b76",
+      "tlog_bytes": 174305,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.7,
+      "seconds_after": 0.68,
+      "before_sha256": "53ce5701b666aa9a824d355570d314bf4589ac43e2430971e16a88df58e515bf",
+      "after_sha256": "53ce5701b666aa9a824d355570d314bf4589ac43e2430971e16a88df58e515bf",
+      "identical": true,
+      "before": {
+        "decisions": 695,
+        "threat_decisions": 54,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 695,
+        "threat_decisions": 54,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_benign_six_002.clean.tlog",
+      "tlog_sha256": "c87abf04a36e3dfc42dae15c51deda6f164b44a14cc0bfb7838c6f02f945cfb2",
+      "tlog_bytes": 174305,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.69,
+      "seconds_after": 0.72,
+      "before_sha256": "b1582e38a18f06348ac2b9c5bac38d105ddc0919a71cd835e0ae3589bc683bbc",
+      "after_sha256": "b1582e38a18f06348ac2b9c5bac38d105ddc0919a71cd835e0ae3589bc683bbc",
+      "identical": true,
+      "before": {
+        "decisions": 700,
+        "threat_decisions": 55,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 700,
+        "threat_decisions": 55,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_benign_six_002.observed.tlog",
+      "tlog_sha256": "c87abf04a36e3dfc42dae15c51deda6f164b44a14cc0bfb7838c6f02f945cfb2",
+      "tlog_bytes": 174305,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.73,
+      "seconds_after": 0.67,
+      "before_sha256": "c635fd6d0cc13c6c6f941c6a26a0a4cf58d2a982b2d81b7c71613a102a68e1f1",
+      "after_sha256": "c635fd6d0cc13c6c6f941c6a26a0a4cf58d2a982b2d81b7c71613a102a68e1f1",
+      "identical": true,
+      "before": {
+        "decisions": 700,
+        "threat_decisions": 55,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 700,
+        "threat_decisions": 55,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_benign_six_003.clean.tlog",
+      "tlog_sha256": "29015daf9ece701278153d5dfa8aa375d1d829d8aba4dfb1dd5dcebc4c4d8d83",
+      "tlog_bytes": 174305,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.66,
+      "seconds_after": 0.69,
+      "before_sha256": "d64bac5680c3763eba0a9a23c4c60cec963f19faa665cd05d202167b5183fe89",
+      "after_sha256": "d64bac5680c3763eba0a9a23c4c60cec963f19faa665cd05d202167b5183fe89",
+      "identical": true,
+      "before": {
+        "decisions": 700,
+        "threat_decisions": 54,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 700,
+        "threat_decisions": 54,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_benign_six_003.observed.tlog",
+      "tlog_sha256": "29015daf9ece701278153d5dfa8aa375d1d829d8aba4dfb1dd5dcebc4c4d8d83",
+      "tlog_bytes": 174305,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.68,
+      "seconds_after": 0.68,
+      "before_sha256": "8e059d1ff49c2d0221afad2c8c7f7f7cec32975fd82a473e5836706b64ea7a81",
+      "after_sha256": "8e059d1ff49c2d0221afad2c8c7f7f7cec32975fd82a473e5836706b64ea7a81",
+      "identical": true,
+      "before": {
+        "decisions": 700,
+        "threat_decisions": 54,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 700,
+        "threat_decisions": 54,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_benign_six_004.clean.tlog",
+      "tlog_sha256": "9044b08d56832143d65ca8b46e638c22275e376fb44307baaf579ed9da1eef22",
+      "tlog_bytes": 174304,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.66,
+      "seconds_after": 0.68,
+      "before_sha256": "185be816f4f6a22b7da506f106d19f937b82a15ecda9c37e2707486b97db0833",
+      "after_sha256": "185be816f4f6a22b7da506f106d19f937b82a15ecda9c37e2707486b97db0833",
+      "identical": true,
+      "before": {
+        "decisions": 700,
+        "threat_decisions": 55,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 700,
+        "threat_decisions": 55,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_benign_six_004.observed.tlog",
+      "tlog_sha256": "9044b08d56832143d65ca8b46e638c22275e376fb44307baaf579ed9da1eef22",
+      "tlog_bytes": 174304,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.68,
+      "seconds_after": 0.67,
+      "before_sha256": "16b14058d843944daa05bf549bc57c8044bfc52791a3735beb7040a487a5fe26",
+      "after_sha256": "16b14058d843944daa05bf549bc57c8044bfc52791a3735beb7040a487a5fe26",
+      "identical": true,
+      "before": {
+        "decisions": 700,
+        "threat_decisions": 55,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 700,
+        "threat_decisions": 55,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_passive_monitor_001.clean.tlog",
+      "tlog_sha256": "7636e0b8937dc3ef1b2c0a57ed42da26e1d3d9993f30374ce9068c2e0866fedb",
+      "tlog_bytes": 4539,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.57,
+      "seconds_after": 0.59,
+      "before_sha256": "2b8ca1073666d3cf939d3c1808cd7bd8fd2ebc7acc46db05be874df8fa4e892c",
+      "after_sha256": "2b8ca1073666d3cf939d3c1808cd7bd8fd2ebc7acc46db05be874df8fa4e892c",
+      "identical": true,
+      "before": {
+        "decisions": 705,
+        "threat_decisions": 0,
+        "alert_decisions": 0,
+        "alert_types": {},
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 705,
+        "threat_decisions": 0,
+        "alert_decisions": 0,
+        "alert_types": {},
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_passive_monitor_001.observed.tlog",
+      "tlog_sha256": "7636e0b8937dc3ef1b2c0a57ed42da26e1d3d9993f30374ce9068c2e0866fedb",
+      "tlog_bytes": 4539,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.58,
+      "seconds_after": 0.57,
+      "before_sha256": "a4196d45507a17707f76066d556402fcdadc3ef3be6b5c65f7cb03b5e2487865",
+      "after_sha256": "a4196d45507a17707f76066d556402fcdadc3ef3be6b5c65f7cb03b5e2487865",
+      "identical": true,
+      "before": {
+        "decisions": 705,
+        "threat_decisions": 0,
+        "alert_decisions": 0,
+        "alert_types": {},
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 705,
+        "threat_decisions": 0,
+        "alert_decisions": 0,
+        "alert_types": {},
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_passive_monitor_hb_001.clean.tlog",
+      "tlog_sha256": "04913505f19a431f88e9001834a14671f4363d2e583cef35d8cb3a61e09e69d1",
+      "tlog_bytes": 8152,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.55,
+      "seconds_after": 0.58,
+      "before_sha256": "3bc6e153cdff590d2fa6f7dde6e40181c0d731b9bf526a1c604130b7d1e88712",
+      "after_sha256": "3bc6e153cdff590d2fa6f7dde6e40181c0d731b9bf526a1c604130b7d1e88712",
+      "identical": true,
+      "before": {
+        "decisions": 709,
+        "threat_decisions": 0,
+        "alert_decisions": 0,
+        "alert_types": {},
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 709,
+        "threat_decisions": 0,
+        "alert_decisions": 0,
+        "alert_types": {},
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_passive_monitor_hb_001.observed.tlog",
+      "tlog_sha256": "04913505f19a431f88e9001834a14671f4363d2e583cef35d8cb3a61e09e69d1",
+      "tlog_bytes": 8152,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.59,
+      "seconds_after": 0.59,
+      "before_sha256": "c3272ae45363fd589c33c6add05be7f3f4394733b63afc2410e1acdbeb56db38",
+      "after_sha256": "c3272ae45363fd589c33c6add05be7f3f4394733b63afc2410e1acdbeb56db38",
+      "identical": true,
+      "before": {
+        "decisions": 709,
+        "threat_decisions": 0,
+        "alert_decisions": 0,
+        "alert_types": {},
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 709,
+        "threat_decisions": 0,
+        "alert_decisions": 0,
+        "alert_types": {},
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_passive_monitor_params_001.clean.tlog",
+      "tlog_sha256": "9b75792040f74766c7d00e6dd94ad623b1a0140fee488ecfe5ddaf4bb62a2994",
+      "tlog_bytes": 424396,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.74,
+      "seconds_after": 0.74,
+      "before_sha256": "e5723ac5ed37d6f823ba453a8afce33de842daf99b481d39b54e988164711a94",
+      "after_sha256": "e5723ac5ed37d6f823ba453a8afce33de842daf99b481d39b54e988164711a94",
+      "identical": true,
+      "before": {
+        "decisions": 706,
+        "threat_decisions": 53,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 706,
+        "threat_decisions": 53,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/ardupilot/raw/ap_passive_monitor_params_001.observed.tlog",
+      "tlog_sha256": "9b75792040f74766c7d00e6dd94ad623b1a0140fee488ecfe5ddaf4bb62a2994",
+      "tlog_bytes": 424396,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.75,
+      "seconds_after": 0.75,
+      "before_sha256": "5edde6aa7f0ba0aaacb397baa0869d69d5afd41d5d444c24976bdaf43181dc00",
+      "after_sha256": "5edde6aa7f0ba0aaacb397baa0869d69d5afd41d5d444c24976bdaf43181dc00",
+      "identical": true,
+      "before": {
+        "decisions": 706,
+        "threat_decisions": 53,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 706,
+        "threat_decisions": 53,
+        "alert_decisions": 4,
+        "alert_types": {
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "GPS_SPOOFING": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/sitl/raw/benign_001.tlog",
+      "tlog_sha256": "9686c31dee3b34aac5c885a9b0066e541a564c7b639d020b0eb04cfeeb0a1569",
+      "tlog_bytes": 1771657,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 1.14,
+      "seconds_after": 1.15,
+      "before_sha256": "bfadc1f89d0aef21d85446737c469e8a3a05f9a858c95842b6a48250163333fb",
+      "after_sha256": "bfadc1f89d0aef21d85446737c469e8a3a05f9a858c95842b6a48250163333fb",
+      "identical": true,
+      "before": {
+        "decisions": 519,
+        "threat_decisions": 519,
+        "alert_decisions": 30,
+        "alert_types": {
+          "MAVLINK_ANOMALY": 25,
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 3,
+          "COMMAND_INJECTION": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 519,
+        "threat_decisions": 519,
+        "alert_decisions": 30,
+        "alert_types": {
+          "MAVLINK_ANOMALY": 25,
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 3,
+          "COMMAND_INJECTION": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/sitl/raw/benign_002.tlog",
+      "tlog_sha256": "53d38fcc25716dd850b72c9f757c177f0d571bd8c65a8f61cdc2fc34b96427ba",
+      "tlog_bytes": 1766156,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 1.13,
+      "seconds_after": 1.17,
+      "before_sha256": "de8581c547e08d0e267b6d9dbe6fae16e88523ff03e3062864ffee824ac65d6a",
+      "after_sha256": "de8581c547e08d0e267b6d9dbe6fae16e88523ff03e3062864ffee824ac65d6a",
+      "identical": true,
+      "before": {
+        "decisions": 537,
+        "threat_decisions": 537,
+        "alert_decisions": 31,
+        "alert_types": {
+          "MAVLINK_ANOMALY": 27,
+          "TELEMETRY_MANIPULATION": 2,
+          "DOS": 1,
+          "COMMAND_INJECTION": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 537,
+        "threat_decisions": 537,
+        "alert_decisions": 31,
+        "alert_types": {
+          "MAVLINK_ANOMALY": 27,
+          "TELEMETRY_MANIPULATION": 2,
+          "DOS": 1,
+          "COMMAND_INJECTION": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/sitl/raw/benign_003.tlog",
+      "tlog_sha256": "44fc1025c181335af1d44b703545072e4bbea463f6634ba758c2972efd4e8c67",
+      "tlog_bytes": 2257570,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 1.3,
+      "seconds_after": 1.3,
+      "before_sha256": "b8788d84169bbb510e1ddb6ee50a7d0a9ec5adcf6e2bfba169bea4d1fb62b5ea",
+      "after_sha256": "b8788d84169bbb510e1ddb6ee50a7d0a9ec5adcf6e2bfba169bea4d1fb62b5ea",
+      "identical": true,
+      "before": {
+        "decisions": 662,
+        "threat_decisions": 662,
+        "alert_decisions": 38,
+        "alert_types": {
+          "MAVLINK_ANOMALY": 33,
+          "TELEMETRY_MANIPULATION": 2,
+          "DOS": 2,
+          "COMMAND_INJECTION": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 662,
+        "threat_decisions": 662,
+        "alert_decisions": 38,
+        "alert_types": {
+          "MAVLINK_ANOMALY": 33,
+          "TELEMETRY_MANIPULATION": 2,
+          "DOS": 2,
+          "COMMAND_INJECTION": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/sitl/raw/benign_004.tlog",
+      "tlog_sha256": "8a8d3d7ccf60bb8943bcc0cf48d78e89bba2a3eaadaf5691baad61da3967157e",
+      "tlog_bytes": 1526873,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 1.08,
+      "seconds_after": 1.05,
+      "before_sha256": "a8ce19594426911c017902cfaa10c9dfcabde87684afdb4a33460d3b2a43486c",
+      "after_sha256": "a8ce19594426911c017902cfaa10c9dfcabde87684afdb4a33460d3b2a43486c",
+      "identical": true,
+      "before": {
+        "decisions": 449,
+        "threat_decisions": 449,
+        "alert_decisions": 28,
+        "alert_types": {
+          "MAVLINK_ANOMALY": 23,
+          "TELEMETRY_MANIPULATION": 3,
+          "DOS": 1,
+          "COMMAND_INJECTION": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 449,
+        "threat_decisions": 449,
+        "alert_decisions": 28,
+        "alert_types": {
+          "MAVLINK_ANOMALY": 23,
+          "TELEMETRY_MANIPULATION": 3,
+          "DOS": 1,
+          "COMMAND_INJECTION": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/sitl/raw/benign_005.tlog",
+      "tlog_sha256": "78350f17811c84919cd7c33d004c6aae1c4e13ffac4ba8bcc90952400d8a62ec",
+      "tlog_bytes": 2021392,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 1.26,
+      "seconds_after": 1.26,
+      "before_sha256": "d30fe2f12280c583d1fcdc405dc0d8a525e410d8cbad2bc09170193e91af52f4",
+      "after_sha256": "d30fe2f12280c583d1fcdc405dc0d8a525e410d8cbad2bc09170193e91af52f4",
+      "identical": true,
+      "before": {
+        "decisions": 593,
+        "threat_decisions": 593,
+        "alert_decisions": 33,
+        "alert_types": {
+          "MAVLINK_ANOMALY": 29,
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "COMMAND_INJECTION": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 593,
+        "threat_decisions": 593,
+        "alert_decisions": 33,
+        "alert_types": {
+          "MAVLINK_ANOMALY": 29,
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "COMMAND_INJECTION": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/sitl/raw/benign_006.tlog",
+      "tlog_sha256": "c540eacaf327ebac84bef94416882374a66e8f7f9efeef484e030ed3d5489318",
+      "tlog_bytes": 1646625,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 1.12,
+      "seconds_after": 1.12,
+      "before_sha256": "7799387295112912086d07d77f3ace25fbf8969c56277e4d91216e3650c2764a",
+      "after_sha256": "7799387295112912086d07d77f3ace25fbf8969c56277e4d91216e3650c2764a",
+      "identical": true,
+      "before": {
+        "decisions": 483,
+        "threat_decisions": 483,
+        "alert_decisions": 29,
+        "alert_types": {
+          "MAVLINK_ANOMALY": 24,
+          "TELEMETRY_MANIPULATION": 3,
+          "DOS": 1,
+          "COMMAND_INJECTION": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 483,
+        "threat_decisions": 483,
+        "alert_decisions": 29,
+        "alert_types": {
+          "MAVLINK_ANOMALY": 24,
+          "TELEMETRY_MANIPULATION": 3,
+          "DOS": 1,
+          "COMMAND_INJECTION": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/sitl/raw/benign_007.tlog",
+      "tlog_sha256": "63c67c6eec69090f02cf12cd67757165002f3682c55315e1337276ea79534974",
+      "tlog_bytes": 2512631,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 1.4,
+      "seconds_after": 1.39,
+      "before_sha256": "baae847e167b4f92f4c10d9b0368f81e3955fe3e58e07a35e69fe37ce022f3c4",
+      "after_sha256": "baae847e167b4f92f4c10d9b0368f81e3955fe3e58e07a35e69fe37ce022f3c4",
+      "identical": true,
+      "before": {
+        "decisions": 736,
+        "threat_decisions": 736,
+        "alert_decisions": 40,
+        "alert_types": {
+          "MAVLINK_ANOMALY": 36,
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "COMMAND_INJECTION": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 736,
+        "threat_decisions": 736,
+        "alert_decisions": 40,
+        "alert_types": {
+          "MAVLINK_ANOMALY": 36,
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "COMMAND_INJECTION": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/sitl/raw/benign_008.tlog",
+      "tlog_sha256": "2accd023aa14404ea0c4a20600313e4a1c81f8366789980d9516e494daae88df",
+      "tlog_bytes": 1877335,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 1.23,
+      "seconds_after": 1.17,
+      "before_sha256": "0c3e7d9cbd5dca807bead5dbc540b327d475cae372429dce547ad12f74ee2aae",
+      "after_sha256": "0c3e7d9cbd5dca807bead5dbc540b327d475cae372429dce547ad12f74ee2aae",
+      "identical": true,
+      "before": {
+        "decisions": 550,
+        "threat_decisions": 550,
+        "alert_decisions": 33,
+        "alert_types": {
+          "MAVLINK_ANOMALY": 28,
+          "TELEMETRY_MANIPULATION": 2,
+          "DOS": 2,
+          "COMMAND_INJECTION": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 550,
+        "threat_decisions": 550,
+        "alert_decisions": 33,
+        "alert_types": {
+          "MAVLINK_ANOMALY": 28,
+          "TELEMETRY_MANIPULATION": 2,
+          "DOS": 2,
+          "COMMAND_INJECTION": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/sitl/raw/benign_009.tlog",
+      "tlog_sha256": "839e8cacfc86890ef5558736fd188a5d7b1cf22e64e3d5500d8fbc0bc72de83f",
+      "tlog_bytes": 2151949,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 1.3,
+      "seconds_after": 1.28,
+      "before_sha256": "673307f60dbd4cce0dde1679ed556b2f5b0daa7ce5d01e22374634a659651181",
+      "after_sha256": "673307f60dbd4cce0dde1679ed556b2f5b0daa7ce5d01e22374634a659651181",
+      "identical": true,
+      "before": {
+        "decisions": 631,
+        "threat_decisions": 631,
+        "alert_decisions": 35,
+        "alert_types": {
+          "MAVLINK_ANOMALY": 31,
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "COMMAND_INJECTION": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 631,
+        "threat_decisions": 631,
+        "alert_decisions": 35,
+        "alert_types": {
+          "MAVLINK_ANOMALY": 31,
+          "TELEMETRY_MANIPULATION": 1,
+          "DOS": 2,
+          "COMMAND_INJECTION": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/sitl/raw/benign_010.tlog",
+      "tlog_sha256": "c4cdd13a1569fcafbf702a75dcbf45c693527fe54cdec2fd28b88e8924503083",
+      "tlog_bytes": 1374049,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 1.02,
+      "seconds_after": 1.02,
+      "before_sha256": "5abf84fb2a5a70d4dca701ddecebbf2069408263710456ff3f8acedbc23cd0de",
+      "after_sha256": "5abf84fb2a5a70d4dca701ddecebbf2069408263710456ff3f8acedbc23cd0de",
+      "identical": true,
+      "before": {
+        "decisions": 405,
+        "threat_decisions": 405,
+        "alert_decisions": 25,
+        "alert_types": {
+          "MAVLINK_ANOMALY": 20,
+          "TELEMETRY_MANIPULATION": 2,
+          "DOS": 2,
+          "COMMAND_INJECTION": 1
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 405,
+        "threat_decisions": 405,
+        "alert_decisions": 25,
+        "alert_types": {
+          "MAVLINK_ANOMALY": 20,
+          "TELEMETRY_MANIPULATION": 2,
+          "DOS": 2,
+          "COMMAND_INJECTION": 1
+        },
+        "ml_enabled": false
+      }
+    },
+    {
+      "tlog": "data/hardware/raw/telemetry_radio_005.tlog",
+      "tlog_sha256": "0f4e2887e4da853b0ffb9aadc56488a0080930d453e245c720a8b063256784b5",
+      "tlog_bytes": 1500,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.54,
+      "seconds_after": 0.57,
+      "before_sha256": "a3212016e8ec89b399e35b8fe694c7f29d3a0f10092da3a841f0bdceab86a54c",
+      "after_sha256": "a3212016e8ec89b399e35b8fe694c7f29d3a0f10092da3a841f0bdceab86a54c",
+      "identical": true,
+      "before": {
+        "decisions": 296,
+        "threat_decisions": 0,
+        "alert_decisions": 0,
+        "alert_types": {},
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 296,
+        "threat_decisions": 0,
+        "alert_decisions": 0,
+        "alert_types": {},
+        "ml_enabled": false
+      },
+      "committed_artifact": "artifacts/hardware/replay_p1p2_005/replay_noml.json",
+      "after_equals_committed_working_copy_bytes": true,
+      "after_equals_committed_blob_modulo_eol": true
+    },
+    {
+      "tlog": "data/hardware/raw/telemetry_radio_007.tlog",
+      "tlog_sha256": "0a70133114f439aad8e7a45b7e86eb76127cda4efa0674891e8c228025d0e17a",
+      "tlog_bytes": 58980,
+      "exit_before": 0,
+      "exit_after": 0,
+      "seconds_before": 0.59,
+      "seconds_after": 0.6,
+      "before_sha256": "1cd58e58bba3eab7f471015ba30c19db65deca383943d16cb23191406d8a4aa6",
+      "after_sha256": "1cd58e58bba3eab7f471015ba30c19db65deca383943d16cb23191406d8a4aa6",
+      "identical": true,
+      "before": {
+        "decisions": 300,
+        "threat_decisions": 295,
+        "alert_decisions": 15,
+        "alert_types": {
+          "DOS": 15
+        },
+        "ml_enabled": false
+      },
+      "after": {
+        "decisions": 300,
+        "threat_decisions": 295,
+        "alert_decisions": 15,
+        "alert_types": {
+          "DOS": 15
+        },
+        "ml_enabled": false
+      },
+      "committed_artifact": "artifacts/hardware/replay_p1p2_007/replay_noml.json",
+      "after_equals_committed_working_copy_bytes": true,
+      "after_equals_committed_blob_modulo_eol": true
+    }
+  ]
+}

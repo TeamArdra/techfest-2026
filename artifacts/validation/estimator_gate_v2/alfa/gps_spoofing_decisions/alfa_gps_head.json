@@ -1,0 +1,118 @@
+{
+ "code": "<wt_head>/src/aegisflight/__init__.py",
+ "n_tlogs": 41,
+ "rows": [
+  {
+   "file": "telemetry/telemetry/2018-07-18/flight4/flight.tlog",
+   "t_unix": 1531929163.29,
+   "gt": "unlabelled",
+   "airborne": false,
+   "threat": true,
+   "pred": "GPS_SPOOFING",
+   "det_physics": 1.0,
+   "evidence": [
+    "position residual 31.5 m \u2265 hard 30 m",
+    "message-rate spike: 162 msg/s > 3\u00d7nominal (84)",
+    "ML anomaly score 1.00 \u2265 0.62 (driver: msg_rate_hz, z=+136.4)"
+   ]
+  },
+  {
+   "file": "telemetry/telemetry/2018-07-18/flight4/flight.tlog",
+   "t_unix": 1531929163.49,
+   "gt": "unlabelled",
+   "airborne": false,
+   "threat": true,
+   "pred": "GPS_SPOOFING",
+   "det_physics": 1.0,
+   "evidence": [
+    "position residual 30.0 m \u2265 hard 30 m",
+    "message-rate spike: 163 msg/s > 3\u00d7nominal (84)",
+    "ML anomaly score 1.00 \u2265 0.62 (driver: msg_rate_hz, z=+137.4)"
+   ]
+  },
+  {
+   "file": "telemetry/telemetry/2018-10-05/flight1/flight.tlog",
+   "t_unix": 1538765085.37,
+   "gt": "unlabelled",
+   "airborne": false,
+   "threat": true,
+   "pred": "GPS_SPOOFING",
+   "det_physics": 1.0,
+   "evidence": [
+    "position residual 30.0 m \u2265 hard 30 m",
+    "message-rate spike: 152 msg/s > 3\u00d7nominal (84)",
+    "ML anomaly score 1.00 \u2265 0.62 (driver: msg_rate_hz, z=+125.8)"
+   ]
+  },
+  {
+   "file": "telemetry/telemetry/2018-10-05/flight1/flight.tlog",
+   "t_unix": 1538765085.57,
+   "gt": "unlabelled",
+   "airborne": false,
+   "threat": true,
+   "pred": "GPS_SPOOFING",
+   "det_physics": 1.0,
+   "evidence": [
+    "position residual 30.2 m \u2265 hard 30 m",
+    "message-rate spike: 158 msg/s > 3\u00d7nominal (84)",
+    "ML anomaly score 1.00 \u2265 0.62 (driver: msg_rate_hz, z=+132.2)"
+   ]
+  },
+  {
+   "file": "telemetry/telemetry/2018-10-05/flight1/flight.tlog",
+   "t_unix": 1538765085.77,
+   "gt": "unlabelled",
+   "airborne": false,
+   "threat": true,
+   "pred": "GPS_SPOOFING",
+   "det_physics": 1.0,
+   "evidence": [
+    "position residual 30.2 m \u2265 hard 30 m",
+    "message-rate spike: 160 msg/s > 3\u00d7nominal (84)",
+    "ML anomaly score 1.00 \u2265 0.62 (driver: msg_rate_hz, z=+134.3)"
+   ]
+  },
+  {
+   "file": "telemetry/telemetry/2018-10-05/flight1/flight.tlog",
+   "t_unix": 1538765085.97,
+   "gt": "unlabelled",
+   "airborne": false,
+   "threat": true,
+   "pred": "GPS_SPOOFING",
+   "det_physics": 1.0,
+   "evidence": [
+    "position residual 30.3 m \u2265 hard 30 m",
+    "message-rate spike: 168 msg/s > 3\u00d7nominal (84)",
+    "ML anomaly score 1.00 \u2265 0.62 (driver: msg_rate_hz, z=+142.7)"
+   ]
+  },
+  {
+   "file": "telemetry/telemetry/2018-10-05/flight1/flight.tlog",
+   "t_unix": 1538765086.57,
+   "gt": "unlabelled",
+   "airborne": false,
+   "threat": true,
+   "pred": "GPS_SPOOFING",
+   "det_physics": 1.0,
+   "evidence": [
+    "position residual 30.0 m \u2265 hard 30 m",
+    "message-rate spike: 167 msg/s > 3\u00d7nominal (84)",
+    "ML anomaly score 1.00 \u2265 0.62 (driver: msg_rate_hz, z=+141.6)"
+   ]
+  },
+  {
+   "file": "telemetry/telemetry/2018-10-05/flight1/flight.tlog",
+   "t_unix": 1538765086.77,
+   "gt": "unlabelled",
+   "airborne": false,
+   "threat": true,
+   "pred": "GPS_SPOOFING",
+   "det_physics": 1.0,
+   "evidence": [
+    "position residual 30.0 m \u2265 hard 30 m",
+    "message-rate spike: 163 msg/s > 3\u00d7nominal (84)",
+    "ML anomaly score 1.00 \u2265 0.62 (driver: msg_rate_hz, z=+137.4)"
+   ]
+  }
+ ]
+}

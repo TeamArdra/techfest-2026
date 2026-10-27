@@ -44,6 +44,8 @@ import psutil
 
 from aegisflight.config import load_config
 from aegisflight.logging import EventStore
+from aegisflight.mavlink.gcs_notifier import is_loopback_host
+from aegisflight.mitigation import DefenseMode, MitigationController
 from aegisflight.pipeline import IDSPipeline
 from aegisflight.sources.mavlink_live import LiveMavlinkSource
 from aegisflight.sources.mavlink_serial import SerialMavlinkTransport
@@ -72,7 +74,17 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--health-interval", type=float, default=10.0)
     ap.add_argument("--no-reconnect", action="store_true", help="fail instead of retrying an unopenable port")
     ap.add_argument("--reconnect-interval", type=float, default=1.0)
+    ap.add_argument("--gcs-notify", action="store_true",
+                    help="send STATUSTEXT alert notifications over UDP to a LOOPBACK GCS (never on the serial port)")
+    ap.add_argument("--gcs-notify-host", default="127.0.0.1", help="loopback GCS host for UDP STATUSTEXT alerts")
+    ap.add_argument("--gcs-notify-port", type=int, default=14550, help="target GCS UDP port for STATUSTEXT alerts")
+    # receive-only monitor: there is no 'active-ips' here; mitigation decisions are reported, never transmitted
+    ap.add_argument("--defense-mode", choices=["passive", "advisory"], default="passive",
+                    help="defense engine posture (report-only): passive (default) or advisory")
     a = ap.parse_args(argv)
+    if a.gcs_notify and not is_loopback_host(a.gcs_notify_host):
+        print(f"FAIL: --gcs-notify-host must be a loopback address (got {a.gcs_notify_host!r})", file=sys.stderr)
+        return 2
 
     out = Path(a.out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -82,6 +94,7 @@ def main(argv: list[str] | None = None) -> int:
     if a.ml and model is None:
         print("WARNING: --ml requested but the model file is missing: running without ML", file=sys.stderr)
     pipe = IDSPipeline(cfg, model_path=model, firmware_dir=None)
+    mitigation = MitigationController(mode=DefenseMode(a.defense_mode))
     db = out / "events.sqlite"
     if any((out / n).exists() for n in ("events.sqlite", "alerts.jsonl", "health.jsonl", "summary.json")):
         # never clobber a previous run's tamper-evident log (a restart loop must not erase the alerts before a crash)
@@ -89,7 +102,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     store = EventStore(db)
     run_id = "serial-" + datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
-    store.start_run(run_id, label="serial-monitor", meta={"port": a.port, "ml": model is not None})
+    store.start_run(run_id, label="serial-monitor", meta={"port": a.port, "ml": model is not None, "defense_mode": a.defense_mode})
     try:
         tr = SerialMavlinkTransport(a.port, baudrate=a.baud, reconnect=not a.no_reconnect,
                                     reconnect_interval_s=a.reconnect_interval, allow_url=a.allow_url)
@@ -105,6 +118,11 @@ def main(argv: list[str] | None = None) -> int:
         store.close()
         return 2
     src = LiveMavlinkSource(tr, sample_rate_hz=rate, origin="start")  # a dead-from-start link still ticks
+    notifier = None
+    if a.gcs_notify:
+        from aegisflight.mavlink.gcs_notifier import GcsNotifier
+        target = (a.gcs_notify_host, a.gcs_notify_port) if a.gcs_notify_port else None
+        notifier = GcsNotifier(enabled=True, udp_target=target)
     stop = threading.Event()
 
     def _stop(*_a: object) -> None:
@@ -142,10 +160,14 @@ def main(argv: list[str] | None = None) -> int:
                 lat_sum += asmt.latency_ms
                 lat_max = max(lat_max, asmt.latency_ms)
                 no_gpi += pipe.last_frame is not None and pipe.last_frame.gps_seen is False
+                if pipe.last_frame is not None:
+                    mitigation.step(pipe.last_frame, asmt)  # report-only: counter_frames are never sent
                 if asmt.is_alert:
                     alerts += 1
                     types[asmt.attack_type.value] += 1
                     row = store.log_event(asmt, run_id)
+                    if notifier is not None:
+                        notifier.notify(asmt)
                     alerts_f.write(json.dumps({"t": round(asmt.t, 3), "wall_utc": datetime.now(UTC).isoformat(),
                                                "type": asmt.attack_type.value, "score": round(asmt.threat_score, 3),
                                                "evidence": asmt.evidence, "event_id": row["id"], "hash": row["hash"],
@@ -172,9 +194,11 @@ def main(argv: list[str] | None = None) -> int:
         src.close()
         health.close()
         alerts_f.close()
+        if notifier is not None:
+            notifier.close()
         chain = store.verify_chain(run_id)
         store.close()
-    if t_stats["bytes_sent"] != 0 or t_stats["write_errors"] != 0:
+    if t_stats["bytes_sent"] != 0 or t_stats["write_errors"] != 0:  # every mode is receive-only
         print(f"FAIL: transmit attempted on a receive-only monitor (bytes_sent={t_stats['bytes_sent']}, "
               f"write_errors={t_stats['write_errors']})", file=sys.stderr)
         rc = 3
@@ -184,6 +208,7 @@ def main(argv: list[str] | None = None) -> int:
     ls = sorted(lat)
     summary = {"schema": "aegisflight.serial_monitor_run/1", "started_utc": started, "port": a.port, "baud": a.baud,
                "ml_enabled": model is not None, "config_dir": a.config_dir or "configs (Stage-1 default)",
+               "defense_mode": a.defense_mode,
                "wall_s": round(wall, 1), "cpu_s": round(cpu, 2),
                "cpu_pct_of_one_core_mean": round(100 * cpu / wall, 2) if wall else None,
                "rss_mb_max": round(rss_max / 2**20, 1), "decisions": decisions, "threat_decisions": threats,

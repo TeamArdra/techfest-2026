@@ -174,6 +174,40 @@ Tested by `test_fusion_and_metrics.py`.
 
 ---
 
+## `src/aegisflight/mitigation/` — Autonomous Prevention & IPS (CORE Stage 2)
+
+- `mitigation/engine.py` — `AutonomousMitigationEngine`: multi-action autonomous response coordinator, priority ranking (`ActuatorPriority`), posture gating (`PASSIVE`, `ADVISORY`, `ACTIVE_IPS`), GCS banner dispatch.
+- `mitigation/golden_state.py` — `GoldenStateEstimator`: synthetic dead-reckoning flight twin (`vx_ms`, `vy_ms`, `trusted_speed_ms`, `trusted_heading_deg`), speed/attitude isolation during telemetry attacks, clean GPS anchoring.
+- `mitigation/sanitizer.py` — `FrameSanitizer`: coordinate clamping (`max_step_m`), altitude delta limit, CUSUM micro-drift accumulator (`AF-SEC-02`), rogue sysid quarantine.
+- `mitigation/killswitch.py` — `KillswitchGuard`: flight-critical safety vetoes (in-flight disarm, forced landing, emergency stop rejection).
+- `mitigation/reconfiguration.py` — `DynamicLinkReconfigurator` & `FloodMitigator`: rate-limiting, link failover, priority channel allocation under DoS flood.
+- `mitigation/actions.py` — Dataclasses: `MitigationAction`, `ActuatorPriority`, `OperatingPosture`, `MitigationPlan`.
+
+---
+
+## `src/aegisflight/hal/` — Hardware Abstraction Layer (CORE Stage 2)
+
+- `hal/discovery.py` — Auto-discovery across serial/USB devices (CubePilot, Pixhawk 6X/4/2.4.8, SiK Telemetry, ExpressLRS, Holybro).
+- `hal/identify.py` — Host platform & companion compute detection (Raspberry Pi 4/5/Zero, NVIDIA Jetson, Rockchip) + dynamic latency budgets (15–65 ms).
+- `hal/profiles.py` — Autopilot firmware detection & parameter adaptation (ArduPilot Copter/Plane/Rover vs PX4 Autopilot).
+- `hal/link_graph.py` — Live topology graph builder (`TelemetryLinkGraph`), node identification, routing path resolution.
+- `hal/topology.py` — Topology selector: selects optimal topology (`TOPOLOGY_B`, `TOPOLOGY_A`, `TOPOLOGY_A_PLUS_B`, `IDS_ONLY`) with human-readable rationale.
+- `hal/inline_bridge.py` — `InlineBridge`: dual-port transparent serial bridge with wire-speed frame sanitization and 150 ms fail-open hardware watchdog.
+
+---
+
+## `rust/aegis_fastpath/` — Native Fastpath Engine (CORE Stage 2)
+
+- `rust/aegis_fastpath/src/lib.rs` — Zero-allocation MAVLink v2 CRC-16 (X.25) table lookup, in-place coordinate sanitization (`GLOBAL_POSITION_INT`), sub-microsecond frame inspection.
+
+---
+
+## `frontend/src-tauri/` — Native Desktop GCS (CORE Stage 2)
+
+- `src-tauri/src/main.rs` — Tauri 2.0 Rust desktop wrapper providing native OS windowing, hardware acceleration, and cross-platform desktop distribution.
+
+---
+
 ## `src/aegisflight/backend/` (CORE for demo)
 - `backend/engine.py` — `LiveEngine`: real-time async sim+IDS loop, runtime
   attack injection, WebSocket subscribers, status/metrics snapshots.

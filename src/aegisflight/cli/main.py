@@ -138,6 +138,10 @@ def _serve_env(spec, args: argparse.Namespace) -> dict[str, str]:
         "AEGIS_CONFIG_DIR": spec.config_dir or "", "AEGIS_ML": "",  # "" -> SourceSpec default (SIM only)
         "AEGIS_RECONNECT": "1" if spec.reconnect else "0", "AEGIS_DB": args.db or "",
         "AEGIS_SERVE_HOST": args.host,
+        "AEGIS_GCS_NOTIFY": "1" if getattr(args, "gcs_notify", False) else "0",
+        "AEGIS_GCS_NOTIFY_HOST": getattr(args, "gcs_notify_host", "127.0.0.1"),
+        "AEGIS_GCS_NOTIFY_PORT": str(getattr(args, "gcs_notify_port", 14550)),
+        "AEGIS_DEFENSE_MODE": spec.defense_mode,
     }
 
 
@@ -147,7 +151,10 @@ def _cmd_serve(args: argparse.Namespace) -> int:
     try:  # validated before anything starts: a bad source is an error, never a silent SIM fallback
         spec = SourceSpec(kind=args.source, port=args.serial_port, baud=args.baud, allow_url=args.allow_url,
                           tlog=args.tlog, speed=args.replay_speed, udp_port=args.udp_port,
-                          config_dir=args.config_dir, reconnect=not args.no_reconnect)
+                          config_dir=args.config_dir, reconnect=not args.no_reconnect,
+                          defense_mode=args.defense_mode,
+                          gcs_notify=args.gcs_notify, gcs_notify_host=args.gcs_notify_host,
+                          gcs_notify_port=args.gcs_notify_port)
     except ValueError as exc:
         print(f"aegis serve: {exc}", file=sys.stderr)
         return 2
@@ -225,6 +232,14 @@ def build_parser() -> argparse.ArgumentParser:
     sv.add_argument("--udp-port", type=int, default=None, help="udp: listen on 127.0.0.1:<port>, passive")
     sv.add_argument("--config-dir", default=None, help="detector profile dir (default: Stage-1 configs/)")
     sv.add_argument("--db", default=None, help="event store (default: artifacts/aegisflight_live.sqlite)")
+    sv.add_argument("--gcs-notify", action="store_true",
+                    help="broadcast MAVLink STATUSTEXT alert notifications to GCS (UDP or active serial/UDP link)")
+    sv.add_argument("--gcs-notify-host", default="127.0.0.1",
+                    help="target GCS host for UDP STATUSTEXT alerts (default: 127.0.0.1)")
+    sv.add_argument("--gcs-notify-port", type=int, default=14550,
+                    help="target GCS UDP port for STATUSTEXT alerts (default: 14550)")
+    sv.add_argument("--defense-mode", choices=["passive", "advisory", "active-ips"], default="passive",
+                    help="defense engine posture: passive (IDS only, zero bytes sent), advisory (GCS alerts), active-ips (autonomous mitigation)")
     sv.set_defaults(func=_cmd_serve)
 
     v = sub.add_parser("verify-log", help="verify a SQLite event-log hash chain")

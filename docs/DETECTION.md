@@ -168,6 +168,100 @@ A **hysteresis** (`hysteresis_ticks`) damps soft triggers until they persist,
 suppressing single-tick GPS-noise spikes; a hard position residual fires
 immediately.
 
+### Estimator-aware position residual (`physics.estimator_gate`, default on; v1 2026-10-25, v2 2026-10-26)
+The residual assumes that the reported position and velocity are one navigation solution.
+ArduPilot says when they are not: `EKF_STATUS_REPORT.flags` with `CONST_POS_MODE` set, or with
+neither `POS_HORIZ_ABS` nor `POS_HORIZ_REL`, means the estimator has no horizontal solution. In
+that state its velocity output is pinned near 0 while `GLOBAL_POSITION_INT` can carry the
+receiver's wandering position. That combination raised false `GPS_SPOOFING` alerts on the
+stationary bench Pixhawk 6X (`docs/HARDWARE_BENCH_PIXHAWK6X.md` §6.10). v2 replaces v1, which a
+review showed could be silenced by one forged report, by flag flipping, or by a stale status
+(`docs/GPS_WORKSTREAM_PROGRESS.md`, "Review findings").
+
+**Gated fix.** A `GLOBAL_POSITION_INT` fix is *gated* only if all of these hold:
+1. the latest report is fresh (at most 2 s, `_LINK_GAP_S`, old at the fix) and says no horizontal
+   solution;
+2. the reports have said no solution continuously for at least 2 s (first to latest report of the
+   run; compared with a 1e-9 s tolerance for float error);
+3. the run restarts on any solution report and on any gap of more than 2 s between two reports.
+
+So a single report, flags that flip, or a stale or missing status never gate a fix. The first
+ungated fix after a gated one is the *transition* fix. Each fix's residual increment is tagged
+(normal / gated / transition) inside the existing 15-fix window; nothing restarts the window.
+
+| Situation | Position rule |
+|---|---|
+| `EKF_STATUS_REPORT` never received, or `estimator_gate: false` | Stage-1 rule on `pos_residual_m`, unchanged |
+| latest fix not gated | Stage-1 thresholds (12 / 30 m) on `pos_residual_nav_m`: the same window without the gated increments and the transition increment. It equals `pos_residual_m` exactly whenever the window holds neither, so a link that never holds "no solution" for 2 s gets the Stage-1 rule |
+| latest fix gated | the position-vs-velocity residual is not used. Rule 4 measures the velocity-implied movement the position does **not** show, over the gated fixes in the window (`pos_vel_shortfall_gated_m`): with V = Σ v·dt and P = Σ of the raw measured displacements of those fixes, shortfall = \|V\| − (P projected on V, clamped to [0, \|V\|]). It goes through the same 12 / 30 m thresholds as `GPS_SPOOFING` ("estimator reports no horizontal solution but its velocity implies X m of movement the position does not show"). Such a decision carries a score-0 line "navigation: estimator reports no horizontal position solution …" when physics scored 0 on it (the line is left out when any physics check scored, so it never sits among scored physics evidence) |
+| any state, while a gated or transition fix is in the window | rule 3: one residual increment \|Δp − v·dt\| ≥ 30 m, unclamped, at a gated or transition fix (`pos_step_max_m`) alerts `GPS_SPOOFING` (hard): "position discontinuity …". It is the step the reported velocity does not account for, not the raw displacement, so a coherent fast vehicle does not trigger it. At ordinary fixes the Stage-1 rule already sees such an increment (clamped to 30 m) |
+
+* No new threshold: the gate reuses `gps_pos_residual_m` (12), `gps_pos_residual_hard_m` (30) and
+  the 2 s `_LINK_GAP_S`.
+* `pos_residual_m` (an ML feature) is computed exactly as before; the new quantities are separate
+  fields. The bits come from pymavlink's `ardupilotmega` dialect, not from hand-typed constants.
+* Rule 4 (gated: velocity-implied movement the position does not show) is bounded:
+  0 ≤ shortfall ≤ \|V\|. A coherent track (P ≈ V) gives ≈ 0, so coherent motion under a
+  no-solution status is quiet, as under the Stage-1 rule. A frozen position (P ≈ 0) or one moving
+  against the velocity gives the full \|V\| and alerts. Wander with a pinned velocity (v ≈ 0, as a
+  position-less estimator reports) can never trigger it. (The first v2 draft measured \|V\| alone,
+  which alerted on coherent motion; corrected 2026-10-26.)
+* Not gated: the GPS/VFR speed check, the acceleration, altitude and heading checks, every protocol
+  rule (including the GNSS fix rule), and the ML detector.
+* Fusion lists score-0 physics evidence (only this navigation line, which physics emits only when it
+  scored 0) after the other detectors' evidence; all other evidence keeps the Stage-1 order
+  (physics, protocol, integrity, anomaly).
+* **Limitations.** All adversarial evidence below is SIM (synthetic envelopes,
+  `tests/unit/test_gps_scenarios_fused.py`); none is SITL, BENCH or FIELD.
+  * **Sustained forged no-solution with zero velocity hides a walk of less than 30 m per fix**
+    (30 m × the fix rate: about 150 m/s at 5 Hz, about 60 m/s at the bench's 2 Hz
+    `GLOBAL_POSITION_INT`). A jump split into steps below 30 m is missed the same way. With no
+    estimator solution and no velocity, such a walk cannot be told apart from GNSS wander. The
+    Stage-1 rule would alert on it, so this is a capability the gate adds for an attacker who can
+    rewrite the status.
+  * Same class, with a non-zero velocity: rule 4 does not measure position movement perpendicular
+    to the velocity, or beyond it along the velocity. A lateral offset or a position running ahead
+    of the velocity, below 30 m per fix, is not detected at gated fixes (SIM test at 5 m/s; the
+    Stage-1 rule alerts on that drift).
+  * `EKF_STATUS_REPORT` is unauthenticated. An in-path attacker can forge it, and can inject it on a
+    link that never sends it (PX4 / ArduPilot SITL as captured): 2 s of sustained no-solution
+    reports activate the gate. Only MAVLink-2 signing closes this. With forged status, also:
+    * a 12–30 m step on the transition fix (when the forged no-solution period ends) is quiet: it is
+      left out of the residual and is below rule 3 (the Stage-1 rule would rate it SUSPICIOUS);
+    * after the solution returns, sensitivity dips briefly: gated increments stay excluded until
+      they age out of the 15-fix window (3 s at 5 Hz, 7.5 s at 2 Hz), so the residual builds from
+      fewer increments in that time;
+    * once a fix is gated, the non-gated residual still in the window is not re-checked, so a forged
+      no-solution run that begins after a drift has already alerted ends that residual alert once
+      the ≥ 2 s debounce completes (the remaining checks, rule-3 increments and the rule-4
+      shortfall, still apply). Re-checking it was tried and rejected: it escalates benign wander
+      that begins together with the CONST_POS switch for up to one window (SIM,
+      `_fix_lost_and_recovered`; a scratch trial, not kept as a test).
+  * Debounce cost: the first 2 s of a genuine no-solution period are judged by the Stage-1 rule, so
+    wander that starts together with the state change can still raise `GPS_SPOOFING` there (SIM,
+    benign case 5).
+  * Whether an attack (for example jamming) drives a real estimator into no-solution, and how the
+    gate then behaves, is unmeasured.
+  * The gate covers the physics rule only. The ML detector still sees the ungated `pos_residual_m`
+    and can raise `GPS_SPOOFING` on the same wander (ML is off by default for non-SIM live sources).
+  * Rule 4 would also alert on a genuine estimator that reports no solution with a non-zero
+    velocity that the reported position does not follow; not observed (on the bench captures
+    008/009 the largest shortfall is 0.11 m; REPLAY of BENCH, in-sample, pinned by the test).
+  * Rule 3 would hard-alert on a vehicle that moves 30 m or more between two fixes in the gated
+    state while the estimator's velocity stays pinned near 0 (a fast vehicle with a slow
+    `GLOBAL_POSITION_INT`); a truthful velocity accounts for the step. Not observed.
+  * The gate needs `EKF_STATUS_REPORT` at least every 2 s (≥ 0.5 Hz). On a slower link a report is
+    stale at the next fix and the run restarts at every report, so nothing is ever gated and the
+    Stage-1 rule applies, including the bench false alarms it was meant to remove.
+  * `nav_gated` is the state at the latest position fix. If `GLOBAL_POSITION_INT` stops, it keeps the
+    last fix's state (stale) while the status reports change.
+  * A reset jump that reaches `GLOBAL_POSITION_INT` one fix after the solution returns falls on an
+    ordinary fix and still alerts.
+  * The thresholds were not re-derived for the gated state. The only benign gated data are the
+    bench captures 008/009 (in-sample, n = 2; largest gated single-fix residual increments 8.85 m
+    and 0.70 m, pinned by the REPLAY-of-BENCH test).
+* `false` restores the Stage-1 rule exactly. Tests: `tests/unit/test_gps_scenarios_fused.py`.
+
 ## Detector C — ML anomaly (`detectors/anomaly.py`)
 
 Benign-trained **ensemble** over the 11-feature `ML_FEATURES` vector, combined

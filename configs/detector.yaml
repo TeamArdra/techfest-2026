@@ -63,6 +63,16 @@ physics:
   battery_drop_rate_v_s: 2.0        # nor collapse impossibly fast
   attitude_rate_consistency: 1.2    # attitude-vs-rate mismatch tolerance
   hysteresis_ticks: 2               # consecutive ticks before firing (soft)
+  # Estimator-aware GPS residual (2026-10-25; v2 2026-10-26). A position fix is "gated" when a fresh
+  # EKF_STATUS_REPORT says no horizontal solution (CONST_POS_MODE, or no POS_HORIZ_ABS/REL bit) and
+  # the reports have said so continuously for >= 2 s. At a gated fix the position-vs-velocity
+  # residual is degraded navigation, not spoofing; velocity-implied movement the position does not
+  # show uses the residual thresholds above, and one residual increment |dp - v*dt| >= the hard
+  # threshold (a step the velocity does not account for) alerts. Ungated fixes use the Stage-1 rule.
+  # Inert only while no EKF_STATUS_REPORT is received; the report is unauthenticated, so an injected
+  # one can activate it (>= 2 s of no-solution reports). Needs reports at least every 2 s.
+  # false = Stage-1 rule. Details: docs/DETECTION.md "Estimator-aware position residual".
+  estimator_gate: true
 
 # ------------------------------------------------------------------ #
 # Detector C: ML anomaly detector (Isolation Forest, trained benign-only)

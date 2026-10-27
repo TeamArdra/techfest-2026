@@ -139,19 +139,20 @@ export function CoveragePanel({ activeAttack }: { activeAttack: string | null })
    no fabricated score, no overclaimed live integration. */
 const IMPLEMENTED = [
   "MAVLink 2 codec (pymavlink)",
-  "Offline PX4 ULog replay",
-  "Offline ArduPilot .tlog replay",
+  "Offline PX4 ULog & ArduPilot .tlog replay",
   "Modular detector interface",
   "FastAPI + WebSocket API",
-  "CLI + config-driven YAML pipeline",
   "SQLite tamper-evident hash-chain log",
   "Live serial / UDP MAVLink source (receive-only)",
+  "MAVLink-2 signing verification",
+  "IPS state machine (SIM dashboard; report-only on live sources)",
+  "STATUSTEXT alerts to a loopback GCS",
 ];
 const PLANNED = [
-  "SITL live integration",
+  "Inline FrameSanitizer relay (code exists, not wired)",
+  "Rust fast-path + Tauri desktop app (prototype, not on the decision path)",
   "Hardware-in-the-loop (HIL)",
   "Onboard / companion deployment",
-  "MAVLink-2 signing verification",
   "Multi-vehicle support",
 ];
 
@@ -160,14 +161,14 @@ export function IntegrationPanel() {
     <div className="panel">
       <header>
         <span className="panel-title">Integration / Platform</span>
-        <span className="panel-note">architecture</span>
+        <span className="panel-note">Stage 2 Architecture</span>
       </header>
       <div className="integ-tagline">
-        Modular MAVLink-based pipeline designed for FC / compute-stack adaptation.
+        Modular MAVLink-based cyber-physical shield with zero-interference flight safety.
       </div>
       <div className="integ-cols">
         <div className="integ-col">
-          <div className="integ-head ok">Implemented</div>
+          <div className="integ-head ok">Implemented in Stage 2</div>
           <ul className="integ-list">
             {IMPLEMENTED.map((x) => (
               <li key={x}>{x}</li>
@@ -175,7 +176,7 @@ export function IntegrationPanel() {
           </ul>
         </div>
         <div className="integ-col">
-          <div className="integ-head planned">Planned</div>
+          <div className="integ-head planned">Future Roadmap</div>
           <ul className="integ-list planned">
             {PLANNED.map((x) => (
               <li key={x}>{x}</li>
