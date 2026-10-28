@@ -155,7 +155,15 @@ def _cmd_serve(args: argparse.Namespace) -> int:
                           config_dir=args.config_dir, reconnect=not args.no_reconnect,
                           defense_mode=args.defense_mode,
                           gcs_notify=args.gcs_notify, gcs_notify_host=args.gcs_notify_host,
-                          gcs_notify_port=args.gcs_notify_port)
+                          gcs_notify_port=args.gcs_notify_port,
+                          signing_key_file=getattr(args, "signing_key_file", None))
+        if spec.signing_key_file:
+            from ..detectors.crossend import load_signing_key
+
+            try:
+                load_signing_key(spec.signing_key_file)
+            except (OSError, ValueError, UnicodeDecodeError) as exc:
+                raise ValueError(f"bad --signing-key-file: {exc}") from exc
     except ValueError as exc:
         print(f"aegis serve: {exc}", file=sys.stderr)
         return 2
@@ -173,6 +181,11 @@ def _cmd_serve(args: argparse.Namespace) -> int:
         print("uvicorn not installed", file=sys.stderr)
         return 1
     os.environ.update(_serve_env(spec, args))
+    # kept out of _serve_env (its key set is fixed); a stale shell value is cleared when no key is given
+    if spec.signing_key_file:
+        os.environ["AEGIS_SIGNING_KEY_FILE"] = spec.signing_key_file
+    else:
+        os.environ.pop("AEGIS_SIGNING_KEY_FILE", None)
     print(f"aegis serve: source {spec.environment} ({spec.describe()['label']}) on http://{args.host}:{args.port}")
     uvicorn.run("aegisflight.backend.app:app", host=args.host, port=args.port, reload=args.reload)
     return 0
@@ -221,7 +234,7 @@ def _cmd_ips_bridge(args: argparse.Namespace) -> int:
                              store=store, run_id=run_id, secret_key=key,
                              allow_unsigned_from_trusted=args.signing_permissive,
                              signing_max_age_s=args.signing_max_age_s, signing_state_path=args.signing_state,
-                             ekf_secondary=args.ekf_secondary)
+                             ekf_secondary=args.ekf_secondary, crossend_interval_s=args.crossend_interval)
     fc.start()
     gcs.start()
     bridge.start()
@@ -303,6 +316,8 @@ def build_parser() -> argparse.ArgumentParser:
                     help="target GCS UDP port for STATUSTEXT alerts (default: 14550)")
     sv.add_argument("--defense-mode", choices=["passive", "advisory", "active-ips"], default="passive",
                     help="defense engine posture: passive (IDS only, zero bytes sent), advisory (GCS alerts), active-ips (autonomous mitigation)")
+    sv.add_argument("--signing-key-file", default=None,
+                    help="32-byte MAVLink-2 key (raw or 64 hex chars) used to authenticate the ips-bridge cross-end summary")
     sv.set_defaults(func=_cmd_serve)
 
     ib = sub.add_parser("ips-bridge", help="inline IPS between a flight controller port and a GCS/radio port")
@@ -328,6 +343,9 @@ def build_parser() -> argparse.ArgumentParser:
     ib.add_argument("--ekf-secondary", action="store_true",
                     help="declare that the aircraft has a configured non-GPS EKF source set; only then may active-ips "
                          "send the EKF source switch (default off: GPS faults escalate to ALT_HOLD instead)")
+    ib.add_argument("--crossend-interval", type=float, default=1.0,
+                    help="seconds between cross-end summaries of the last forwarded GLOBAL_POSITION_INT sent to the GCS "
+                         "side only (0 = off); lets a GCS-side 'aegis serve' detect telemetry altered after the bridge")
     ib.add_argument("--config-dir", default=None)
     ib.add_argument("--db", default=None, help="log alerts to this SQLite hash-chain store")
     ib.add_argument("--seconds", type=float, default=None, help="run time (default: until Ctrl-C)")

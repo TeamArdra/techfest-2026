@@ -22,6 +22,7 @@ from pathlib import Path
 from .config import AegisConfig
 from .core.types import ThreatAssessment
 from .detectors import AnomalyDetector, IntegrityDetector, PhysicsDetector, ProtocolDetector
+from .detectors.crossend import CrossEndMonitor
 from .features.extractor import FeatureExtractor, FeatureFrame
 from .fusion.engine import FusionEngine
 from .integrity.verifier import FirmwareVerifier
@@ -34,8 +35,11 @@ class IDSPipeline:
         cfg: AegisConfig,
         model_path: str | Path | None = None,
         firmware_dir: str | Path | None = None,
+        crossend: CrossEndMonitor | None = None,
     ) -> None:
         self.cfg = cfg
+        # optional GCS-side cross-end check (detectors/crossend.py); None = byte-identical behaviour
+        self.crossend = crossend
         det = cfg.detector
         self.extractor = FeatureExtractor(
             cmd_window_s=det["protocol"].get("command_burst_window_s", 2.0)
@@ -84,6 +88,8 @@ class IDSPipeline:
         """Ingest one tick; return a ThreatAssessment at decision cadence, else None."""
         for m in tick.messages:
             self.extractor.update(m)
+            if self.crossend is not None:
+                self.crossend.update(m)
         self.extractor.note_sig_invalid(tick.sig_invalid)  # P4: 0 for every non-signing source
         if tick.tick % self.decision_every != 0:
             return None
@@ -92,6 +98,8 @@ class IDSPipeline:
         frame = self.extractor.extract(tick.t)
         self.last_frame = frame
         r_proto = self.protocol.process(frame)
+        if self.crossend is not None:
+            self._merge_crossend(r_proto, tick.t)
         r_phys = self.physics.process(frame)
         r_anom = self.anomaly.process(frame)
         r_integ = self.integrity.process()
@@ -106,6 +114,18 @@ class IDSPipeline:
         self.extractor.clear_window_counts()
         self._last = assessment
         return assessment
+
+    def _merge_crossend(self, r_proto, t: float) -> None:
+        """Fold the cross-end verdict into the PROTOCOL result (score = max, evidence extended, votes merged)."""
+        ce = self.crossend.assess(t) if self.crossend is not None else None
+        if ce is None or ce.score <= 0.0:
+            return
+        r_proto.score = max(r_proto.score, ce.score)
+        r_proto.triggered = r_proto.score >= 0.5
+        r_proto.evidence.extend(ce.evidence)
+        for k, v in ce.votes.items():
+            r_proto.attack_votes[k] = max(r_proto.attack_votes.get(k, 0.0), v)
+        r_proto.signals["crossend_score"] = ce.score
 
     def run(self, ticks: Iterator[TelemetryTick]) -> Iterator[ThreatAssessment]:
         for tick in ticks:
@@ -133,6 +153,8 @@ class IDSPipeline:
         self.physics.reset()
         self.anomaly.reset()
         self.integrity.reset()
+        if self.crossend is not None:
+            self.crossend.reset()
         self.fusion.reset()
         self._last = None
         self.last_frame = None

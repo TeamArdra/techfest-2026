@@ -212,7 +212,11 @@ class LiveEngine:
                                  meta=self.spec.run_meta())
 
     def _build(self) -> None:
-        self.pipeline = IDSPipeline(self.cfg, model_path=self.model_path, firmware_dir=self.fw_dir)
+        crossend = None
+        if not self.is_sim:  # inert until a bridge summary is seen; never used for SIM
+            from ..detectors.crossend import CrossEndMonitor, load_signing_key
+            crossend = CrossEndMonitor(load_signing_key(self.spec.signing_key_file) if self.spec.signing_key_file else None)
+        self.pipeline = IDSPipeline(self.cfg, model_path=self.model_path, firmware_dir=self.fw_dir, crossend=crossend)
         if self.is_sim:
             self.source = SimulatedTelemetrySource(self.cfg, NoAttack(), seed=42)
             self._gen = self.source.stream()

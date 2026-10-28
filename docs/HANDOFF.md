@@ -93,6 +93,7 @@ Demo script: `docs/DEMO_RUNBOOK.md`.
   - Confirmed explicitly by the user on 2026-10-26, after the v2 rework: "Yes, confirm the extension".
   - The extractor also reads `EKF_STATUS_REPORT.flags` (ardupilotmega id 193). The codec does not
     encode it, so SIM is unaffected.
+  - Extended 2026-10-28, additive: MISSION_COUNT/ITEM/ITEM_INT/CURRENT/ITEM_REACHED read by the extractor for the mission-path check; user requested it in chat on 2026-10-28; ML_FEATURES unchanged.
   - Callers: `PhysicsDetector` only, via the new optional `FeatureFrame` fields `ekf_flags`,
     `ekf_age_s`, `nav_solution`, `nav_gated`, `pos_residual_nav_m`, `pos_step_max_m` and
     `pos_vel_shortfall_gated_m` (v2, 2026-10-26).

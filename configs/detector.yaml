@@ -81,6 +81,8 @@ physics:
   snr_spread_min_db: 1.5            # std of GPS_STATUS SNRs below this = uniform-power signals
   snr_min_sats: 8                   # ... with at least this many satellites
   gps_ekf_vel_disagree_ms: 3.0      # |GPS_RAW_INT.vel - GLOBAL_POSITION_INT speed|
+  mission_xtrack_alert_m: 60.0      # mission-path check (2026-10-28), uncalibrated; inert without an observed mission
+  mission_hysteresis_ticks: 5       # consecutive decisions beyond the threshold
 
 # ------------------------------------------------------------------ #
 # Detector C: ML anomaly detector (Isolation Forest, trained benign-only)

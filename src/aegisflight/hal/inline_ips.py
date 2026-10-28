@@ -37,7 +37,18 @@ from collections import deque
 from collections.abc import Callable
 from typing import Any, Protocol
 
+from pymavlink.dialects.v20 import common as mav2
+
 from ..config import AegisConfig, load_config
+from ..detectors.crossend import (
+    GPI_MSGID,
+    MARKER_ADDRESS,
+    MARKER_TYPE,
+    MARKER_VER,
+    gpi_from_frame,
+    pack_summary,
+)
+from ..mavlink.signing import MavlinkSignatureVerifier
 from ..mitigation.controller import MitigationController
 from ..mitigation.inline_policy import InlinePolicy
 from ..mitigation.types import DefenseMode
@@ -102,6 +113,7 @@ class InlineIpsBridge:
         idle_sleep_s: float = 0.0005,
         ekf_secondary: bool | None = None,
         clock_ns: Callable[[], int] = time.monotonic_ns,
+        crossend_interval_s: float = 1.0,
     ) -> None:
         self.fc, self.gcs = fc, gcs
         self._secret_key = secret_key
@@ -124,6 +136,16 @@ class InlineIpsBridge:
         self.run_id = run_id
         self._clock_ns = clock_ns
         self._idle = idle_sleep_s
+        # cross-end summary (see detectors/crossend.py): the forward path only stores a reference to the last
+        # forwarded GLOBAL_POSITION_INT; the analyser thread builds and sends the summary to the GCS side
+        self.crossend_interval_s = float(crossend_interval_s)
+        self._last_gpi: bytes | None = None
+        self._last_gpi_sent: bytes | None = None
+        self._crossend_next_ns = 0
+        self._crossend_enc = mav2.MAVLink(None, srcSystem=1, srcComponent=191)
+        self._crossend_enc.robust_parsing = True
+        self._crossend_signer = MavlinkSignatureVerifier(secret_key) if secret_key is not None else None
+        self.crossend_sent = 0
         self._stop = threading.Event()
         self._threads: list[threading.Thread] = []
         self._source: LiveMavlinkSource | None = None
@@ -216,6 +238,8 @@ class InlineIpsBridge:
                 if dest.send(raw):
                     if direction == "down":
                         self.forwarded_down += 1
+                        if fr.msgid == GPI_MSGID:
+                            self._last_gpi = raw
                     else:
                         self.forwarded_up += 1
                 else:
@@ -238,6 +262,7 @@ class InlineIpsBridge:
 
     def analyse_tick(self, tick: Any) -> None:
         """Process one tick: detect, run the controller, push its state into the policy, send counter-frames."""
+        self.emit_crossend()
         assessment = self.pipeline.process_tick(tick)
         if assessment is None or self.pipeline.last_frame is None:
             return
@@ -256,6 +281,32 @@ class InlineIpsBridge:
                     self.counter_frames_sent += 1
                 else:
                     self.send_failures += 1
+
+    def emit_crossend(self) -> bool:
+        """Send ONE summary of the latest forwarded GLOBAL_POSITION_INT to the GCS transport (never the FC, never the
+        tap), at most once per interval and only when a new frame was forwarded. Analyser thread only."""
+        if self.crossend_interval_s <= 0:
+            return False
+        now = self._clock_ns()
+        raw = self._last_gpi
+        if now < self._crossend_next_ns or raw is None or raw is self._last_gpi_sent:
+            return False
+        self._crossend_next_ns = now + int(self.crossend_interval_s * 1e9)
+        vals = gpi_from_frame(raw)
+        if vals is None:
+            return False
+        self._last_gpi_sent = raw
+        self._crossend_enc.seq = self.crossend_sent % 256
+        msg = self._crossend_enc.memory_vect_encode(MARKER_ADDRESS, MARKER_VER, MARKER_TYPE,
+                                                    pack_summary(vals, self._secret_key))
+        frame = bytes(msg.pack(self._crossend_enc))
+        if self._crossend_signer is not None:
+            frame = self._crossend_signer.sign_frame(frame)
+        if self.gcs.send(frame):
+            self.crossend_sent += 1
+            return True
+        self.send_failures += 1
+        return False
 
     def _analyse_loop(self) -> None:
         self._source = LiveMavlinkSource(self.tap, sample_rate_hz=self.rate_hz, origin="start",
@@ -290,7 +341,7 @@ class InlineIpsBridge:
                            "samples": len(lat)},
             "policy": self.policy.stats(),
             "analyser": {"decisions": self.decisions, "alerts": self.alerts, "errors": self.analyser_errors,
-                         "counter_frames_sent": self.counter_frames_sent, "summary": self.last_summary,
+                         "counter_frames_sent": self.counter_frames_sent, "crossend_sent": self.crossend_sent, "summary": self.last_summary,
                          "ekf_secondary": self.controller.ekf_secondary_available},
             "last_error": self.last_error,
         }

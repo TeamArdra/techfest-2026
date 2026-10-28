@@ -103,3 +103,22 @@ In `active-ips`, a GPS spoofing or GNSS jamming episode is handled in software o
 5. Recovery needs the clean-tick count and a position residual below 6 m. The EKF primary is restored only if we switched; the trusted flight mode is not restored (the pilot resumes). Command-injection episodes still restore the trusted mode.
 
 PASSIVE and ADVISORY never send control frames. `bridge.status()["analyser"]["ekf_secondary"]` shows the declared capability.
+
+## Cross-end check
+
+Detects telemetry altered AFTER the bridge (radio link, GCS-side injection) while the drone flies normally.
+Once per `--crossend-interval` seconds (default 1.0, `0` = off) the bridge sends the GCS side one MAVLink 2
+`MEMORY_VECT` (sysid 1, compid 191, fixed marker) holding the exact integer fields (`time_boot_ms, lat, lon, alt,
+relative_alt, vx, vy`) of the last `GLOBAL_POSITION_INT` it forwarded (after any rewrite). It is built on the
+analyser thread, never in the per-frame hook, and goes to the GCS transport only (not the FC, not the tap).
+With `--signing-key-file` the frame is signed and carries a truncated HMAC tag in the payload.
+
+A GCS-side `aegis serve --source serial|udp [--signing-key-file K]` runs `CrossEndMonitor`
+(`detectors/crossend.py`), merged into the PROTOCOL detector. A summary whose `time_boot_ms` matches a received
+frame must match every field exactly; a difference scores 0.9 (`TELEMETRY_MANIPULATION`). Summaries that stop for
+more than 5 s, or a bad/absent authentication when a key is set, give 0.3 (`MAVLINK_ANOMALY`) evidence. Without any
+summary seen the monitor is inert.
+
+Limits: sampled at 1 Hz, so a forged frame with a different `time_boot_ms` is never compared; without a key the
+summary itself can be forged; it works only if the GCS-side IDS sees the bridge summary on the same link.
+Not measured on hardware.

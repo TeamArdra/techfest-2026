@@ -282,6 +282,23 @@ velocity and satellite-jump fields are reported only once EKF_STATUS_REPORT or G
 received (SIM carries `GPS_RAW_INT` too). The messages are unauthenticated and can be forged. A
 slow drift that stays inside IMU error is physically undetectable by software alone.
 
+### Mission-path check (2026-10-28, additive)
+
+`features/mission.py` rebuilds the commanded mission from MISSION_COUNT / MISSION_ITEM(_INT) /
+MISSION_CURRENT / MISSION_ITEM_REACHED seen on either link direction (a new MISSION_COUNT replaces
+the mission; it is usable only when every seq 0..count-1 arrived). Legs run from the previous
+NAV_WAYPOINT to the waypoint of the current MISSION_CURRENT.seq (first leg: from the first position
+seen in AUTO). The extractor reports `mission_xtrack_m` (distance to the leg segment),
+`mission_wp_dist_m` and `mission_known` only while the mission is complete, MISSION_CURRENT is <= 3 s
+old, mode is AUTO, the vehicle is armed and the position is fresh; otherwise None. PhysicsDetector
+votes GPS_SPOOFING (navigation deviation) when the cross-track exceeds `mission_xtrack_alert_m`
+(60 m) for `mission_hysteresis_ticks` (5) decisions, score 0.6 rising to 0.85 at 3x the threshold.
+
+**Limits.** Thresholds are uncalibrated engineering defaults. Wind or a legitimate reroute can also
+trigger it. Loiter, spline and DO_JUMP-heavy missions are only approximated (only NAV_WAYPOINT in a
+global frame is used). It says nothing when the upload was not observed, and the mission messages
+are unauthenticated and can be forged.
+
 ## Detector C — ML anomaly (`detectors/anomaly.py`)
 
 Benign-trained **ensemble** over the 11-feature `ML_FEATURES` vector, combined

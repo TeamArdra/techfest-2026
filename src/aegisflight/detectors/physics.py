@@ -124,6 +124,10 @@ class PhysicsDetector(Detector):
         self.snr_spread_min_db = float(p.get("snr_spread_min_db", 1.5))
         self.snr_min_sats = int(p.get("snr_min_sats", 8))
         self.vel_disagree_ms = float(p.get("gps_ekf_vel_disagree_ms", 3.0))
+        # Mission-path check (2026-10-28): UNCALIBRATED engineering defaults (docs/DETECTION.md).
+        self.mission_xtrack_alert_m = float(p.get("mission_xtrack_alert_m", 60.0))
+        self.mission_hysteresis_ticks = int(p.get("mission_hysteresis_ticks", 5))
+        self._mission_streak = 0
         self._soft_streak = 0
 
     def process(self, frame: FeatureFrame) -> DetectorResult:
@@ -267,6 +271,7 @@ class PhysicsDetector(Detector):
             evidence.append(f"heading/course mismatch {yc:.0f}° (attitude inconsistent with track)")
 
         self._receiver_rules(frame, bump, evidence, signals)
+        self._mission_rule(frame, bump, evidence, signals)
 
         # ---- hysteresis on soft (non-hard) triggers ----
         if score > 0.0:
@@ -340,6 +345,34 @@ class PhysicsDetector(Detector):
                     f"> {self.vel_disagree_ms:.0f} m/s"
                 )
 
+    def _mission_rule(
+        self,
+        frame: FeatureFrame,
+        bump: Callable[..., None],
+        evidence: list[str],
+        signals: dict[str, float],
+    ) -> None:
+        """Reported track far from the commanded mission leg while in AUTO. Inert (streak cleared)
+        when ``mission_xtrack_m`` is None. Wind or a legitimate reroute can also cause it."""
+        xt = frame.mission_xtrack_m
+        if xt is None or not frame.mission_known:
+            self._mission_streak = 0
+            return
+        signals["mission_xtrack_m"] = xt
+        if xt <= self.mission_xtrack_alert_m:
+            self._mission_streak = 0
+            return
+        self._mission_streak += 1
+        if self._mission_streak < self.mission_hysteresis_ticks:
+            return
+        s = 0.6 + 0.25 * min(1.0, max(0.0, (xt / self.mission_xtrack_alert_m - 1.0) / 2.0))
+        # own sustained hysteresis already applied, so no extra soft damping
+        bump(AttackType.GPS_SPOOFING, s, hard_hit=True)
+        seq = f" (waypoint {frame.mission_wp_seq})" if frame.mission_wp_seq is not None else ""
+        evidence.append(
+            f"reported track is {xt:.0f} m from the commanded mission leg while in AUTO{seq}"
+        )
+
     def _residual_rule(self, pr: float, bump: Callable[..., None], evidence: list[str]) -> None:
         """The Stage-1 position-residual thresholds (soft / hard), unchanged."""
         if pr >= self.pos_resid_hard:
@@ -355,4 +388,5 @@ class PhysicsDetector(Detector):
 
     def reset(self) -> None:
         self._soft_streak = 0
+        self._mission_streak = 0
         self.cusum.reset()

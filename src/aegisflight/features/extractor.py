@@ -26,6 +26,7 @@ from pymavlink.dialects.v20 import ardupilotmega as _apm
 from ..core.geo import EARTH_RADIUS_M, wrap_deg_180
 from ..core.types import MessageEnvelope, TelemetrySnapshot
 from ..mavlink.codec import MODE_NAMES
+from .mission import MissionTracker
 
 # Position-residual sliding window (in position fixes; GPS ≈ 5 Hz => ~3 s).
 # A bounded window (rather than an infinite leaky integrator) accumulates the
@@ -182,6 +183,15 @@ class FeatureFrame:
     gps_snr_spread_db: float | None = None
     gps_snr_sats: int = 0
     gps_vel_disagree_ms: float | None = None
+    # ADDITIVE (2026-10-28): mission-path check. NOT in ML_FEATURES. ``mission_known``: a COMPLETE
+    # mission was observed AND the check is active (MISSION_CURRENT seen <= 3 s ago, flight_mode
+    # AUTO, armed, fresh position). ``mission_xtrack_m``: horizontal distance to the current mission
+    # leg SEGMENT; ``mission_wp_dist_m``: distance to its target waypoint; ``mission_wp_seq``: that
+    # waypoint's seq. All None / False when inactive (always so on the SIM stream).
+    mission_known: bool = False
+    mission_xtrack_m: float | None = None
+    mission_wp_dist_m: float | None = None
+    mission_wp_seq: int | None = None
 
     @property
     def battery_v_rate_abs(self) -> float:
@@ -252,6 +262,8 @@ class FeatureExtractor:
         self._batt_hist: deque[tuple[float, float]] = deque(maxlen=4)  # (t, voltage)
         self._alt_hist: deque[tuple[float, float]] = deque(maxlen=4)  # (t, baro_alt)
 
+        self._mission = MissionTracker()
+
         # command log
         self._commands: deque[CommandEvent] = deque(maxlen=200)
         self._sig_invalid_window = 0  # P4: reset each decision, see note_sig_invalid()
@@ -286,6 +298,9 @@ class FeatureExtractor:
 
         name = msg.msgname
         f = msg.fields
+        if name.startswith("MISSION_"):
+            self._mission.update(msg)
+            return
         if name == "HEARTBEAT":
             m_type = f.get("type", 0)
             if m_type != 6:  # Ignore GCS heartbeats for vehicle state
@@ -534,6 +549,22 @@ class FeatureExtractor:
                 vel_disagree = abs(self._raw_vel_ms - gps_speed)
         snr = self._snr if t - self._snr_t <= _LINK_GAP_S else None
 
+        # ---- mission path (ADDITIVE 2026-10-28) ----
+        m_known, m_xt, m_wd, m_seq = False, None, None, None
+        mt = self._mission
+        if (
+            mt.complete
+            and 0.0 <= t - mt.current_t <= 3.0
+            and snap.flight_mode == "AUTO"
+            and snap.armed is True
+            and snap.lat is not None
+            and snap.lon is not None
+            and snap.gps_age <= _LINK_GAP_S
+        ):
+            mev = mt.evaluate(snap.lat, snap.lon)
+            if mev is not None:
+                m_known, m_xt, m_wd, m_seq = True, mev[0], mev[1], mev[2]
+
         # ---- command ----
         recent = [c for c in self._commands if c.recv_time >= t - self.cmd_window_s]
         cmd_rate = len(recent) / self.cmd_window_s if self.cmd_window_s > 0 else 0.0
@@ -581,6 +612,10 @@ class FeatureExtractor:
             gps_snr_spread_db=snr[0] if snr else None,
             gps_snr_sats=snr[1] if snr else 0,
             gps_vel_disagree_ms=vel_disagree,
+            mission_known=m_known,
+            mission_xtrack_m=m_xt,
+            mission_wp_dist_m=m_wd,
+            mission_wp_seq=m_seq,
         )
 
     # -- small numeric helpers --------------------------------------------- #

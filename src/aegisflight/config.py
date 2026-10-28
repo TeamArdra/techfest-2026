@@ -126,6 +126,8 @@ DEFAULT_DETECTOR: dict[str, Any] = {
         "snr_spread_min_db": 1.5,
         "snr_min_sats": 8,
         "gps_ekf_vel_disagree_ms": 3.0,
+        "mission_xtrack_alert_m": 60.0,  # uncalibrated; inert without an observed mission
+        "mission_hysteresis_ticks": 5,
     },
     "anomaly": {
         "model_path": "models/isoforest.joblib",

@@ -52,6 +52,8 @@ class SourceSpec:
     gcs_notify_host: str = "127.0.0.1"
     gcs_notify_port: int = 14550
     defense_mode: str = "passive"
+    # optional 32-byte MAVLink signing key file: authenticates the bridge cross-end summary (detectors/crossend.py)
+    signing_key_file: str | None = None
 
     def __post_init__(self) -> None:
         if self.kind not in KINDS:
@@ -126,6 +128,7 @@ class SourceSpec:
             d["tlog"] = Path(d["tlog"]).name
         if d.get("config_dir") and Path(d["config_dir"]).is_absolute():
             d["config_dir"] = Path(d["config_dir"]).name
+        d["signing_key_file"] = bool(self.signing_key_file)  # never record a local path
         d.update(environment=self.environment, physical=self.physical, ml=self.ml_enabled)
         if self.kind == "serial" and self.physical:
             d["usb"] = serial_port_identity(self.port)
@@ -177,6 +180,7 @@ def spec_from_env(env: dict[str, str] | None = None) -> SourceSpec:
         gcs_notify_host=e.get("AEGIS_GCS_NOTIFY_HOST") or "127.0.0.1",
         gcs_notify_port=int(e.get("AEGIS_GCS_NOTIFY_PORT") or "14550"),
         defense_mode=e.get("AEGIS_DEFENSE_MODE", "passive") or "passive",
+        signing_key_file=e.get("AEGIS_SIGNING_KEY_FILE") or None,
     )
 
 
