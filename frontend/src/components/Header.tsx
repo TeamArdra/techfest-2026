@@ -1,3 +1,4 @@
+import { gpsNote } from "../lib/source";
 import type { EnvView, LinkView } from "../lib/source";
 import type { DefenseMode, LinkStatus, SourceInfo } from "../types";
 
@@ -89,6 +90,7 @@ export function SourceBar({ source, link, linkView, runId, eventsCount }: {
           <b>{gps.valid_fix ? "yes" : "no"}</b>
         </span>
       )}
+      {gpsNote(gps) && <span data-testid="gps-note" style={{ color: "var(--warn)" }}>{gpsNote(gps)}</span>}
       {source && !source.ml && source.kind !== "sim" && <span>ML off · integrity UNKNOWN (no verifier)</span>}
     </div>
   );

@@ -44,6 +44,7 @@ from pathlib import Path
 import psutil
 
 from aegisflight.config import load_config
+from aegisflight.core.gps_health import GpsHealthObserver
 from aegisflight.logging import EventStore
 from aegisflight.mavlink.gcs_notifier import is_loopback_host
 from aegisflight.mitigation import DefenseMode, MitigationController
@@ -61,6 +62,13 @@ def _coverage(pipe: IDSPipeline, no_gpi: int) -> dict:
             "global_position_seen": f.gps_seen if f else None,
             "gps_raw_seen": f.gps_raw_seen if f else None,
             "decisions_without_global_position": no_gpi}
+
+
+def _nav_health(obs: GpsHealthObserver, now: float) -> dict:
+    """What the VEHICLE reports about its own position solution (passive; never an alert, never read by a
+    detector). ``flagged_decisions`` counts decisions made while a condition held; ``last`` is the state at
+    ``now``. Unknown is None. Not evidence that a position is authentic."""
+    return {"decisions": obs.decisions, "flagged_decisions": dict(obs.flagged), "last": obs.snapshot(now)}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -150,6 +158,8 @@ def main(argv: list[str] | None = None) -> int:
     proc.cpu_percent(None)
     t_wall0, cpu0 = time.perf_counter(), sum(proc.cpu_times()[:2])
     decisions = alerts = threats = no_gpi = 0
+    nav = GpsHealthObserver()
+    nav_t = 0.0  # tick clock of the latest tick, for the health snapshot
     types: Counter[str] = Counter()
     lat: deque[float] = deque(maxlen=100_000)  # bounded: this runner may run for days; p99 is over the last 100k
     lat_sum = lat_max = 0.0
@@ -163,9 +173,13 @@ def main(argv: list[str] | None = None) -> int:
     deadline = time.monotonic() + a.seconds if a.seconds > 0 else None
     try:
         for tick in src.stream():
+            nav_t = tick.t
+            for m in tick.messages:
+                nav.observe(m.msgname, m.fields, tick.t)
             asmt = pipe.process_tick(tick)
             if asmt is not None:
                 decisions += 1
+                nav.tally(tick.t)
                 threats += bool(asmt.threat)
                 lat.append(asmt.latency_ms)
                 lat_sum += asmt.latency_ms
@@ -192,7 +206,8 @@ def main(argv: list[str] | None = None) -> int:
                 health.write(json.dumps({"wall_utc": datetime.now(UTC).isoformat(), "decisions": decisions,
                                          "alerts": alerts, "transport": tr.stats, "source": src.stats,
                                          "cpu_pct": cpu_samples[-1], "rss_mb": round(rss_max / 2**20, 1),
-                                         "telemetry_coverage": _coverage(pipe, no_gpi)},
+                                         "telemetry_coverage": _coverage(pipe, no_gpi),
+                                         "navigation_health": _nav_health(nav, nav_t)},
                                         default=str) + "\n")
                 health.flush()
             if stop.is_set() or (deadline is not None and now >= deadline):
@@ -230,6 +245,7 @@ def main(argv: list[str] | None = None) -> int:
                "transport": t_stats, "source": s_stats,
                "link_ever_delivered_frames": t_stats["frames_received"] > 0,  # exit 0 does NOT mean a healthy link
                "telemetry_coverage": _coverage(pipe, no_gpi),
+               "navigation_health": _nav_health(nav, nav_t),
                "passive_check": {"bytes_sent": t_stats["bytes_sent"], "write_errors": t_stats["write_errors"],
                                  "passed": t_stats["bytes_sent"] == 0 and t_stats["write_errors"] == 0},
                "hash_chain": {"ok": chain.ok, "length": chain.length}, "exit_code": rc}

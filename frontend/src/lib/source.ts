@@ -2,7 +2,7 @@
 // decides anything — the backend derives `environment` (never user-settable) and the link `state`
 // (backend/engine.py link_status); this module only words them, so the dashboard cannot present
 // simulated, replayed or stale data as live physical telemetry. Pure functions (frontend/tests/).
-import type { Environment, LinkStatus } from "../types";
+import type { Environment, GpsLink, LinkStatus } from "../types";
 
 export interface EnvView {
   badge: Environment | "—";
@@ -95,6 +95,16 @@ export function fmtAge(s: number | null | undefined): string {
 
 function num(v: unknown): number | null {
   return typeof v === "number" ? v : null;
+}
+
+// What the VEHICLE itself reports about its position solution, worded next to the receiver's "valid
+// fix" so a 3D fix is never the only thing an operator sees. Passive: this is not an alert and not an
+// authenticity check (a spoofer can report a clean fix). null = nothing to say (healthy or unknown).
+export function gpsNote(gps: GpsLink | null | undefined): string | null {
+  const parts: string[] = [];
+  if (gps?.horizontal_solution === false) parts.push("autopilot reports no horizontal position solution");
+  if (gps?.gps_healthy === false) parts.push("autopilot marks the GPS sensor unhealthy");
+  return parts.length ? `${parts.join(" · ")} — treat this position as unconfirmed` : null;
 }
 
 // `updateAgeS`: seconds since the dashboard last received ANY update from the backend. The backend

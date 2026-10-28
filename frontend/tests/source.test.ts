@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { envView, linkView } from "../src/lib/source.ts";
+import { envView, gpsNote, linkView } from "../src/lib/source.ts";
 
 const ENVS = ["SIM", "REPLAY", "SITL", "BENCH"];
 const NON_SIM = ["REPLAY", "SITL", "BENCH"];
@@ -80,4 +80,21 @@ test("backend silence overrides a live-looking state, never a final one", () => 
 test("no link reported yet", () => {
   assert.equal(linkView(null, true, null).label, "No data");
   assert.equal(linkView(null, false, null).label, "Backend offline");
+});
+
+test("a 3D fix is never the only thing shown when the vehicle says its position is unconfirmed", () => {
+  const gps = (extra) => ({ fix_type: 3, fix_name: "3D_FIX", satellites: 7, valid_fix: true, gps_raw_age_s: 0.1,
+    position_age_s: 0.1, position_zero: false, ...extra });
+  assert.equal(gpsNote(gps({ horizontal_solution: false, gps_healthy: false })),
+    "autopilot reports no horizontal position solution · autopilot marks the GPS sensor unhealthy — treat this position as unconfirmed");
+  assert.match(gpsNote(gps({ horizontal_solution: false })), /no horizontal position solution/);
+  assert.match(gpsNote(gps({ gps_healthy: false })), /GPS sensor unhealthy/);
+});
+
+test("no note when the vehicle reports a solution, or when it is unknown (unknown is not a warning)", () => {
+  assert.equal(gpsNote({ fix_type: 3, horizontal_solution: true, gps_healthy: true }), null);
+  assert.equal(gpsNote({ fix_type: 3, horizontal_solution: null, gps_healthy: null }), null);
+  assert.equal(gpsNote({ fix_type: 3 }), null); // older backend: keys absent
+  assert.equal(gpsNote(null), null);
+  assert.equal(gpsNote(undefined), null);
 });
