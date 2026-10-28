@@ -4,6 +4,25 @@ Living status for the GPS workstream. It is updated after each milestone and bef
 Crash checkpoint (local, git-ignored): `.claude/checkpoints/2026-10-26-gps-iter2-crash-recovery.md`.
 Plan: `docs/GPS_WORKSTREAM_PLAN.md`.
 
+## Final-week hardware verification (2026-10-29), `main` a44dd9c: receive-only, nothing transmitted
+Evidence: `artifacts/hardware/gps_hw_verify_20261029/` (README, `manifest.json`). Claim class none; live part `BENCH`-class, replay part `REPLAY`.
+- **Live (physical vehicle, disarmed + stationary per telemetry):** COM7 (the only serial port; CP210x radio bridge), 115200,
+  90 s, `run_serial_ids.py` with `--defense-mode passive --no-reconnect`. 5,130 frames, 0 loss/CRC/garbage/gaps,
+  `bytes_sent` 0, **0 IDS alerts in 451 decisions**. The vehicle reported 3D fix with 6 to 7 satellites, `eph` ~8, GPS-healthy
+  bit 0/180, EKF with **no horizontal solution** (`0xa7`), and position wander up to 34.3 m while stationary.
+- **Offline (`REPLAY` of the same bytes):** gate on 0 alerts; gate off (Stage-1 rule) 4 false `GPS_SPOOFING`. Re-replay of 008/009
+  matches the committed artifacts (modulo CRLF). One capture, in the gate's design setting: not an independent test.
+- **Checks run (this session, Windows, Python 3.13.15):** focused GPS/serial/defense suites pass; **full pytest 883 passed, 3
+  skipped, 0 failed**; `ruff check src tests scripts backend` clean; frontend `npm test` 8/8 and `npm run build` OK;
+  `scripts/verify_stage2.py` exit 0 (8 suites, 17 PASS lines; a SIM demo, not validation evidence); Stage-1 regression
+  `aegis benchmark --no-figures` TP/FP/TN/FN **6535 / 4 / 16826 / 65**, identical to `artifacts/benchmarks/summary.md`.
+- **Code change:** optional `--tlog` on `run_serial_ids.py` (single consumer, via `TapTransport`), +2 tests. No `src/` or `configs/` change.
+- **Findings:** (1) the IDS is silent when the receiver says 3D fix but the vehicle's own health flags say the position is not
+  trustworthy: no coverage/health line exists for it (`docs/VALIDATION_EVIDENCE.md` Section 3). (2) No hardware capture has a
+  healthy EKF, so the gate's un-gated branch is untested on hardware. (3) Not run: `aegis-reviewer` on these claims.
+- **Next action:** one more receive-only capture of the same command with the vehicle under open sky until `EKF_STATUS_REPORT`
+  shows `POS_HORIZ_ABS`, then replay it gate on vs off. Without it the demo can only show the degraded-estimator path.
+
 ## Integration session (2026-10-26 evening): teammate branch `origin/stage2-autonomous-defense`
 Live status. Updated at each milestone.
 - **Audit (verified).** `main` 90b9aa2 and `origin/main` 10e5b22 share **no common ancestor** (different root

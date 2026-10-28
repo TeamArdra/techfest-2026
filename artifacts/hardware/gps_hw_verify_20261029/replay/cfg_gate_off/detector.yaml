@@ -1,0 +1,104 @@
+# AegisFlight - detection engine configuration
+#
+# Every threshold documents: what it means, its unit, and the rationale.
+# Thresholds were set against *simulated* benign flights. (Earlier versions of
+# this comment cited scripts/tune_thresholds.py; no such script exists in the
+# repo.) They are NOT calibrated for real vehicles -- see docs/EXTERNAL_DATA.md:
+# e.g. the 28 msg/s nominal rate and the unbiased GPS/baro check do not transfer.
+# Re-tune after changing the simulator.
+
+decision_rate_hz: 5.0          # fusion/decision cadence
+
+# ------------------------------------------------------------------ #
+# Detector A: protocol / rule engine
+# ------------------------------------------------------------------ #
+protocol:
+  expected_sysids: [1]              # legitimate vehicle system id(s)
+  expected_gcs_sysids: [255, 254]   # legitimate ground station id(s)
+  autopilot_compid: 1               # MAV_COMP_ID_AUTOPILOT1
+  gcs_compids: [190, 191, 200]      # MAV_COMP_ID_MISSIONPLANNER etc.
+  heartbeat_timeout_s: 3.0          # missing heartbeat => link fault
+  max_msg_rate_hz: 400.0            # aggregate rate above this => flood (DoS)
+  nominal_msg_rate_hz: 28.0         # expected steady-state aggregate rate
+  msg_rate_spike_factor: 3.0        # rate > factor*nominal => suspicious
+  max_seq_gap: 30                   # per-source sequence jump => loss/DoS
+  min_interarrival_ms: 0.4          # bursts faster than this are abnormal
+  gps_dropout_s: 2.0                # GPS silence longer than this => stale
+  # GPS position policy (user decision 2026-10-15, "Coverage, not attack"). false: a link that has
+  # NEVER delivered GLOBAL_POSITION_INT is reported as a coverage condition (evidence only, no
+  # vote, score 0); true: position is required and never-received is a DOS-voting fault after
+  # gps_dropout_s of monitoring (never_seen_gps_* knobs apply only then). GPS lost after having
+  # been seen is a DOS fault either way. Stage-1 SIM streams always carry position: no effect.
+  require_global_position: false
+  allowed_commands_in_flight:
+    - MAV_CMD_NAV_WAYPOINT
+    - MAV_CMD_DO_SET_MODE
+    - MAV_CMD_NAV_LOITER_UNLIM
+    - MAV_CMD_DO_CHANGE_SPEED
+    - MAV_CMD_NAV_RETURN_TO_LAUNCH
+  sensitive_commands:
+    - MAV_CMD_COMPONENT_ARM_DISARM
+    - MAV_CMD_DO_FLIGHTTERMINATION
+    - MAV_CMD_NAV_LAND
+    - MAV_CMD_DO_SET_HOME
+  command_burst_window_s: 2.0
+  command_burst_max: 4
+  require_signing: false            # if true, unsigned msgs are flagged
+  min_gnss_fix_type: 3              # GPS_RAW_INT fix_type below this = no 3D fix
+  min_gnss_satellites: 5            # fewer satellites than this = degraded fix
+  gnss_loss_ticks: 5                # consecutive decisions (1 s @5 Hz) before firing
+
+# ------------------------------------------------------------------ #
+# Detector B: physics / cyber-physical consistency
+# ------------------------------------------------------------------ #
+physics:
+  gps_pos_residual_m: 12.0          # |dead-reckoned pos - reported pos|
+  gps_pos_residual_hard_m: 30.0     # hard trigger regardless of hysteresis
+  gps_speed_consistency_ms: 5.0     # |GPS-derived speed - VFR groundspeed|
+  alt_consistency_m: 8.0            # |GPS alt - baro alt| -- NO bias correction is applied
+  alt_jump_ms: 25.0                 # altitude rate-of-change ceiling (m/s)
+  max_accel_ms2: 20.0               # implausible horizontal acceleration
+  max_jerk_ms3: 60.0                # implausible jerk
+  battery_rise_v: 0.4               # voltage should not spontaneously rise
+  battery_drop_rate_v_s: 2.0        # nor collapse impossibly fast
+  attitude_rate_consistency: 1.2    # attitude-vs-rate mismatch tolerance
+  hysteresis_ticks: 2               # consecutive ticks before firing (soft)
+  # Estimator-aware GPS residual (2026-10-25; v2 2026-10-26). A position fix is "gated" when a fresh
+  # EKF_STATUS_REPORT says no horizontal solution (CONST_POS_MODE, or no POS_HORIZ_ABS/REL bit) and
+  # the reports have said so continuously for >= 2 s. At a gated fix the position-vs-velocity
+  # residual is degraded navigation, not spoofing; velocity-implied movement the position does not
+  # show uses the residual thresholds above, and one residual increment |dp - v*dt| >= the hard
+  # threshold (a step the velocity does not account for) alerts. Ungated fixes use the Stage-1 rule.
+  # Inert only while no EKF_STATUS_REPORT is received; the report is unauthenticated, so an injected
+  # one can activate it (>= 2 s of no-solution reports). Needs reports at least every 2 s.
+  # false = Stage-1 rule. Details: docs/DETECTION.md "Estimator-aware position residual".
+  estimator_gate: false
+
+# ------------------------------------------------------------------ #
+# Detector C: ML anomaly detector (Isolation Forest, trained benign-only)
+# ------------------------------------------------------------------ #
+anomaly:
+  model_path: models/isoforest.joblib
+  score_threshold: 0.62             # normalised anomaly score => triggered
+  contamination: 0.02
+  n_estimators: 200
+  warmup_ticks: 20
+
+# ------------------------------------------------------------------ #
+# Fusion engine
+# ------------------------------------------------------------------ #
+fusion:
+  weights:
+    protocol_rule: 0.30
+    physics_consistency: 0.34
+    ml_anomaly: 0.16
+    firmware_integrity: 0.20
+  threat_threshold: 0.45
+  severity_bands:
+    WATCH: 0.30
+    SUSPICIOUS: 0.45
+    HIGH: 0.62
+    CRITICAL: 0.80
+  alert_threshold_severity: SUSPICIOUS
+  cooldown_s: 4.0                    # dedup window per attack type
+  clear_ticks: 4                     # normal ticks before clearing alert state

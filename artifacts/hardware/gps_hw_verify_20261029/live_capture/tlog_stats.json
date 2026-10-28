@@ -1,0 +1,283 @@
+{
+  "frames": 5130,
+  "bad_data": 0,
+  "duration_s": 89.82,
+  "first_recv_unix": 1793217866.400976,
+  "recv_clock_backsteps": 0,
+  "framing_magic": {
+    "0xFE": 5130
+  },
+  "signed_frames": 0,
+  "sources": {
+    "1/1": {
+      "frames": 5130,
+      "seq_forward_gaps": 0,
+      "seq_reordered": 0,
+      "seq_span": 5130,
+      "seq_unique": 5130,
+      "seq_net_missing": 0,
+      "seq_duplicates": 0,
+      "net_loss_pct": 0.0
+    }
+  },
+  "seq_gap_events": 0,
+  "seq_gap_sizes_top": [],
+  "seq_gap_t_offsets_s": [],
+  "seq_reorder_events": 0,
+  "seq_reorder_t_offsets_s": [],
+  "seq_reorder_depths": [],
+  "heartbeat": {
+    "type": 2,
+    "autopilot": 3,
+    "base_mode_last": 81,
+    "system_status_last": 3,
+    "mavlink_version": 3,
+    "custom_mode_last_hex": "0x0"
+  },
+  "modes": {
+    "MAIN_0": 90
+  },
+  "mode_transitions": [
+    [
+      0.0,
+      "MAIN_0"
+    ]
+  ],
+  "boot_clock_vs_recv_drift_ppm": 243.5,
+  "messages": [
+    {
+      "src": "1/1",
+      "msg": "AHRS2",
+      "count": 360,
+      "rate_hz": 4.008,
+      "dt_median_ms": 96.91,
+      "dt_p99_ms": 422.4,
+      "dt_max_ms": 422.58
+    },
+    {
+      "src": "1/1",
+      "msg": "ATTITUDE",
+      "count": 360,
+      "rate_hz": 4.008,
+      "dt_median_ms": 96.55,
+      "dt_p99_ms": 418.52,
+      "dt_max_ms": 422.14
+    },
+    {
+      "src": "1/1",
+      "msg": "VFR_HUD",
+      "count": 360,
+      "rate_hz": 4.008,
+      "dt_median_ms": 98.13,
+      "dt_p99_ms": 422.38,
+      "dt_max_ms": 422.49
+    },
+    {
+      "src": "1/1",
+      "msg": "AHRS",
+      "count": 180,
+      "rate_hz": 2.004,
+      "dt_median_ms": 495.06,
+      "dt_p99_ms": 518.69,
+      "dt_max_ms": 518.77
+    },
+    {
+      "src": "1/1",
+      "msg": "GLOBAL_POSITION_INT",
+      "count": 180,
+      "rate_hz": 2.004,
+      "dt_median_ms": 494.79,
+      "dt_p99_ms": 518.4,
+      "dt_max_ms": 518.54
+    },
+    {
+      "src": "1/1",
+      "msg": "SYS_STATUS",
+      "count": 180,
+      "rate_hz": 2.004,
+      "dt_median_ms": 494.54,
+      "dt_p99_ms": 518.65,
+      "dt_max_ms": 518.71
+    },
+    {
+      "src": "1/1",
+      "msg": "POWER_STATUS",
+      "count": 180,
+      "rate_hz": 2.004,
+      "dt_median_ms": 504.13,
+      "dt_p99_ms": 504.71,
+      "dt_max_ms": 504.79
+    },
+    {
+      "src": "1/1",
+      "msg": "MEMINFO",
+      "count": 180,
+      "rate_hz": 2.004,
+      "dt_median_ms": 504.13,
+      "dt_p99_ms": 504.71,
+      "dt_max_ms": 504.79
+    },
+    {
+      "src": "1/1",
+      "msg": "NAV_CONTROLLER_OUTPUT",
+      "count": 180,
+      "rate_hz": 2.004,
+      "dt_median_ms": 504.01,
+      "dt_p99_ms": 505.02,
+      "dt_max_ms": 505.21
+    },
+    {
+      "src": "1/1",
+      "msg": "MISSION_CURRENT",
+      "count": 180,
+      "rate_hz": 2.004,
+      "dt_median_ms": 494.75,
+      "dt_p99_ms": 518.59,
+      "dt_max_ms": 518.74
+    },
+    {
+      "src": "1/1",
+      "msg": "SERVO_OUTPUT_RAW",
+      "count": 180,
+      "rate_hz": 2.004,
+      "dt_median_ms": 504.11,
+      "dt_p99_ms": 504.75,
+      "dt_max_ms": 504.76
+    },
+    {
+      "src": "1/1",
+      "msg": "RC_CHANNELS",
+      "count": 180,
+      "rate_hz": 2.004,
+      "dt_median_ms": 494.99,
+      "dt_p99_ms": 518.66,
+      "dt_max_ms": 518.97
+    },
+    {
+      "src": "1/1",
+      "msg": "RC_CHANNELS_RAW",
+      "count": 180,
+      "rate_hz": 2.004,
+      "dt_median_ms": 504.12,
+      "dt_p99_ms": 504.82,
+      "dt_max_ms": 505.02
+    },
+    {
+      "src": "1/1",
+      "msg": "RAW_IMU",
+      "count": 180,
+      "rate_hz": 2.004,
+      "dt_median_ms": 504.11,
+      "dt_p99_ms": 504.9,
+      "dt_max_ms": 505.19
+    },
+    {
+      "src": "1/1",
+      "msg": "SCALED_IMU2",
+      "count": 180,
+      "rate_hz": 2.004,
+      "dt_median_ms": 504.05,
+      "dt_p99_ms": 504.7,
+      "dt_max_ms": 504.96
+    },
+    {
+      "src": "1/1",
+      "msg": "SCALED_IMU3",
+      "count": 180,
+      "rate_hz": 2.004,
+      "dt_median_ms": 494.77,
+      "dt_p99_ms": 518.31,
+      "dt_max_ms": 518.7
+    },
+    {
+      "src": "1/1",
+      "msg": "SCALED_PRESSURE",
+      "count": 180,
+      "rate_hz": 2.004,
+      "dt_median_ms": 504.11,
+      "dt_p99_ms": 504.75,
+      "dt_max_ms": 504.88
+    },
+    {
+      "src": "1/1",
+      "msg": "SCALED_PRESSURE2",
+      "count": 180,
+      "rate_hz": 2.004,
+      "dt_median_ms": 495.03,
+      "dt_p99_ms": 518.61,
+      "dt_max_ms": 518.65
+    },
+    {
+      "src": "1/1",
+      "msg": "GPS_RAW_INT",
+      "count": 180,
+      "rate_hz": 2.004,
+      "dt_median_ms": 494.76,
+      "dt_p99_ms": 518.45,
+      "dt_max_ms": 518.54
+    },
+    {
+      "src": "1/1",
+      "msg": "SYSTEM_TIME",
+      "count": 180,
+      "rate_hz": 2.004,
+      "dt_median_ms": 504.14,
+      "dt_p99_ms": 504.89,
+      "dt_max_ms": 505.39
+    },
+    {
+      "src": "1/1",
+      "msg": "RANGEFINDER",
+      "count": 180,
+      "rate_hz": 2.004,
+      "dt_median_ms": 495.11,
+      "dt_p99_ms": 518.57,
+      "dt_max_ms": 518.64
+    },
+    {
+      "src": "1/1",
+      "msg": "TERRAIN_REPORT",
+      "count": 180,
+      "rate_hz": 2.004,
+      "dt_median_ms": 494.68,
+      "dt_p99_ms": 518.61,
+      "dt_max_ms": 518.89
+    },
+    {
+      "src": "1/1",
+      "msg": "EKF_STATUS_REPORT",
+      "count": 180,
+      "rate_hz": 2.004,
+      "dt_median_ms": 504.09,
+      "dt_p99_ms": 504.84,
+      "dt_max_ms": 504.9
+    },
+    {
+      "src": "1/1",
+      "msg": "VIBRATION",
+      "count": 180,
+      "rate_hz": 2.004,
+      "dt_median_ms": 504.08,
+      "dt_p99_ms": 504.73,
+      "dt_max_ms": 504.8
+    },
+    {
+      "src": "1/1",
+      "msg": "BATTERY_STATUS",
+      "count": 180,
+      "rate_hz": 2.004,
+      "dt_median_ms": 504.12,
+      "dt_p99_ms": 504.8,
+      "dt_max_ms": 505.16
+    },
+    {
+      "src": "1/1",
+      "msg": "HEARTBEAT",
+      "count": 90,
+      "rate_hz": 1.002,
+      "dt_median_ms": 998.48,
+      "dt_p99_ms": 1008.99,
+      "dt_max_ms": 1009.25
+    }
+  ]
+}
