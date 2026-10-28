@@ -102,6 +102,29 @@ The final-code smoke batches are **n = 3 per variant** (same seeds and trial ind
 Pre-onset / clean-control false alarms in the final-code smoke batches: drift 0/538, drop 0/583, delay 0/454, replay 0/48, GNSS 0/662 pooled decisions; ArduPilot control arm 0/175 x3 and live benign ML-off 0/592 x2 in-flight decisions
 (5 known start-up alerts per ArduPilot flight). Original-batch figures are quoted from `docs/VALIDATION_EVIDENCE.md` §1b / `artifacts/sitl/P2_*_summary.md`, which are unchanged. Final-code trial files: `artifacts/sitl/p2*_final_trial_*`.
 
+## 1e. Live receive-only GPS verification on the powered-on vehicle (2026-10-28 UTC): `BENCH`-class + `REPLAY`, claim class none
+
+Bundle: `artifacts/hardware/gps_hw_verify_20261029/` (README there has the setup, regeneration commands and caveats).
+One 90 s receive-only run on COM7 (CP210x radio bridge, 115200), ArduPilot-family quadrotor, **disarmed and stationary per
+its own telemetry**. Not flight, not an attack, not detection evidence.
+
+* **Link (live):** 5,130 MAVLink 1 frames, 0 bad/CRC/garbage, 0 sequence gaps, 0 disconnects, `bytes_sent` 0. 26 message
+  types; `GPS_RAW_INT`, `GLOBAL_POSITION_INT`, `EKF_STATUS_REPORT`, `SYS_STATUS` at 2 Hz, `ATTITUDE`/`VFR_HUD` at 4 Hz,
+  `HEARTBEAT` 1 Hz. `GPS_STATUS` and `STATUSTEXT` not on this link; `GPS_RAW_INT.h_acc` unavailable (MAVLink 1 framing).
+* **IDS (live):** 451 decisions, **0 alerts**.
+* **What the receiver reported (live):** 3D fix 180/180 but 6 to 7 satellites, `eph` 7.99 to 8.58, `SYS_STATUS` GPS-healthy
+  bit **0/180**, EKF flags `0xa7` 180/180 (**no horizontal position solution**, `CONST_POS_MODE`), reported position
+  offset from the first fix up to **34.3 m while the vehicle was stationary** (reported speed <= 0.02 m/s). A 3D fix is
+  not evidence that the position is trustworthy, and here the vehicle's own health flags say it is not.
+* **Replay of the same bytes (`REPLAY`, ML off):** estimator gate on: 450 decisions, 0 alerts. Gate off (Stage-1 rule): 4
+  `GPS_SPOOFING` alerts ("position residual 12.0 to 15.2 m > 12 m"), 60 threat decisions. So the gate removes false alarms
+  on a real stationary stream whose receiver wanders. **One capture, same setting the gate was designed from: design-consistent, not
+  independent.**
+* **Not shown:** that the gate behaves correctly on a *healthy* hardware estimator (all of 008, 009 and this capture have
+  no horizontal solution); that the IDS would detect a spoof on this vehicle (nothing was injected); real RF spoofing. The
+  IDS is silent on "3D fix but poor quality / unhealthy GPS / no horizontal EKF solution": there is no coverage or health
+  evidence line for it (see Section 3).
+
 ## 2. Simulation-only evidence
 
 | Claim | Evidence | Caveat |
@@ -117,6 +140,15 @@ Pre-onset / clean-control false alarms in the final-code smoke batches: drift 0/
 | Firmware tamper detection | SHA-256 manifest compare | manifest is **unsigned** in the PoC |
 
 ## 3. Known gaps (reported, not hidden)
+
+* **Poor-quality GPS under a "3D fix" is silent (found 2026-10-28, Section 1e).** On the live capture the receiver reported
+  3D with 6 to 7 satellites and `eph` ~8, the GPS-healthy bit was clear and the EKF had no horizontal solution, yet the IDS
+  emitted neither an alert nor a coverage/health line (0 alerts, as designed: the gate is quiet under a no-solution
+  status). The dashboard therefore cannot tell an operator that the position is untrustworthy. Not a detector defect against
+  the written design; an evidence-line gap. Follow-up: a passive, non-alerting "GPS quality / estimator solution" health line
+  (`summary.json` + `health.jsonl`), which needs an `aegis-detection` change and its own tests. Not done in this session.
+* **No healthy-estimator hardware capture exists.** 008, 009 and the 2026-10-28 capture all lack `POS_HORIZ_ABS`, so the
+  un-gated Stage-1 branch has not been seen on a hardware stream.
 
 * `command_injection:gcs_replay` / expected-GCS impersonation — the protocol detector's
   **identity/provenance** rule cannot and does not distinguish any command carrying the

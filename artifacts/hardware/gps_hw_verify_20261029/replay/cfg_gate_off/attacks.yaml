@@ -1,0 +1,51 @@
+# AegisFlight - attack scenario configuration
+#
+# Every scenario is a SAFE, LOCAL SIMULATION. Attacks perturb the simulated
+# telemetry / MAVLink stream only; nothing here touches a real network or
+# vehicle. `start_s` / `duration_s` are relative to session start.
+
+gps_spoofing:
+  mode: gradual_drift          # sudden_offset | gradual_drift | replay_freeze
+  start_s: 40.0
+  duration_s: 30.0
+  offset_m: 120.0              # sudden_offset displacement (m)
+  bearing_deg: 90.0           # direction of injected offset
+  drift_rate_ms: 6.0          # gradual_drift injected velocity (m/s)
+
+mavlink_anomaly:
+  mode: rogue_sysid            # rogue_sysid | rate_spike | seq_scramble | packet_loss
+  start_s: 40.0
+  duration_s: 30.0
+  rogue_sysid: 42
+  rogue_compid: 1
+  rate_multiplier: 5.0
+  loss_prob: 0.5
+
+command_injection:
+  mode: rogue_command          # rogue_command | mode_flip | arm_disarm_burst
+  start_s: 45.0
+  duration_s: 20.0
+  source_sysid: 66
+  source_compid: 200
+  command: MAV_CMD_COMPONENT_ARM_DISARM
+  burst: 6
+
+telemetry_manipulation:
+  mode: altitude_bias          # altitude_bias | speed_mismatch | battery_jump | frozen_attitude
+  start_s: 40.0
+  duration_s: 30.0
+  altitude_bias_m: 35.0
+  speed_bias_ms: 9.0
+  battery_jump_pct: 30.0
+
+dos:
+  mode: flood                  # flood | blackout | latency
+  start_s: 45.0
+  duration_s: 20.0
+  flood_multiplier: 12.0
+  blackout_prob: 0.9
+  latency_ms: 400.0
+
+firmware_integrity:
+  start_s: 30.0
+  tamper_component: ekf3_params.bin

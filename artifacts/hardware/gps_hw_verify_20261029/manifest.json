@@ -1,0 +1,52 @@
+{
+  "schema": "aegisflight.hw_verification_manifest/1",
+  "id": "gps_hw_verify_20261029",
+  "claim_class": "none (receiver/estimator reports + false-alarm behaviour on one benign stream; not detection evidence)",
+  "environment": {"live": "BENCH-class (physical ArduPilot-family quadrotor, disarmed and stationary per telemetry; props/airframe state not confirmed)", "replay": "REPLAY"},
+  "provenance": {
+    "git_head": "a44dd9c2b2e267f2e3ce6bb9a148d83f180ef68b",
+    "branch": "main",
+    "working_tree_at_capture": "run_serial_ids.py --tlog change and 2 tests uncommitted; src/ and configs/ identical to HEAD",
+    "python": "3.13.15", "pymavlink": "2.4.50", "pyserial": "3.5", "numpy": "2.5.3", "scikit-learn": "1.9.1", "os": "Windows 11",
+    "config_detector_yaml_sha256": "be7876745a26e1a9de23acb1e079cab18165887df3ad8cd9800f67dae4e1f8be",
+    "config_gate_off_detector_yaml_sha256": "daa4d15ecfc6bcfc96734f8dd431dfcc7f0c0cd81b303de0ac46ba80496b057f",
+    "run_serial_ids_py_sha256_at_capture": "30b227de42a5aef93e524da40138bc394c7ac8dd42a1edc7c1f6987a0735962c",
+    "ml": "off (Stage-1 model does not transfer to ArduPilot)"
+  },
+  "live": {
+    "port": "COM7", "port_device": "Silicon Labs CP210x USB to UART Bridge (USB\\VID_10C4&PID_EA60)", "ports_enumerated": 1,
+    "baud": 115200, "baud_source": "docs/HARDWARE_BENCH_PIXHAWK6X.md section 6 (empirical)",
+    "window_utc": ["2026-10-28T20:04:26Z", "2026-10-28T20:05:56Z"], "requested_seconds": 90,
+    "command": "scripts/hardware/run_serial_ids.py --port COM7 --baud 115200 --out-dir artifacts/hardware/gps_hw_verify_20261029/live_capture --seconds 90 --health-interval 10 --no-reconnect --defense-mode passive --tlog data/hardware/raw/gps_hw_verify_20261029.tlog",
+    "exit_code": 0, "bytes_sent": 0, "write_errors": 0,
+    "raw_tlog": {"path": "data/hardware/raw/gps_hw_verify_20261029.tlog", "committed": false, "reason": "holds vehicle position; git-ignored", "bytes": 193410, "sha256": "c2e3459b15706479323da39813329ad1796948548b29f5d9df4ac55144d48e8f"},
+    "outputs": ["live_capture/summary.json", "live_capture/health.jsonl", "live_capture/alerts.jsonl", "live_capture/tlog_stats.json", "live_capture/gnss_summary.json"],
+    "not_committed": ["live_capture/events.sqlite (git-ignored; empty chain, length 0)"],
+    "result": {"frames": 5130, "decisions": 451, "alerts": 0, "seq_gaps": 0, "crc_rejects": 0, "garbage_bytes": 0, "disconnects": 0, "armed": false, "ekf_flags": "0xa7 x180 (no horizontal position solution)", "gps_healthy_bit": "0/180"}
+  },
+  "offline_tools": [
+    "scripts/sitl/tlog_stats.py", "scripts/hardware/gnss_tlog_summary.py", "scripts/ardupilot/replay_ap_tlog.py"
+  ],
+  "replay": {
+    "input": "data/hardware/raw/gps_hw_verify_20261029.tlog",
+    "runs": {
+      "gate_on": {"config": "configs/", "decisions": 450, "alert_decisions": 0, "output": "replay/live_capture_gate_on_noml.json"},
+      "gate_off": {"config": "replay/cfg_gate_off/ (configs/ with physics.estimator_gate: false)", "decisions": 450, "threat_decisions": 60, "alert_decisions": 4, "output": "replay/live_capture_gate_off_noml.json"}
+    },
+    "fixture_determinism": {"telemetry_radio_008.tlog": "identical to committed replay_gnss_008_estimator_gate/replay_noml.json modulo CRLF", "telemetry_radio_009.tlog": "identical to committed replay_gnss_009_estimator_gate/replay_noml.json modulo CRLF"}
+  },
+  "checks": {
+    "ruff src tests scripts backend": "All checks passed",
+    "focused pytest (gps_scenarios_fused, missing_telemetry x2, defense_safety, mitigation, run_serial_ids, mavlink_serial, mavlink_live, serial_raw_tap)": "no failures (summary line not captured; run_serial_ids + defense_safety re-run: 38 passed)",
+    "pytest -p no:cacheprovider -o addopts= -q -rfE": "883 passed, 3 skipped, 0 failed (155.29 s)",
+    "frontend npm test": "8 passed, 0 failed",
+    "frontend npm run build": "ok (tsc --noEmit + vite build)",
+    "scripts/verify_stage2.py": "exit 0; 8 suites, 17 [PASS], 0 FAIL (SIM demo, not validation evidence)",
+    "aegis benchmark --out <scratch> --no-figures": "TP/FP/TN/FN 6535 / 4 / 16826 / 65, identical to artifacts/benchmarks/summary.md; committed artifacts untouched"
+  },
+  "not_run": [
+    "aegis-reviewer pass on the claims in README.md",
+    "ALFA replays and the SIM spoofing probes were not re-executed beyond the unit suite; committed artifacts/validation/estimator_gate_v2/ is cited, not regenerated",
+    "any attack, spoofing, jamming, injection or malformed-frame scenario against the live vehicle (forbidden by scope)"
+  ]
+}

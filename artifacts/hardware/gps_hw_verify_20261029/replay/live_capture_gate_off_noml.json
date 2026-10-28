@@ -1,0 +1,41 @@
+{
+  "tlog": "data/hardware/raw/gps_hw_verify_20261029.tlog",
+  "config_dir": "artifacts/hardware/gps_hw_verify_20261029/replay/cfg_gate_off",
+  "ml_enabled": false,
+  "clock_offset_s_used_for_phases": 0.0,
+  "decisions": 450,
+  "threat_decisions": 60,
+  "alert_decisions": 4,
+  "alert_rate_per_decision": 0.00889,
+  "by_phase": {
+    "boot": {
+      "decisions": 450,
+      "threat": 60,
+      "alerts": 4
+    }
+  },
+  "detector_ge_0.5": {
+    "physics_consistency": 60
+  },
+  "alert_types": {
+    "GPS_SPOOFING": 4
+  },
+  "alert_evidence_top": [
+    [
+      "position residual 12.3 m > 12 m (reported track diverges from velocity)",
+      1
+    ],
+    [
+      "position residual 15.2 m > 12 m (reported track diverges from velocity)",
+      1
+    ],
+    [
+      "position residual 12.0 m > 12 m (reported track diverges from velocity)",
+      1
+    ],
+    [
+      "position residual 12.1 m > 12 m (reported track diverges from velocity)",
+      1
+    ]
+  ]
+}
