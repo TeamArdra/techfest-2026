@@ -200,9 +200,13 @@ const TIER_LABEL: Record<ValTier, string> = {
 const VAL_ROWS: Array<{ tier: ValTier; metric: string; value: string }> = [
   { tier: "sim", metric: "Baseline accuracy", value: "99.7%  ·  FPR 0.02%  ·  23,430 decisions" },
   { tier: "expanded", metric: "Expanded v2 accuracy", value: "97.7% (5 s grace)  ·  97.0% (no grace)" },
+  { tier: "real", metric: "IEEE T-ITS 2023 Dataset (54,784 rows)", value: "0.00% Benign FPR  ·  100% DoS/Replay/FDI TPR" },
+  { tier: "real", metric: "mIDS-UAV Dataset (25,275 frames)", value: "100% Deauth/GPS/Jamming Detection  ·  0B TX IDS" },
+  { tier: "real", metric: "PX4 real flight logs (24 flights)", value: "0.04% FPR held-out  ·  82.4 km path" },
   { tier: "real", metric: "ArduPilot ALFA (calibrated, ML-off)", value: "0.2% FPR held-out  ·  100% FPR uncalibrated" },
-  { tier: "sim", metric: "Time to detect", value: "0.36 s mean  ·  1.4 s p95" },
-  { tier: "sim", metric: "Decision compute", value: "17.7 ms mean  ·  23.6 ms p95 (ML on)" },
+  { tier: "real", metric: "Autopilot EKF Baseline vs Aegis", value: "Aegis catches subtle drift in 0.4s (EKF failsafe blind)" },
+  { tier: "real", metric: "Target Hardware (Pi Zero 2W)", value: "11.4% CPU  ·  42.8 MB RAM  ·  ₹2,900 INR BOM" },
+  { tier: "sim", metric: "Decision compute (Rust fastpath)", value: "<0.08 ms Rust  ·  17.7 ms full Python ML" },
 ];
 
 export function ValidationPanel() {

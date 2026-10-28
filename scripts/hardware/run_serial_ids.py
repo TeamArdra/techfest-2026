@@ -31,6 +31,7 @@ Exit codes: 0 ok (NOT a statement about link health: see ``link_ever_delivered_f
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import signal
 import sys
@@ -220,7 +221,7 @@ def main(argv: list[str] | None = None) -> int:
                "link_ever_delivered_frames": t_stats["frames_received"] > 0,  # exit 0 does NOT mean a healthy link
                "telemetry_coverage": _coverage(pipe, no_gpi),
                "passive_check": {"bytes_sent": t_stats["bytes_sent"], "write_errors": t_stats["write_errors"],
-                                 "passed": t_stats["bytes_sent"] == 0 and t_stats["write_errors"] == 0},
+                                 "passed": t_stats["bytes_sent"] == 0 and t_stats["write_errors"] == 0} if a.defense_mode == "passive" else {"bypassed": True, "defense_mode": a.defense_mode},
                "hash_chain": {"ok": chain.ok, "length": chain.length}, "exit_code": rc}
     (out / "summary.json").write_text(json.dumps(summary, indent=2, default=str), encoding="utf-8")
     print(json.dumps({k: summary[k] for k in ("wall_s", "decisions", "alert_decisions", "alert_types",

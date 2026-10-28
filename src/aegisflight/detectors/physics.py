@@ -194,6 +194,17 @@ class PhysicsDetector(Detector):
                 "(sustained sub-noise velocity divergence)"
             )
 
+        # ---- 2D Page-Hinkley / CUSUM micro-drift (< 0.3 m/s) ----
+        cusum_val = max(frame.cusum_drift_m, self.cusum.magnitude_m)
+        signals["cusum_drift_m"] = cusum_val
+        if (self.cusum_enabled or self.cusum.triggered) and cusum_val >= self.cusum_threshold_m:
+            s = ramp(cusum_val, self.cusum_threshold_m, self.cusum_threshold_m * 3.0)
+            bump(AttackType.GPS_SPOOFING, max(0.65, s), hard_hit=True)
+            evidence.append(
+                f"CUSUM micro-drift residual {cusum_val:.2f} m ≥ {self.cusum_threshold_m:.1f} m "
+                "(sustained sub-noise velocity divergence)"
+            )
+
         # ---- GPS altitude vs baro (telemetry manipulation / spoofing) ----
         ad = frame.gps_baro_alt_diff_m
         signals["gps_baro_alt_diff_m"] = ad
