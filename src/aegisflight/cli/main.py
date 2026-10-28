@@ -17,6 +17,7 @@ import argparse
 import contextlib
 import os
 import sys
+from pathlib import Path
 
 from .. import __version__
 
@@ -196,6 +197,16 @@ def _cmd_ips_bridge(args: argparse.Namespace) -> int:
     except ValueError as exc:
         print(f"aegis ips-bridge: {exc}", file=sys.stderr)
         return 2
+    key = None
+    if args.signing_key_file:
+        try:
+            raw = Path(args.signing_key_file).read_bytes()
+            key = raw if len(raw) == 32 else bytes.fromhex(raw.decode("ascii").strip())
+            if len(key) != 32:
+                raise ValueError("key must be 32 bytes")
+        except (OSError, ValueError, UnicodeDecodeError) as exc:
+            print(f"aegis ips-bridge: bad --signing-key-file: {exc}", file=sys.stderr)
+            return 2
     store = None
     if args.db:
         from ..logging import EventStore
@@ -207,7 +218,9 @@ def _cmd_ips_bridge(args: argparse.Namespace) -> int:
         run_id = "ips-bridge"
     bridge = InlineIpsBridge(fc, gcs, config_dir=args.config_dir, mode=args.defense_mode,
                              trusted_sysids=tuple(args.trusted_sysid) if args.trusted_sysid else None,
-                             store=store, run_id=run_id)
+                             store=store, run_id=run_id, secret_key=key,
+                             allow_unsigned_from_trusted=args.signing_permissive,
+                             signing_max_age_s=args.signing_max_age_s, signing_state_path=args.signing_state)
     fc.start()
     gcs.start()
     bridge.start()
@@ -301,6 +314,16 @@ def build_parser() -> argparse.ArgumentParser:
                     help="passive/advisory forward every frame byte-identically; active-ips filters and counter-acts")
     ib.add_argument("--trusted-sysid", type=int, action="append",
                     help="ground-station sysid allowed to command the vehicle (repeatable; default from detector.yaml)")
+    ib.add_argument("--signing-key-file", default=None,
+                    help="32-byte MAVLink-2 signing key (raw, or 64 hex chars). With it, control traffic must be validly "
+                         "signed with an increasing timestamp; counter-frames are signed too")
+    ib.add_argument("--signing-permissive", action="store_true",
+                    help="rollout only: let UNSIGNED control frames from a trusted sysid through (forged or replayed "
+                         "signed frames are still dropped)")
+    ib.add_argument("--signing-max-age-s", type=float, default=None,
+                    help="also reject signed frames older than this on the bridge clock (needs a correct clock)")
+    ib.add_argument("--signing-state", default=None,
+                    help="file that keeps the last timestamp per stream across restarts (closes the post-restart replay window)")
     ib.add_argument("--config-dir", default=None)
     ib.add_argument("--db", default=None, help="log alerts to this SQLite hash-chain store")
     ib.add_argument("--seconds", type=float, default=None, help="run time (default: until Ctrl-C)")

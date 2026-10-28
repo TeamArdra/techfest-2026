@@ -51,7 +51,28 @@ fresh (3 s); a stalled analyser means transparent forwarding, not a stale rewrit
 | GPS spoofing / altitude bias on the downlink | GPS / altitude corrected in transit; EKF switch sent to the FC |
 | Telemetry manipulation (speed, battery) | detected; no inline correction exists |
 | Firmware tamper | detected; pre-arm lock only when known disarmed |
-| `gcs_replay` / any attack using the real GCS sysid | **not stopped**: on an unsigned link it is indistinguishable from the pilot. Needs MAVLink-2 signing |
+| `gcs_replay` / any attack using the real GCS sysid | stopped only with `--signing-key-file`; on an unsigned link it is indistinguishable from the pilot |
+
+## MAVLink-2 signing (closes `gcs_replay` and sysid spoofing)
+```bash
+aegis ips-bridge ... --defense-mode active-ips --signing-key-file gcs.key --signing-state /var/lib/aegis/sig.json
+```
+`gcs.key` is the same 32-byte key the GCS and the flight controller use (raw bytes or 64 hex characters; keep it out of the repo).
+With a key, in `active-ips`:
+- every control message and sensitive command on the uplink must carry a valid signature with a strictly increasing
+  timestamp per (link, sysid, compid) stream. A forged sysid fails the MAC, a replayed frame fails the timestamp, an unsigned
+  frame is dropped. A valid signature, not the sysid, is what makes a sender trusted;
+- `--signing-state` keeps the last timestamp per stream across restarts, so a restart does not reopen a replay window;
+- `--signing-max-age-s N` also rejects signed frames older than N s on the bridge clock (stops a captured frame that was
+  held back and released later). Use it only if the companion's clock is correct (no RTC means a wrong clock);
+- `--signing-permissive` is for rollout only: unsigned control frames from a trusted sysid pass, forged or replayed signed
+  frames still do not;
+- the bridge's own counter-frames are signed with the same key, and the IDS side verifies signatures too (`sig_invalid`).
+
+Not covered: signing must be enabled on the GCS and the flight controller (`SETUP_SIGNING`; PX4 and ArduPilot accept the
+first key from whoever sends it first, so provision on a trusted link). Signed downlink telemetry cannot be rewritten
+(GPS correction does not apply to it). Rules are only checked for control traffic, not for every frame. The verifier matches
+pymavlink's signer (tested), but has not been run against a real autopilot's signing implementation.
 
 ## Fix made while building this
 `FrameSanitizer` skipped any `GLOBAL_POSITION_INT` shorter than 40 bytes. MAVLink 2 trims trailing zero bytes (`vz`,
@@ -67,6 +88,6 @@ recomputes the CRC; if nothing needs changing it forwards the original bytes.
 - **Not tested against a real flight controller, a radio or SITL.** Do the first run with the aircraft restrained.
 - **No hardware bypass.** Both ports end in this process; if the companion loses power or the process dies the link is
   cut. A relay or splitter that connects FC and radio directly when the companion is down is required for flight.
-- Trust is by sysid. On an unsigned link an attacker who claims sysid 255 passes; enable MAVLink-2 signing and set
+- Without a signing key, trust is by sysid and an attacker who claims sysid 255 passes; use signing and set
   `--trusted-sysid` to the ground stations you actually use.
 - The vehicle's mode restore only works for ArduCopter mode names; PX4 modes are never guessed.

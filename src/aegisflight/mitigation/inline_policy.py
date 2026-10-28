@@ -22,18 +22,30 @@ inline bridge runs on every frame. It has two layers:
   them fresh (``touch`` within ``dynamic_ttl_s``); a stalled analyser therefore degrades to transparent
   forwarding, never to a stale rewrite. Signed frames are never modified (a rewrite would break the MAC).
 
-Limits that no software rule removes: on an unsigned link a sysid is only a claim, so an attacker who
-uses the real GCS sysid (255) is indistinguishable from the pilot (``gcs_replay``); MAVLink-2 signing is the fix.
+**MAVLink-2 signing (optional, ``signing_key``).** On an unsigned link a sysid is only a claim, so an attacker who
+uses the real GCS sysid (255) is indistinguishable from the pilot (``gcs_replay``). With a 32-byte key the policy
+instead requires every control message and sensitive command on the uplink to carry a valid signature with a strictly
+increasing timestamp per (link, sysid, compid) stream: a forged sysid fails the MAC, a replayed frame fails the
+timestamp, and an unsigned frame is dropped (``allow_unsigned_from_trusted`` softens only that last case, for a
+rollout). A valid signature, not the sysid, is then what makes a sender trusted. Timestamp state can be persisted
+(``state_path``) so a restart does not reopen a replay window; ``max_age_s`` additionally rejects frames older than
+that on the bridge's clock (leave it off if the companion has no real-time clock). A signed frame cannot be altered
+by a rewrite, and a frame the attacker merely *delays* keeps a valid signature until ``max_age_s`` lapses.
 Any exception in a rule forwards the original frame (fail-open).
 """
 
 from __future__ import annotations
 
+import contextlib
+import json
+import os
 import struct
 import threading
 import time
 from collections.abc import Callable, Iterable
+from pathlib import Path
 
+from ..mavlink.signing import MAVLINK_EPOCH_UNIX_S, MavlinkSignatureVerifier
 from ..proxy.hooks import FrameContext
 from .sanitizer import FrameSanitizer
 
@@ -120,6 +132,10 @@ class InlinePolicy:
         dynamic_ttl_s: float = 3.0,
         in_flight_alt_m: float = 2.0,
         in_flight_speed_ms: float = 1.0,
+        signing_key: bytes | None = None,
+        allow_unsigned_from_trusted: bool = False,
+        max_age_s: float | None = None,
+        state_path: str | os.PathLike[str] | None = None,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self.sanitizer = sanitizer or FrameSanitizer()
@@ -138,6 +154,19 @@ class InlinePolicy:
         self.rel_alt_m: float | None = None
         self.groundspeed_ms: float | None = None
         self._last_cmd: dict[tuple[int, int, int], tuple[float, bytes]] = {}
+        # MAVLink-2 signing of the uplink (None = trust by sysid)
+        self._verifier = MavlinkSignatureVerifier(signing_key) if signing_key is not None else None
+        self.allow_unsigned_from_trusted = bool(allow_unsigned_from_trusted)
+        self.max_age_s = max_age_s
+        self._state_path = Path(state_path) if state_path else None
+        self._state_dirty = False
+        self._last_persist = 0.0
+        if self._verifier is not None and self._state_path is not None:
+            self._load_state()
+        self.signed_ok = 0
+        self.dropped_unsigned = 0
+        self.dropped_bad_signature = 0
+        self.dropped_replay = 0
         # counters
         self.dropped_untrusted_control = 0
         self.dropped_inflight_disarm = 0
@@ -176,7 +205,9 @@ class InlinePolicy:
                     or (self.groundspeed_ms or 0.0) > self.in_flight_speed_ms)
 
     def stats(self) -> dict[str, int | bool | None]:
-        return {"enforce": self.enforce, "dynamic_fresh": self.dynamic_fresh, "armed": self.armed,
+        return {"signing": self._verifier is not None, "signed_ok": self.signed_ok,
+                "dropped_unsigned": self.dropped_unsigned, "dropped_bad_signature": self.dropped_bad_signature,
+                "dropped_replay": self.dropped_replay, "enforce": self.enforce, "dynamic_fresh": self.dynamic_fresh, "armed": self.armed,
                 "in_flight": self.in_flight, "dropped_untrusted_control": self.dropped_untrusted_control,
                 "dropped_inflight_disarm": self.dropped_inflight_disarm, "dropped_burst": self.dropped_burst,
                 "dropped_dynamic": self.dropped_dynamic, "rewritten": self.rewritten,
@@ -217,13 +248,21 @@ class InlinePolicy:
                 return [ctx.raw]
             trusted = ctx.sysid in self.trusted_sysids
             msgid = ctx.msgid
+            cmd = _command(ctx.raw, msgid) if msgid in _COMMAND_MSGIDS else None
+            needs_auth = msgid in CONTROL_MSGIDS or (cmd is not None and cmd[0] in SENSITIVE_COMMANDS)
+            if needs_auth and self._verifier is not None:
+                verdict = self._check_signature(ctx)
+                if verdict == "ok":
+                    trusted = True  # a valid signature, not the sysid, makes the sender trusted
+                elif verdict == "unsigned" and trusted and self.allow_unsigned_from_trusted:
+                    pass  # rollout mode: an unsigned frame from a trusted sysid still passes
+                else:
+                    return []
             if msgid in CONTROL_MSGIDS and not trusted:
                 self.dropped_untrusted_control += 1
                 return []
-            if msgid in _COMMAND_MSGIDS:
-                cmd = _command(ctx.raw, msgid)
-                if cmd is not None and cmd[0] in SENSITIVE_COMMANDS:
-                    return self._command_rule(ctx, trusted, *cmd)
+            if cmd is not None and cmd[0] in SENSITIVE_COMMANDS:
+                return self._command_rule(ctx, trusted, *cmd)
             if self.dynamic_fresh and self.sanitizer.active and not trusted:
                 # quarantined / flooding sender on the uplink (the sanitizer drops both directions)
                 if ctx.sysid in self.sanitizer.quarantined_sysids and ctx.sysid not in self.protected_sysids:
@@ -235,6 +274,58 @@ class InlinePolicy:
             return [ctx.raw]
 
     # -- internals ----------------------------------------------------------- #
+
+    def _check_signature(self, ctx: FrameContext) -> str:
+        """``ok`` | ``unsigned`` | ``bad_signature`` | ``replay`` (each counted)."""
+        v = self._verifier
+        assert v is not None
+        res = v.verify_frame(ctx.raw)
+        if res.valid:
+            if self.max_age_s is not None:
+                now_10us = (time.time() - MAVLINK_EPOCH_UNIX_S) * 100_000
+                if res.timestamp_10us < now_10us - self.max_age_s * 100_000:
+                    self.dropped_replay += 1
+                    return "replay"
+            self.signed_ok += 1
+            self._state_dirty = True
+            self._maybe_persist()
+            return "ok"
+        if not res.signed:
+            self.dropped_unsigned += 1
+            return "unsigned"
+        if res.replayed:
+            self.dropped_replay += 1
+            return "replay"
+        self.dropped_bad_signature += 1
+        return "bad_signature"
+
+    # -- signing state persistence ------------------------------------------- #
+
+    def _load_state(self) -> None:
+        assert self._verifier is not None and self._state_path is not None
+        with contextlib.suppress(OSError, ValueError, KeyError, TypeError):
+            data = json.loads(self._state_path.read_text(encoding="utf-8"))
+            for k, ts in data.get("streams", {}).items():
+                link, sysid, compid = (int(x) for x in k.split(":"))
+                self._verifier._last_timestamps[(link, sysid, compid)] = int(ts)
+
+    def _maybe_persist(self, force: bool = False) -> None:
+        if self._state_path is None or self._verifier is None or not self._state_dirty:
+            return
+        now = time.monotonic()
+        if not force and now - self._last_persist < 1.0:
+            return
+        self._last_persist = now
+        self._state_dirty = False
+        with contextlib.suppress(OSError):
+            tmp = self._state_path.with_suffix(self._state_path.suffix + ".tmp")
+            streams = {f"{k[0]}:{k[1]}:{k[2]}": v for k, v in self._verifier._last_timestamps.items()}
+            tmp.write_text(json.dumps({"streams": streams}), encoding="utf-8")
+            os.replace(tmp, self._state_path)
+
+    def flush(self) -> None:
+        """Write the signing timestamp state now (called on shutdown)."""
+        self._maybe_persist(force=True)
 
     def _command_rule(self, ctx: FrameContext, trusted: bool, command: int, p1: float, p2: float) -> list[bytes]:
         if not trusted:

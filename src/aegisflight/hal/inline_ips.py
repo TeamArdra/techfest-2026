@@ -96,10 +96,14 @@ class InlineIpsBridge:
         store: Any | None = None,
         run_id: str = "ips-bridge",
         secret_key: bytes | None = None,
+        allow_unsigned_from_trusted: bool = False,
+        signing_max_age_s: float | None = None,
+        signing_state_path: str | None = None,
         idle_sleep_s: float = 0.0005,
         clock_ns: Callable[[], int] = time.monotonic_ns,
     ) -> None:
         self.fc, self.gcs = fc, gcs
+        self._secret_key = secret_key
         self.cfg = cfg or load_config(config_dir)
         proto = self.cfg.detector.get("protocol", {})
         self.pipeline = IDSPipeline(self.cfg, model_path=None, firmware_dir=None)  # ML is simulation-only
@@ -108,6 +112,8 @@ class InlineIpsBridge:
             self.controller.sanitizer,
             trusted_sysids=trusted_sysids if trusted_sysids is not None else tuple(proto.get("expected_gcs_sysids", (255, 254))),
             vehicle_sysids=vehicle_sysids if vehicle_sysids is not None else tuple(proto.get("expected_sysids", (1,))),
+            signing_key=secret_key, allow_unsigned_from_trusted=allow_unsigned_from_trusted,
+            max_age_s=signing_max_age_s, state_path=signing_state_path,
         )
         self.policy.set_enforce(self.controller.mode == DefenseMode.ACTIVE_IPS)
         self.tap = TapTransport()
@@ -151,6 +157,7 @@ class InlineIpsBridge:
         for th in self._threads:
             if th is not threading.current_thread():
                 th.join(timeout=2.0)
+        self.policy.flush()
         for tr in (self.fc, self.gcs):
             with contextlib.suppress(Exception):
                 tr.close()
@@ -249,7 +256,8 @@ class InlineIpsBridge:
                     self.send_failures += 1
 
     def _analyse_loop(self) -> None:
-        self._source = LiveMavlinkSource(self.tap, sample_rate_hz=self.rate_hz, origin="start")
+        self._source = LiveMavlinkSource(self.tap, sample_rate_hz=self.rate_hz, origin="start",
+                                         secret_key=self._secret_key)
         try:
             for tick in self._source.stream():
                 if self._stop.is_set():
