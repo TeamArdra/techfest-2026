@@ -93,8 +93,8 @@ export function ControlPanel({ activeAttack, controls, environment, topology }: 
         </header>
         <div className="empty">
           This server monitors a <b>{environment}</b> source. Start / stop / reset and attack injection
-          are simulation-only — the backend refuses them (HTTP 409) — and the IDS never transmits to the
-          vehicle.
+          are simulation-only — the backend refuses them (HTTP 409). In PASSIVE and ADVISORY the IDS does not
+          transmit to the vehicle; ACTIVE IPS sends counter-commands.
         </div>
       </div>
     );

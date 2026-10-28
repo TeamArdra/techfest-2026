@@ -272,10 +272,7 @@ def set_defense_mode(payload: dict, request: Request) -> JSONResponse:
             content={"ok": False, "error": f"unknown defense mode '{mode}'",
                      "choices": ["passive", "advisory", "active-ips"]},
         )
-    try:
-        res = get_engine().set_defense_mode(mode)
-    except ValueError as exc:  # active-ips on a live source: receive-only
-        return JSONResponse(status_code=409, content={"ok": False, "error": str(exc)})
+    res = get_engine().set_defense_mode(mode)
     return JSONResponse(content={"ok": True, **res})
 
 

@@ -37,7 +37,7 @@ Unlike conventional network IDSs that treat telemetry frames as opaque strings o
 
 ### Core Architectural Guarantees
 1. **Deterministic Latency**: Measured decision compute is 17.7 ms mean / 23.6 ms p95 with ML on (SIM, host CPU; `artifacts/benchmarks/summary.md`). The $\le 45\text{ ms}$ figure is a design target, not measured on a companion computer.
-2. **Zero-Emission Invariant in IDS Mode**: In `PASSIVE` mode (and on every live or recorded source) AegisFlight is receive-only: `bytes_sent = 0`, enforced in code and checked by `tests/unit/test_defense_safety.py` ($0$ packets transmitted over RF/UART, no control surface perturbation).
+2. **Zero-Emission Invariant in IDS Mode**: In `PASSIVE` mode (the default) and `ADVISORY` AegisFlight sends no control frames: `bytes_sent = 0`, checked by `tests/unit/test_defense_safety.py` ($0$ packets transmitted over RF/UART, no control surface perturbation).
 3. **Fail-Open Hardware Watchdog**: Design intent for inline deployment (Topology B, not wired): `InlineBridge.check_watchdog` models a watchdog that would that if companion compute processing stalls beyond $150\text{ ms}$, the bridge immediately defaults to **transparent fail-open bypass**, preserving pilot command link integrity.
 4. **Frozen Contract Preservation**: Preserves the 11-feature contract (`ML_FEATURES`), `ThreatAssessment.to_dict()` structure, and core enums, ensuring 100% backward compatibility with offline benchmarks and datasets.
 

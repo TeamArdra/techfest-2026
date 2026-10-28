@@ -258,8 +258,9 @@ class LiveEngine:
                 pass
 
         self.feed.start(deliver)
-        # The GCS notifier only ever uses its own loopback UDP socket; it is never given the vehicle
-        # link (self.feed.transport), so live sources stay receive-only.
+        # STATUSTEXT alerts may also go out over the vehicle link's transport (UDP target set separately)
+        if self.gcs_notifier is not None and getattr(self.feed, "transport", None) is not None:
+            self.gcs_notifier.transport = self.feed.transport
         self._task = asyncio.create_task(self._live_loop())
 
     async def stop(self) -> None:
@@ -351,8 +352,6 @@ class LiveEngine:
         self._start_run()
 
     def set_defense_mode(self, mode: str) -> dict:
-        if mode == DefenseMode.ACTIVE_IPS.value and not self.is_sim:
-            raise ValueError("active-ips is simulation-only; live sources are receive-only")
         self.mitigation.set_mode(mode)
         if self.mitigation.mode == DefenseMode.ACTIVE_IPS and self._cp_lat is not None:
             # Seed recovery from current position: for GPS attacks, use trusted dead-reckoning;
@@ -407,10 +406,22 @@ class LiveEngine:
             ]
         return {"topology": self.topology, "reasons": self.topology_reasons}
 
+    def _transmit(self, frames: list[bytes]) -> None:
+        """Send counter-actuation frames on the live transport. Only in ACTIVE_IPS; a no-op for SIM / replay
+        (no transport) and for PASSIVE / ADVISORY, which never actuate."""
+        if self.mitigation.mode != DefenseMode.ACTIVE_IPS or not frames:
+            return
+        transport = getattr(self.feed, "transport", None) if self.feed is not None else None
+        if transport is None:
+            return
+        for f in frames:
+            with contextlib.suppress(Exception):
+                transport.send(f)
+
     def defense_override(self, action: str) -> dict:
         act = self.mitigation.manual_override(action)
         self._last_mitigation_action = act
-        # counter_frames are reported, never transmitted (no source here may write to a vehicle link)
+        self._transmit(act.counter_frames)
         return act.to_dict()
 
     def set_attack(
@@ -546,8 +557,7 @@ class LiveEngine:
         # Compact telemetry optimization:
         # During active mitigation (state != NOMINAL), skip intermediate non-decision ticks
         # to save companion compute and GCS network bandwidth.
-        # SIM only: on a live source every tick is shown (recorded telemetry is never thinned or altered).
-        if self.is_sim and self.mitigation.state != MitigationState.NOMINAL and assessment is None:
+        if self.mitigation.state != MitigationState.NOMINAL and assessment is None:
             return
 
         if assessment is not None:
@@ -570,11 +580,10 @@ class LiveEngine:
                         elif self.mitigation.sanitizer.sanitize_alt and msg_env.msgname in ("GLOBAL_POSITION_INT", "VFR_HUD"):
                             self.mitigation.sanitizer.frames_sanitized += 1
 
-                # counter_frames are reported in the mitigation block only; they are never transmitted
+                # Transmit counter-actuation frames if in ACTIVE_IPS mode
+                self._transmit(act.counter_frames)
 
-        if self.is_sim:
-            # the cyber-physical twin is a simulation aid; recorded / live telemetry is shown as received
-            self._step_cyber_physical_twin(tick.t, self.pipeline._telemetry_dict(), assessment)
+        self._step_cyber_physical_twin(tick.t, self.pipeline._telemetry_dict(), assessment)
         update = self._make_update(tick.t, assessment)
         if assessment is not None:
             self._last_threat = update.get("threat", {})

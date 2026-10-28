@@ -80,7 +80,6 @@ export default function App() {
               telemetry={live.telemetry}
               topology={live.topology}
               topologyReasons={live.topologyReasons}
-              sim={live.environment === "SIM"}
             />
           </ErrorBoundary>
         </section>

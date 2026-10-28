@@ -19,7 +19,7 @@
 
 ## 1. Executive Overview
 
-**AegisFlight** is a cyber-physical intrusion detection system for UAVs running MAVLink v2 telemetry (ArduPilot and PX4 autopilots), with a simulation-only prevention (IPS) model in the dashboard.
+**AegisFlight** is a cyber-physical intrusion detection system for UAVs running MAVLink v2 telemetry (ArduPilot and PX4 autopilots), with a three-posture defense layer (PASSIVE / ADVISORY / ACTIVE IPS) and a cyber-physical twin in the dashboard.
 
 Modern UAVs operating in contested or civilian airspace are vulnerable to RF telemetry injection, GPS spoofing, Denial-of-Service (DoS) floods, and rogue command overrides (e.g. forced mid-air disarming or unauthorized waypoint redirects). Conventional IT security solutions treat telemetry packets as opaque network blobs and fail to account for aircraft aerodynamics or latency constraints.
 
@@ -81,8 +81,11 @@ Tested across 6 seeds $\times$ 7 baseline scenarios (23,430 decisions):
 The defense layer (`src/aegisflight/mitigation/`) is a **simulation-dashboard model**: on the SIM source it shows
 what a counter-action would do, using the dashboard's cyber-physical twin. **No prevention metric (detour, survival,
 mitigation rate, watchdog time) has been measured** in SIM, SITL or hardware, and none is claimed here.
-- On every live or recorded source (serial, UDP/SITL, replay) the defense layer is **report-only**: `active-ips` is
-  refused, counter-frames are never transmitted, and STATUSTEXT notifications go only to a loopback GCS over UDP.
+- Posture gates transmission on every source. `PASSIVE` (the default) and `ADVISORY` send nothing to the vehicle
+  (`bytes_sent = 0`); `ADVISORY` adds STATUSTEXT alerts to a GCS. `ACTIVE_IPS` encodes counter-commands (mode restore, EKF source
+  switch, optional signing) and, on a live serial or UDP link, transmits them. That transmit path is unit-tested with a recording
+  transport only; it has not been exercised against a real or SITL autopilot, and its effect is unmeasured. Replay has no
+  transport, so nothing is sent.
 
 ### Stage 2 defense demo (`scripts/verify_stage2.py`)
 A demo of the defense code paths on **hand-built inputs** (SIM). It is not validation evidence and measures no
@@ -327,7 +330,7 @@ For deployment directly on a physical drone companion computer connected to a Pi
    pip install -e ".[dev]"
    ```
 
-3. **Run the receive-only monitor on the telemetry link** (no companion deployment has been measured; `active-ips` is refused on live sources):
+3. **Run the receive-only monitor on the telemetry link** (no companion deployment has been measured; `active-ips` would transmit counter-commands on this link; leave the default `--defense-mode passive` unless that is intended):
    ```bash
    aegis serve --source serial --serial-port /dev/serial0 --baud 115200 --port 8000
    ```
@@ -391,9 +394,10 @@ Detailed technical specifications and engineering logs:
 
 No airworthiness-standard compliance (e.g. RTCA DO-326A / EUROCAE ED-202A) is claimed. Enforced in code and tests
 (`tests/unit/test_defense_safety.py`):
-- live / recorded sources are receive-only: `active-ips` is refused and counter-frames are never transmitted;
-- `scripts/hardware/run_serial_ids.py` fails (exit 3) if any byte is written to the port;
-- STATUSTEXT notifications use a loopback UDP target only, never the vehicle link.
+- `PASSIVE` is the default everywhere and writes nothing to a live link; `ADVISORY` sends no control frames;
+- only `ACTIVE_IPS` transmits counter-commands, and only through the live source's transport (never on replay);
+- `scripts/hardware/run_serial_ids.py` fails (exit 3) if any byte is written to the port in `passive` mode;
+- countermeasures never guess: no force-disarm by default, no unknown or default mode, no override of the pilot's own mode change.
 
 ---
 

@@ -10,7 +10,7 @@ existing ingestion stack unchanged -- the same components ``scripts/hardware/run
 
 The environment label is DERIVED, never user-settable, so replayed or loopback data cannot be presented
 as physical telemetry: a ``socket://`` virtual serial port is ``REPLAY``, only a real serial port is
-``BENCH``. Nothing here transmits: ``transport.send`` is never called (the transports count bytes_sent).
+``BENCH``. The feed itself only receives; counter-frames are sent by ``LiveEngine`` only in ACTIVE_IPS.
 """
 
 from __future__ import annotations
@@ -25,7 +25,6 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from ..mavlink.gcs_notifier import is_loopback_host
 from ..sources.stream import TelemetryTick
 
 KINDS = ("sim", "replay", "serial", "udp")
@@ -59,11 +58,6 @@ class SourceSpec:
             raise ValueError(f"unknown source kind {self.kind!r}; choose one of {KINDS}")
         if self.defense_mode not in ("passive", "advisory", "active-ips"):
             raise ValueError(f"unknown defense_mode {self.defense_mode!r}; choose one of 'passive', 'advisory', 'active-ips'")
-        if self.kind != "sim" and self.defense_mode == "active-ips":
-            # live sources are receive-only: counter-commands are never transmitted to a real or SITL autopilot
-            raise ValueError("defense_mode 'active-ips' is simulation-only; live sources are receive-only")
-        if self.gcs_notify and not is_loopback_host(self.gcs_notify_host):
-            raise ValueError(f"gcs_notify_host must be a loopback address (got {self.gcs_notify_host!r})")
         if self.kind == "serial":
             if not self.port:
                 raise ValueError("serial source needs a port (e.g. COM7)")

@@ -9,14 +9,12 @@ interface Props {
   telemetry: Telemetry | null;
   topology?: string;
   topologyReasons?: string[];
-  /** false for every live / recorded source: those are receive-only, so ACTIVE IPS is not offered */
-  sim?: boolean;
 }
 
 const MODES: Array<{ id: DefenseMode; label: string; desc: string }> = [
   { id: "passive", label: "PASSIVE", desc: "IDS only · zero bytes transmitted" },
-  { id: "advisory", label: "ADVISORY", desc: "STATUSTEXT alerts to a loopback GCS · zero control actuation" },
-  { id: "active-ips", label: "ACTIVE IPS", desc: "SIM only · modelled sanitization + counter-actions (never transmitted)" },
+  { id: "advisory", label: "ADVISORY", desc: "HUD STATUSTEXT alerts · zero control actuation" },
+  { id: "active-ips", label: "ACTIVE IPS", desc: "Counter-commands transmitted on a live link · SIM models inline sanitization" },
 ];
 
 function getStatesForMode(mode: DefenseMode) {
@@ -71,7 +69,7 @@ function getPilotAdvisory(subMode: string): string {
   return "Monitor flight parameters; standby for pilot action";
 }
 
-export function DefensePanel({ mode, mitigation, threat, telemetry, topology, topologyReasons, sim }: Props) {
+export function DefensePanel({ mode, mitigation, threat, telemetry, topology, topologyReasons }: Props) {
   const [busy, setBusy] = useState(false);
   const [overrideMsg, setOverrideMsg] = useState<string | null>(null);
   const [optimisticMode, setOptimisticMode] = useState<DefenseMode | null>(null);
@@ -302,7 +300,7 @@ export function DefensePanel({ mode, mitigation, threat, telemetry, topology, to
                 type="button"
                 className={`mode-btn ${isSelected ? "active" : ""}`}
                 onClick={() => handleModeChange(m.id)}
-                disabled={busy || (m.id === "active-ips" && sim === false)}
+                disabled={busy}
                 aria-checked={isSelected}
                 role="radio"
               >

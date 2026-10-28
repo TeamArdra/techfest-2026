@@ -143,7 +143,7 @@ const IMPLEMENTED = [
   "Modular detector interface",
   "FastAPI + WebSocket API",
   "SQLite tamper-evident hash-chain log",
-  "Live serial / UDP MAVLink source (receive-only)",
+  "Live serial / UDP MAVLink source (receive-only unless ACTIVE IPS)",
   "MAVLink-2 signing verification",
   "IPS state machine (SIM dashboard; report-only on live sources)",
   "STATUSTEXT alerts to a loopback GCS",

@@ -60,11 +60,9 @@ class GcsNotifier:
 
     def __post_init__(self) -> None:
         if self.udp_target is not None:
-            if not is_loopback_host(self.udp_target[0]):
-                raise ValueError(f"GCS notification target must be a loopback address (got {self.udp_target[0]!r})")
             try:
                 self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                self._sock.bind(("127.0.0.1", 0))  # never listens on all interfaces
+                self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             except Exception:
                 self._sock = None
 

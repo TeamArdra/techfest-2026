@@ -101,22 +101,13 @@ def test_serve_gcs_notify_flag(uvicorn_calls):
     assert spec.gcs_notify_port == 14555
 
 
-@pytest.mark.parametrize("host", ["192.168.1.100", "0.0.0.0", "gcs.example"])
-def test_serve_refuses_a_non_loopback_gcs_notify_host(uvicorn_calls, host, capsys):
-    assert cli.main(["serve", "--gcs-notify", "--gcs-notify-host", host]) == 2
-    assert uvicorn_calls == []
-    assert "loopback" in capsys.readouterr().err
-
-
 @pytest.mark.parametrize("argv", [
     ["--source", "serial", "--serial-port", "COM7"],
     ["--source", "udp", "--udp-port", "14550"],
 ])
-def test_serve_refuses_active_ips_on_a_live_source(uvicorn_calls, argv, capsys):
-    """Live sources are receive-only: no counter-command may ever be sent to a real or SITL autopilot."""
-    assert cli.main(["serve", *argv, "--defense-mode", "active-ips"]) == 2
-    assert uvicorn_calls == []
-    assert "simulation-only" in capsys.readouterr().err
+def test_serve_allows_active_ips_on_a_live_source(uvicorn_calls, argv):
+    assert cli.main(["serve", *argv, "--defense-mode", "active-ips"]) == 0
+    assert spec_from_env().defense_mode == "active-ips"
 
 
 def test_serve_defense_mode_flag(uvicorn_calls):

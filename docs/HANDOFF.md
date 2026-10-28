@@ -41,7 +41,7 @@ simulation — no real drone or network is involved.**
 | ArduPilot & PX4 SITL Integration | ✅ COMPLETE (`docs/ARDUPILOT_SITL.md`, `docs/STAGE2_RUNBOOK.md`) |
 
 ## What you can demonstrate today
-`aegis serve --defense-mode active-ips` (SIM only; live sources refuse it and are receive-only) → dashboard → click an attack → live detection + the SIM-only mitigation model (counter-actions are shown, never transmitted; Topology B sanitisation is not wired); firmware tamper → SHA-256 INVALID alert; event log verifiable via `aegis verify-log`. Demo of the defense code paths on hand-built inputs: `python scripts/verify_stage2.py` (not validation evidence). Full test suite: `pytest`.
+`aegis serve --defense-mode active-ips` (on a live source this transmits counter-commands; the default `passive` does not) → dashboard → click an attack → live detection + the SIM-only mitigation model (counter-actions are shown, never transmitted; Topology B sanitisation is not wired); firmware tamper → SHA-256 INVALID alert; event log verifiable via `aegis verify-log`. Demo of the defense code paths on hand-built inputs: `python scripts/verify_stage2.py` (not validation evidence). Full test suite: `pytest`.
 
 ## Current limitations (be honest)
 - A *constant, fully-consistent* GPS offset is only detected at the transition

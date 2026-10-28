@@ -12,7 +12,7 @@
 - **Physical Link (bench, as tested)**: Pixhawk 6X telemetry over USB/radio on COM7, receive-only (`docs/HARDWARE_BENCH_PIXHAWK6X.md`). A companion UART link is a design target, not tested.
 - **Strict Bench Budgets (targets unless stated)**:
   - Detection compute (host, SIM, ML on): 17.7 ms mean / 23.6 ms p95 (`artifacts/benchmarks/summary.md`); not measured on a companion computer.
-  - Telemetry Bandwidth Overhead: design target $\le 8\%$ (counter-frames are encoded but never transmitted on a live source; not measured).
+  - Telemetry Bandwidth Overhead: design target $\le 8\%$ (counter-frames are sent only in ACTIVE_IPS; not measured).
   - Resident Memory (RSS): design target, not measured.
 
 ## 2. Runtime Daemons & Active Ports
