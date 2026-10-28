@@ -151,6 +151,7 @@ def test_advisory_mode_statustext_frames():
 
 def test_active_ips_gps_spoofing_ekf_switch():
     ctrl = MitigationController(mode=DefenseMode.ACTIVE_IPS)
+    ctrl.set_capabilities(ekf_secondary=True)  # the switch is only sent when a secondary is declared
     # 1. Nominal tick sets golden anchor
     snap0 = _make_dummy_snapshot(t=1.0, lat=18.9220, lon=72.8347, alt=25.0)
     frame0 = _make_dummy_frame(snap0)
@@ -170,7 +171,8 @@ def test_active_ips_gps_spoofing_ekf_switch():
         evidence=["horizontal position divergence > 200m"],
     )
 
-    action = ctrl.step(frame1, asmt1)
+    ctrl.step(frame1, asmt1)  # first threat tick: not yet confirmed
+    action = ctrl.step(frame1, asmt1)  # confirmed on the 2nd consecutive tick
     assert ctrl.state == MitigationState.AUTO_MITIGATING
     assert action.sub_mode == AttackSubMode.GPS_GRADUAL_DRIFT
     assert action.ekf_switched is True
@@ -183,6 +185,7 @@ def test_active_ips_gps_spoofing_ekf_switch():
 
 def test_active_ips_quarantine_recovery():
     ctrl = MitigationController(mode=DefenseMode.ACTIVE_IPS, recovery_clean_ticks=25)
+    ctrl.set_capabilities(ekf_secondary=True)
     # Step into attack
     snap0 = _make_dummy_snapshot(t=1.0, lat=18.9220, lon=72.8347)
     ctrl.step(_make_dummy_frame(snap0), _make_dummy_assessment(t=1.0, threat=False))
@@ -191,6 +194,10 @@ def test_active_ips_quarantine_recovery():
     ctrl.step(
         _make_dummy_frame(snap1),
         _make_dummy_assessment(t=2.0, threat=True, attack_type=AttackType.GPS_SPOOFING, severity=Severity.CRITICAL),
+    )
+    ctrl.step(
+        _make_dummy_frame(_make_dummy_snapshot(t=2.2, lat=18.9250, lon=72.8347)),
+        _make_dummy_assessment(t=2.2, threat=True, attack_type=AttackType.GPS_SPOOFING, severity=Severity.CRITICAL),
     )
     assert ctrl.state == MitigationState.AUTO_MITIGATING
 
@@ -563,6 +570,7 @@ def test_trajectory_return_to_normal_with_active_ips():
 
     # 3. Switch to ACTIVE_IPS mid-attack: trajectory must steer back toward dead-reckoned lon (~72.9133)
     ctrl.set_mode(DefenseMode.ACTIVE_IPS)
+    ctrl.set_capabilities(ekf_secondary=True)
     for step_idx in range(1, 12):
         t = 1.0 + step_idx * 0.2
         # Spoofed lon keeps drifting further East
@@ -573,7 +581,7 @@ def test_trajectory_return_to_normal_with_active_ips():
         )
         act_ips = ctrl.step(_make_dummy_frame(snap_k), asmt_k)
         assert act_ips.sanitize_gps is True
-        assert act_ips.ekf_switched is True
+        assert act_ips.ekf_switched is (step_idx >= 2)  # confirmed on the 2nd consecutive tick
 
     # After ~11 ticks in ACTIVE_IPS, effective_lon has returned close to the nominal DR lon (72.9133)
     # and is far from the runaway spoofed lon (~72.9183)
@@ -720,12 +728,14 @@ def test_cusum_micro_drift_integrator_ids_and_ips():
 
     # 4. ACTIVE_IPS (Defense) mode: switches EKF and clamps micro-drift coordinates
     ctrl_ips = MitigationController(mode=DefenseMode.ACTIVE_IPS)
+    ctrl_ips.set_capabilities(ekf_secondary=True)
     ctrl_ips.step(_make_dummy_frame(_make_dummy_snapshot(t=0.0, lat=19.1334, lon=72.9133)), _make_dummy_assessment(t=0.0, threat=False))
+    ctrl_ips.step(frame_micro, asmt_micro)
     act_ips = ctrl_ips.step(frame_micro, asmt_micro)
     assert act_ips.sub_mode == AttackSubMode.GPS_GRADUAL_DRIFT
     assert act_ips.sanitize_gps is True
     assert act_ips.ekf_switched is True
-    assert len(act_ips.counter_frames) == 1
+    assert len(act_ips.counter_frames) == 2  # STATUSTEXT warning + EKF switch
 
 
 # --- 24. Control-Plane Token Auth & CORS/Origin Lockdown ---

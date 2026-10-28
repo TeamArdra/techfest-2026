@@ -14,6 +14,12 @@ from .sanitizer import FrameSanitizer
 from .submode_classifier import AttackSubModeClassifier
 from .types import AttackParameters, AttackSubMode, DefenseMode, MitigationAction, MitigationState
 
+_POSITION_DEPENDENT_MODES = frozenset({
+    "AUTO", "GUIDED", "LOITER", "RTL", "SMART_RTL", "POSHOLD", "BRAKE", "AUTO_RTL", "LAND", "CIRCLE",
+    "DRIFT", "THROW", "FOLLOW", "ZIGZAG",
+})
+_PILOT_MODE_COMMANDS = frozenset({176, 20, 21})  # DO_SET_MODE, NAV_RETURN_TO_LAUNCH, NAV_LAND
+
 
 class MitigationController:
     """Coordinates autonomous attack parameterization, frame sanitization, and recovery."""
@@ -24,8 +30,15 @@ class MitigationController:
         recovery_clean_ticks: int = 25,
         command_cooldown_s: float = 1.0,
         secret_key: bytes | None = None,
+        gps_confirm_ticks: int = 2,
+        gps_escalate_s: float = 3.0,
+        gps_switch_check_s: float = 4.0,
     ) -> None:
         self.mode = mode
+        self.gps_confirm_ticks = gps_confirm_ticks
+        self.gps_escalate_s = gps_escalate_s
+        self.gps_switch_check_s = gps_switch_check_s
+        self.ekf_secondary_available: bool = False
         self.recovery_clean_ticks = recovery_clean_ticks
         self.command_cooldown_s = command_cooldown_s
 
@@ -44,6 +57,19 @@ class MitigationController:
         self._last_cmd_name: str | None = None
         self._quarantined_sysids: set[int] = set()
         self.action_history: list[dict[str, Any]] = []
+        self._reset_gps_episode()
+
+    def _reset_gps_episode(self) -> None:
+        self._gps_episode = False
+        self._gps_ticks = 0
+        self._gps_confirm_t: float | None = None
+        self._gps_switch_t: float | None = None
+        self._gps_alt_hold_sent = False
+        self._gps_cancelled = False
+
+    def set_capabilities(self, ekf_secondary: bool | None = None) -> None:
+        """Declare what the aircraft has; None (unknown) counts as not available."""
+        self.ekf_secondary_available = bool(ekf_secondary)
 
     def _add_action(self, t: float, tag: str, detail: str) -> None:
         if self.action_history and self.action_history[-1]["tag"] == tag and abs(t - self.action_history[-1]["t"]) < 1.0:
@@ -63,6 +89,7 @@ class MitigationController:
                 self._ekf_switched = False
                 self._sanitize_gps_latched = False
                 self._last_cmd_name = None
+                self._reset_gps_episode()
             self._add_action(self.golden.anchor_t or 0.0, "MODE_CHANGE", f"Switched defense posture to {self.mode.value.upper()}")
 
     def reset(self) -> None:
@@ -75,6 +102,7 @@ class MitigationController:
         self._last_cmd_t.clear()
         self._last_cmd_name = None
         self._quarantined_sysids.clear()
+        self._reset_gps_episode()
         self.action_history.clear()
         self.golden.reset()
         self.classifier.reset()
@@ -105,6 +133,8 @@ class MitigationController:
         # --- A. Clean or sub-threshold tick: Recovery & nominal tracking ---
         if not is_threat:
             self._attack_streak = 0
+            if self._gps_confirm_t is None:
+                self._gps_ticks = 0
             if (
                 not asmt.threat
                 and asmt.severity == Severity.NORMAL
@@ -116,7 +146,8 @@ class MitigationController:
                     self.estimator.allowed_sysids.add(s)
             if self.state in (MitigationState.AUTO_MITIGATING, MitigationState.SAFE_HOLD):
                 self._clean_streak += 1
-                if self._clean_streak >= self.recovery_clean_ticks:
+                gps_gate_ok = not (self._gps_episode and frame.pos_residual_m >= 6.0)
+                if self._clean_streak >= self.recovery_clean_ticks and gps_gate_ok:
                     # Successfully recovered!
                     counter_frames: list[bytes] = []
                     if self.mode == DefenseMode.PASSIVE:
@@ -133,9 +164,12 @@ class MitigationController:
                             self._ekf_switched = False
 
                         # restore only a mode that was actually observed as trusted and can be encoded;
-                        # never a default (an AUTO fallback would start a mission)
+                        # never a default (an AUTO fallback would start a mission). Never after a GPS
+                        # episode: the position may have been spoofed, the pilot resumes the mission.
                         restore_mode = self.golden.trusted_mode
-                        if self.actuator.knows_mode(restore_mode) and self._can_send_command(f"RESTORE_{restore_mode}", t):
+                        if self._gps_episode:
+                            self._add_action(t, "GPS_RECOVERED", "GPS consistent again - pilot to resume")
+                        elif self.actuator.knows_mode(restore_mode) and self._can_send_command(f"RESTORE_{restore_mode}", t):
                             counter_frames.append(self.actuator.encode_set_mode(restore_mode))
                             self._record_command(f"RESTORE_{restore_mode}", t)
 
@@ -144,6 +178,7 @@ class MitigationController:
                         self._quarantined_sysids.clear()
 
                     self._sanitize_gps_latched = False
+                    self._reset_gps_episode()
                     self.state = MitigationState.NOMINAL
                     self._add_action(t, "RECOVERED", f"Telemetry verified clean for {self._clean_streak * 0.2:.1f}s -> Resumed nominal baseline")
                     return MitigationAction(
@@ -244,16 +279,15 @@ class MitigationController:
         rate_limit_active = False
 
         if self.mode == DefenseMode.ACTIVE_IPS:
+            if sub_mode.value.startswith("gps_spoofing") or sub_mode == AttackSubMode.DOS_GNSS_JAMMING:
+                self._gps_ladder(frame, t, counter_frames)
+            elif self._gps_confirm_t is None:
+                self._gps_ticks = 0
             # 1. GPS Spoofing Playbook (guarded against packet-reordering latency spikes)
             if sub_mode.value.startswith("gps_spoofing"):
                 sanitize_gps = True
                 self._sanitize_gps_latched = True
                 self._add_action(t, "SANITIZE_GPS", f"GPS sanitizer active: clamping N:{params.north_offset_m:.1f}m E:{params.east_offset_m:.1f}m false offset")
-                if not self._ekf_switched and self._can_send_command("EKF_SWITCH_SECONDARY", t):
-                    counter_frames.append(self.actuator.encode_ekf_source_switch(source_set=2))
-                    self._record_command("EKF_SWITCH_SECONDARY", t)
-                    self._ekf_switched = True
-                    self._add_action(t, "EKF_SWITCH", "Autopilot commanded to switch EKF to Optical Flow / Non-GPS DR")
 
             # 2. Command Injection Playbook
             elif asmt.attack_type == AttackType.COMMAND_INJECTION:
@@ -269,7 +303,7 @@ class MitigationController:
                     # reported only: nothing on this path drops the command before the autopilot
                     self._add_action(t, "VETO_DISARM", "Flagged motor arm/disarm command burst in flight (not blocked)")
 
-                if (self.actuator.knows_mode(params.target_restore_mode)
+                if (not self._gps_episode and self.actuator.knows_mode(params.target_restore_mode)
                         and self._can_send_command(f"RESTORE_{params.target_restore_mode}", t)):
                     counter_frames.append(self.actuator.encode_set_mode(params.target_restore_mode))
                     self._record_command(f"RESTORE_{params.target_restore_mode}", t)
@@ -306,10 +340,6 @@ class MitigationController:
                     sanitize_gps = True
                     self._sanitize_gps_latched = True
                     self._add_action(t, "ANTI_JAM_DR", "GNSS receiver jammed (fix lost) -> switched navigation to IMU/Baro dead reckoning")
-                    if not self._ekf_switched and self._can_send_command("EKF_SWITCH_SECONDARY", t):
-                        counter_frames.append(self.actuator.encode_ekf_source_switch(source_set=2))
-                        self._record_command("EKF_SWITCH_SECONDARY", t)
-                        self._ekf_switched = True
                 elif sub_mode == AttackSubMode.DOS_BLACKOUT:
                     self._add_action(t, "LINK_WATCHDOG", "Telemetry blackout/latency detected -> holding golden state & arming failsafe loiter")
 
@@ -323,7 +353,8 @@ class MitigationController:
                     self._add_action(t, "PREARM_LOCK", "Autopilot pre-arm check locked: tampered firmware")
 
             # 7. Safe Hold Escalation Playbook
-            if self.state == MitigationState.SAFE_HOLD and self._can_send_command("SET_MODE_ALT_HOLD", t):
+            if (self.state == MitigationState.SAFE_HOLD and not (self._gps_episode and self._gps_cancelled)
+                    and self._can_send_command("SET_MODE_ALT_HOLD", t)):
                 counter_frames.append(self.actuator.encode_set_mode("ALT_HOLD"))
                 self._record_command("SET_MODE_ALT_HOLD", t)
                 self._add_action(t, "SAFE_HOLD_CMD", "Counter-actuation dispatched: engaged ALT_HOLD loiter")
@@ -363,6 +394,56 @@ class MitigationController:
             actions=list(self.action_history),
             summary=summary,
         )
+
+    def _gps_ladder(self, frame: FeatureFrame, t: float, counter_frames: list[bytes]) -> None:
+        """Software-only GPS response: confirm, warn, (switch EKF if a secondary is declared), else ALT_HOLD."""
+        self._gps_episode = True
+        self._gps_ticks += 1
+        if self._gps_cancelled:
+            return
+        if self._gps_confirm_t is not None:
+            for c in frame.commands_recent:
+                if (c.command in _PILOT_MODE_COMMANDS and c.sysid in self.classifier.allowed_sysids
+                        and c.recv_time >= self._gps_confirm_t):
+                    self._gps_cancelled = True
+                    self._add_action(t, "GPS_PILOT_OVERRIDE", f"Pilot mode command {c.command} from sysid {c.sysid} -> GPS ladder cancelled")
+                    return
+        if self._gps_confirm_t is None:
+            if self._gps_ticks < self.gps_confirm_ticks:
+                return
+            self._gps_confirm_t = t
+            self._add_action(t, "GPS_CONFIRMED", f"GPS fault confirmed after {self._gps_ticks} ticks")
+            if self._can_send_command("STATUSTEXT_GPS", t):
+                counter_frames.append(self.actuator.encode_statustext("AEGIS: GPS unreliable - do not trust position"))
+                self._record_command("STATUSTEXT_GPS", t)
+            if self.ekf_secondary_available and not self._ekf_switched and self._can_send_command("EKF_SWITCH_SECONDARY", t):
+                counter_frames.append(self.actuator.encode_ekf_source_switch(source_set=2))
+                self._record_command("EKF_SWITCH_SECONDARY", t)
+                self._ekf_switched = True
+                self._gps_switch_t = t
+                self._add_action(t, "EKF_SWITCH", "Autopilot commanded to switch EKF to the declared non-GPS source set")
+            return
+        if self._gps_alt_hold_sent:
+            return
+        if self._gps_switch_t is not None:
+            # still in the threat branch here, so the threat persists; residual only documents it
+            if (t - self._gps_switch_t) < self.gps_switch_check_s - 1e-6:
+                return
+            reason = f"EKF switch unconfirmed after {self.gps_switch_check_s:.0f}s (residual {frame.pos_residual_m:.1f}m)"
+        else:
+            if (t - self._gps_confirm_t) < self.gps_escalate_s - 1e-6:
+                return
+            reason = "no secondary position source"
+        mode = frame.snapshot.flight_mode
+        # only an ArduCopter mode name is acted on: PX4 mode numbers mean something else, so those are never guessed
+        dependent = bool(mode) and self.actuator.knows_mode(mode) and str(mode).upper() in _POSITION_DEPENDENT_MODES
+        if frame.snapshot.armed is not True or not dependent:
+            return
+        if self._can_send_command("SET_MODE_ALT_HOLD", t):
+            counter_frames.append(self.actuator.encode_set_mode("ALT_HOLD"))
+            self._record_command("SET_MODE_ALT_HOLD", t)
+            self._gps_alt_hold_sent = True
+            self._add_action(t, "GPS_ALT_HOLD", f"{reason} -> ALT_HOLD so the aircraft stops trusting GPS")
 
     def manual_override(self, action: str) -> MitigationAction:
         """Handle manual GCS operator override commands."""

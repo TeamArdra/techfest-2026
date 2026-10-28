@@ -220,7 +220,8 @@ def _cmd_ips_bridge(args: argparse.Namespace) -> int:
                              trusted_sysids=tuple(args.trusted_sysid) if args.trusted_sysid else None,
                              store=store, run_id=run_id, secret_key=key,
                              allow_unsigned_from_trusted=args.signing_permissive,
-                             signing_max_age_s=args.signing_max_age_s, signing_state_path=args.signing_state)
+                             signing_max_age_s=args.signing_max_age_s, signing_state_path=args.signing_state,
+                             ekf_secondary=args.ekf_secondary)
     fc.start()
     gcs.start()
     bridge.start()
@@ -324,6 +325,9 @@ def build_parser() -> argparse.ArgumentParser:
                     help="also reject signed frames older than this on the bridge clock (needs a correct clock)")
     ib.add_argument("--signing-state", default=None,
                     help="file that keeps the last timestamp per stream across restarts (closes the post-restart replay window)")
+    ib.add_argument("--ekf-secondary", action="store_true",
+                    help="declare that the aircraft has a configured non-GPS EKF source set; only then may active-ips "
+                         "send the EKF source switch (default off: GPS faults escalate to ALT_HOLD instead)")
     ib.add_argument("--config-dir", default=None)
     ib.add_argument("--db", default=None, help="log alerts to this SQLite hash-chain store")
     ib.add_argument("--seconds", type=float, default=None, help="run time (default: until Ctrl-C)")

@@ -116,6 +116,14 @@ class PhysicsDetector(Detector):
         # as captured); the report is unauthenticated, so an injected one can activate it (it needs
         # >= 2 s of sustained no-solution reports).
         self.estimator_gate = bool(p.get("estimator_gate", True))
+        # EKF-health / receiver-signature rules (2026-10-28). UNCALIBRATED engineering defaults, not
+        # measured evidence (docs/DETECTION.md). Inert while the extended messages are absent.
+        self.ekf_var_warn = float(p.get("ekf_var_warn", 0.5))
+        self.ekf_var_reject = float(p.get("ekf_var_reject", 1.0))
+        self.sat_jump_min = int(p.get("sat_jump_min", 6))
+        self.snr_spread_min_db = float(p.get("snr_spread_min_db", 1.5))
+        self.snr_min_sats = int(p.get("snr_min_sats", 8))
+        self.vel_disagree_ms = float(p.get("gps_ekf_vel_disagree_ms", 3.0))
         self._soft_streak = 0
 
     def process(self, frame: FeatureFrame) -> DetectorResult:
@@ -258,6 +266,8 @@ class PhysicsDetector(Detector):
             bump(AttackType.TELEMETRY_MANIPULATION, max(0.5, s))
             evidence.append(f"heading/course mismatch {yc:.0f}° (attitude inconsistent with track)")
 
+        self._receiver_rules(frame, bump, evidence, signals)
+
         # ---- hysteresis on soft (non-hard) triggers ----
         if score > 0.0:
             self._soft_streak += 1
@@ -278,6 +288,57 @@ class PhysicsDetector(Detector):
             attack_votes=votes,
             signals=signals,
         )
+
+    def _receiver_rules(
+        self,
+        frame: FeatureFrame,
+        bump: Callable[..., None],
+        evidence: list[str],
+        signals: dict[str, float],
+    ) -> None:
+        """EKF-health and GPS receiver-signature rules; every field is None/0 when its message is
+        absent, so each rule is inert then. All are soft (damped until ``hysteresis_ticks``)."""
+        gs = AttackType.GPS_SPOOFING
+        ev, ep = frame.ekf_vel_var, frame.ekf_pos_var
+        if ev is not None and ep is not None:
+            worst = max(ev, ep)
+            signals["ekf_innovation_var"] = worst
+            if worst >= self.ekf_var_reject:
+                bump(gs, 0.7)
+                evidence.append(
+                    f"EKF innovation ratio {worst:.2f} ≥ {self.ekf_var_reject:.1f} "
+                    "(velocity/position variance: estimator rejecting its inputs)"
+                )
+            elif worst >= self.ekf_var_warn:
+                bump(gs, 0.3)
+                evidence.append(
+                    f"EKF innovation ratio {worst:.2f} ≥ {self.ekf_var_warn:.1f} (warning level)"
+                )
+        if frame.gps_sat_jump >= self.sat_jump_min and frame.snapshot.gps_fix_type >= 3:
+            signals["gps_sat_jump"] = float(frame.gps_sat_jump)
+            bump(gs, 0.6)
+            evidence.append(
+                f"satellites_visible changed by {frame.gps_sat_jump} between reports "
+                f"(≥ {self.sat_jump_min}) with the fix still valid"
+            )
+        sp = frame.gps_snr_spread_db
+        if sp is not None and frame.gps_snr_sats >= self.snr_min_sats:
+            signals["gps_snr_spread_db"] = sp
+            if sp < self.snr_spread_min_db:
+                bump(gs, 0.6)
+                evidence.append(
+                    f"GPS_STATUS SNR spread {sp:.2f} dB < {self.snr_spread_min_db:.1f} dB over "
+                    f"{frame.gps_snr_sats} satellites (uniform-power signals)"
+                )
+        vd = frame.gps_vel_disagree_ms
+        if vd is not None:
+            signals["gps_vel_disagree_ms"] = vd
+            if vd > self.vel_disagree_ms:
+                bump(gs, max(0.55, ramp(vd, self.vel_disagree_ms, self.vel_disagree_ms * 3)))
+                evidence.append(
+                    f"GPS_RAW_INT velocity differs from EKF velocity by {vd:.1f} m/s "
+                    f"> {self.vel_disagree_ms:.0f} m/s"
+                )
 
     def _residual_rule(self, pr: float, bump: Callable[..., None], evidence: list[str]) -> None:
         """The Stage-1 position-residual thresholds (soft / hard), unchanged."""

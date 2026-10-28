@@ -120,6 +120,12 @@ DEFAULT_DETECTOR: dict[str, Any] = {
         "battery_drop_rate_v_s": 2.0,  # nor drop absurdly fast
         "attitude_rate_consistency": 1.2,  # rad/s mismatch tolerance
         "hysteresis_ticks": 2,  # consecutive ticks before firing
+        "ekf_var_warn": 0.5,  # uncalibrated engineering defaults (docs/DETECTION.md)
+        "ekf_var_reject": 1.0,
+        "sat_jump_min": 6,
+        "snr_spread_min_db": 1.5,
+        "snr_min_sats": 8,
+        "gps_ekf_vel_disagree_ms": 3.0,
     },
     "anomaly": {
         "model_path": "models/isoforest.joblib",

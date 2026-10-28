@@ -102,6 +102,7 @@ Demo script: `docs/DEMO_RUNBOOK.md`.
     - 44 of 44 links without `EKF_STATUS_REPORT` replay byte-identically.
     - ALFA before/after differs only in the `unlabelled` category.
     - Evidence: `artifacts/validation/estimator_gate_v2/` (README, manifest).
+  - Extended 2026-10-28, additive: EKF_STATUS_REPORT variances, GPS_RAW_INT eph/vel, GPS_STATUS read by the extractor; user requested the EKF-health and receiver-signature rules in chat on 2026-10-28; ML_FEATURES unchanged.
   - See `docs/DETECTION.md` "Estimator-aware position residual".
 - **The event schema / hash-chain canonicalisation** — breaks existing logs.
 - **The benchmark scoring policy** (warmup/grace) — changing it changes reported

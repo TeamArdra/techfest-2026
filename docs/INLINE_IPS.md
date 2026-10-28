@@ -91,3 +91,15 @@ recomputes the CRC; if nothing needs changing it forwards the original bytes.
 - Without a signing key, trust is by sysid and an attacker who claims sysid 255 passes; use signing and set
   `--trusted-sysid` to the ground stations you actually use.
 - The vehicle's mode restore only works for ArduCopter mode names; PX4 modes are never guessed.
+
+## GPS response ladder
+
+In `active-ips`, a GPS spoofing or GNSS jamming episode is handled in software only, per episode, on decision ticks:
+
+1. Confirm after 2 consecutive threat ticks; send a STATUSTEXT warning.
+2. Without a declared secondary source (default): if the fault persists 3 s after confirmation and the vehicle is armed in a position-dependent mode (AUTO, GUIDED, LOITER, RTL, POSHOLD, ... or unknown), send one `ALT_HOLD`. The controller never sends AUTO/RTL/LOITER/GUIDED/POSHOLD/LAND during an episode.
+3. With `--ekf-secondary` (operator declares a configured non-GPS EKF source set): send the EKF source switch at confirmation; if the fault persists 4 s later, fall back to `ALT_HOLD`. Sensor messages never enable this automatically.
+4. A pilot mode command (DO_SET_MODE, RTL, LAND) from a trusted sysid after confirmation cancels the ladder for the episode.
+5. Recovery needs the clean-tick count and a position residual below 6 m. The EKF primary is restored only if we switched; the trusted flight mode is not restored (the pilot resumes). Command-injection episodes still restore the trusted mode.
+
+PASSIVE and ADVISORY never send control frames. `bridge.status()["analyser"]["ekf_secondary"]` shows the declared capability.

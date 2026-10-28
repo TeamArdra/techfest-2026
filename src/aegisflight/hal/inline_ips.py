@@ -100,6 +100,7 @@ class InlineIpsBridge:
         signing_max_age_s: float | None = None,
         signing_state_path: str | None = None,
         idle_sleep_s: float = 0.0005,
+        ekf_secondary: bool | None = None,
         clock_ns: Callable[[], int] = time.monotonic_ns,
     ) -> None:
         self.fc, self.gcs = fc, gcs
@@ -108,6 +109,7 @@ class InlineIpsBridge:
         proto = self.cfg.detector.get("protocol", {})
         self.pipeline = IDSPipeline(self.cfg, model_path=None, firmware_dir=None)  # ML is simulation-only
         self.controller = MitigationController(mode=DefenseMode(mode), secret_key=secret_key)
+        self.controller.set_capabilities(ekf_secondary=ekf_secondary)
         self.policy = InlinePolicy(
             self.controller.sanitizer,
             trusted_sysids=trusted_sysids if trusted_sysids is not None else tuple(proto.get("expected_gcs_sysids", (255, 254))),
@@ -288,6 +290,7 @@ class InlineIpsBridge:
                            "samples": len(lat)},
             "policy": self.policy.stats(),
             "analyser": {"decisions": self.decisions, "alerts": self.alerts, "errors": self.analyser_errors,
-                         "counter_frames_sent": self.counter_frames_sent, "summary": self.last_summary},
+                         "counter_frames_sent": self.counter_frames_sent, "summary": self.last_summary,
+                         "ekf_secondary": self.controller.ekf_secondary_available},
             "last_error": self.last_error,
         }

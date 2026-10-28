@@ -162,6 +162,26 @@ class FeatureFrame:
     pos_residual_nav_m: float | None = None
     pos_step_max_m: float = 0.0
     pos_vel_shortfall_gated_m: float = 0.0
+    # ADDITIVE (2026-10-28): EKF health and GPS receiver signature. NOT in ML_FEATURES. All are
+    # None (``gps_sat_jump``: 0) unless the extended MAVLink messages are present, so the SIM stream
+    # and any link without them is unchanged.
+    # ``ekf_vel_var`` / ``ekf_pos_var`` / ``ekf_compass_var``: EKF_STATUS_REPORT velocity_variance,
+    # pos_horiz_variance, compass_variance (ArduPilot normalised innovation ratios; >= 1.0 = the EKF
+    # rejects its inputs, >= 0.5 warning); None if never received or older than 2 s.
+    # ``gps_sat_jump``: |change| of GPS_RAW_INT.satellites_visible between consecutive reports, held
+    # for 1 s after it happens. ``gps_snr_spread_db``: std of the non-zero GPS_STATUS satellite_snr
+    # values (None without GPS_STATUS, older than 2 s, or fewer than 8 satellites);
+    # ``gps_snr_sats``: how many were non-zero. ``gps_vel_disagree_ms``: |GPS_RAW_INT.vel -
+    # hypot(GLOBAL_POSITION_INT vx, vy)|. The two receiver-signature fields that SIM also carries
+    # (sat jump, vel disagreement) are reported only once EKF_STATUS_REPORT or GPS_STATUS has been
+    # received, which keeps the SIM stream and the Stage-1 benchmark untouched.
+    ekf_vel_var: float | None = None
+    ekf_pos_var: float | None = None
+    ekf_compass_var: float | None = None
+    gps_sat_jump: int = 0
+    gps_snr_spread_db: float | None = None
+    gps_snr_sats: int = 0
+    gps_vel_disagree_ms: float | None = None
 
     @property
     def battery_v_rate_abs(self) -> float:
@@ -206,6 +226,16 @@ class FeatureExtractor:
         self._last_ekf_t = -1e9
         self._ekf_flags: int | None = None
         self._nosol_since: float | None = None  # first report of the current no-solution run
+        self._ekf_vars: tuple[float, float, float] | None = None  # (vel, pos_horiz, compass)
+        self._ext_seen = False  # EKF_STATUS_REPORT or GPS_STATUS ever received
+        self._prev_sats: int | None = None
+        self._prev_valid = False
+        self._sat_jump = 0
+        self._sat_jump_t = -1e9
+        self._raw_vel_ms: float | None = None
+        self._raw_vel_t = -1e9
+        self._snr: tuple[float, int] | None = None  # (spread dB, n satellites) or None
+        self._snr_t = -1e9
 
         # navigation bookkeeping
         self._resid_incs: deque[tuple[float, float]] = deque(maxlen=_RESID_WINDOW)
@@ -302,6 +332,28 @@ class FeatureExtractor:
             self.snapshot.satellites = int(f.get("satellites_visible", 0))
             self.snapshot.gps_fix_type = int(f.get("fix_type", 0))
             self.snapshot.hdop = f.get("eph", 0) / 100.0
+            sats = self.snapshot.satellites
+            # a jump counts only with a 3D fix on BOTH reports: satellites returning after a fix
+            # loss (or leaving with it) is receiver recovery / jamming, handled by other rules
+            valid = self.snapshot.gps_fix_type >= 3
+            if self._prev_sats is not None and valid and self._prev_valid and sats != self._prev_sats:
+                self._sat_jump = abs(sats - self._prev_sats)
+                self._sat_jump_t = t
+            self._prev_sats = sats
+            self._prev_valid = valid
+            vel = f.get("vel")
+            if vel is not None and int(vel) != 65535:  # 65535 = unknown
+                self._raw_vel_ms = int(vel) / 100.0
+                self._raw_vel_t = t
+        elif name == "GPS_STATUS" and "satellite_snr" in f:
+            self._ext_seen = True
+            vals = [float(x) for x in f["satellite_snr"] if x]
+            self._snr_t = t
+            if len(vals) >= 8:
+                mean = sum(vals) / len(vals)
+                self._snr = ((sum((x - mean) ** 2 for x in vals) / len(vals)) ** 0.5, len(vals))
+            else:
+                self._snr = None
         elif name == "EKF_STATUS_REPORT" and "flags" in f:
             flags = int(f["flags"])
             if ekf_has_horizontal_solution(flags):
@@ -310,6 +362,13 @@ class FeatureExtractor:
                 self._nosol_since = t  # a new no-solution run (first one, or after a report gap)
             self._last_ekf_t = t
             self._ekf_flags = flags
+            self._ext_seen = True
+            if all(k in f for k in ("velocity_variance", "pos_horiz_variance", "compass_variance")):
+                self._ekf_vars = (
+                    float(f["velocity_variance"]),
+                    float(f["pos_horiz_variance"]),
+                    float(f["compass_variance"]),
+                )
         elif name == "COMMAND_LONG":
             params = tuple(f.get(f"param{i}", 0.0) for i in range(1, 8))
             self._commands.append(
@@ -460,6 +519,21 @@ class FeatureExtractor:
             yaw_deg = math.degrees(snap.yaw) % 360.0
             yaw_course = abs(wrap_deg_180(yaw_deg - course))
 
+        # ---- EKF health / GPS receiver signature (ADDITIVE 2026-10-28) ----
+        ekf_vars = self._ekf_vars if ekf_seen and t - self._last_ekf_t <= _LINK_GAP_S else None
+        sat_jump = 0
+        vel_disagree: float | None = None
+        if self._ext_seen:
+            if t - self._sat_jump_t <= 1.0:
+                sat_jump = self._sat_jump
+            if (
+                self._raw_vel_ms is not None
+                and t - self._raw_vel_t <= _LINK_GAP_S
+                and snap.gps_age <= _LINK_GAP_S
+            ):
+                vel_disagree = abs(self._raw_vel_ms - gps_speed)
+        snr = self._snr if t - self._snr_t <= _LINK_GAP_S else None
+
         # ---- command ----
         recent = [c for c in self._commands if c.recv_time >= t - self.cmd_window_s]
         cmd_rate = len(recent) / self.cmd_window_s if self.cmd_window_s > 0 else 0.0
@@ -500,6 +574,13 @@ class FeatureExtractor:
             pos_residual_nav_m=pos_residual_nav if ekf_seen else None,
             pos_step_max_m=pos_step_max,
             pos_vel_shortfall_gated_m=pos_vel_shortfall_gated,
+            ekf_vel_var=ekf_vars[0] if ekf_vars else None,
+            ekf_pos_var=ekf_vars[1] if ekf_vars else None,
+            ekf_compass_var=ekf_vars[2] if ekf_vars else None,
+            gps_sat_jump=sat_jump,
+            gps_snr_spread_db=snr[0] if snr else None,
+            gps_snr_sats=snr[1] if snr else 0,
+            gps_vel_disagree_ms=vel_disagree,
         )
 
     # -- small numeric helpers --------------------------------------------- #

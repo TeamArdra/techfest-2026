@@ -262,6 +262,26 @@ ungated fix after a gated one is the *transition* fix. Each fix's residual incre
     and 0.70 m, pinned by the REPLAY-of-BENCH test).
 * `false` restores the Stage-1 rule exactly. Tests: `tests/unit/test_gps_scenarios_fused.py`.
 
+### EKF-health and GPS receiver-signature rules (2026-10-28, additive)
+
+Software-only checks on messages any flight controller already streams (`EKF_STATUS_REPORT`,
+`GPS_RAW_INT`, `GPS_STATUS`). All vote `GPS_SPOOFING`, are soft (damped until `hysteresis_ticks`),
+and are **inert when the messages are absent**, so SIM, the Stage-1 benchmark and existing replays
+are unchanged. Thresholds are optional `physics` keys in `configs/detector.yaml`.
+
+| Rule | Default | Score |
+|---|---|---|
+| EKF velocity or position variance ≥ `ekf_var_reject` | 1.0 | 0.7 (≥ `ekf_var_warn` 0.5: 0.3, evidence only) |
+| `satellites_visible` jump ≥ `sat_jump_min` with fix_type ≥ 3 on both reports (recovery after a fix loss does not count) | 6 | 0.6 |
+| SNR spread < `snr_spread_min_db` with ≥ `snr_min_sats` satellites | 1.5 dB, 8 | 0.6 |
+| \|`GPS_RAW_INT.vel` − GPS-position speed\| > `gps_ekf_vel_disagree_ms` | 3 m/s | ≥ 0.55 |
+
+**Limits.** These thresholds are uncalibrated engineering defaults, not measured evidence; they
+have only been exercised on synthetic frames (`tests/unit/test_gps_receiver_signature.py`). The
+velocity and satellite-jump fields are reported only once EKF_STATUS_REPORT or GPS_STATUS has been
+received (SIM carries `GPS_RAW_INT` too). The messages are unauthenticated and can be forged. A
+slow drift that stays inside IMU error is physically undetectable by software alone.
+
 ## Detector C — ML anomaly (`detectors/anomaly.py`)
 
 Benign-trained **ensemble** over the 11-feature `ML_FEATURES` vector, combined

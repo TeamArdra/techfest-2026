@@ -136,6 +136,7 @@ def audit_ips_trajectory_recovery() -> None:
 
     # B. ACTIVE IPS mode verification (EKF switch + Dead-Reckoning Recovery)
     ctrl_ips = MitigationController(mode=DefenseMode.ACTIVE_IPS)
+    ctrl_ips.set_capabilities(ekf_secondary=True)
     ctrl_ips.step(FeatureFrame(t=0.0, snapshot=snap0), _make_asmt(t=0.0, threat=False))
 
     # Multiple ticks of spoofing
@@ -296,8 +297,10 @@ def audit_cusum_micro_drift() -> None:
     act_ids = ctrl_ids.step(frame_m, asmt_m)
 
     ctrl_ips = MitigationController(mode=DefenseMode.ACTIVE_IPS)
+    ctrl_ips.set_capabilities(ekf_secondary=True)
     ctrl_ips.step(FeatureFrame(t=0.0, snapshot=snap_m), _make_asmt(t=0.0, threat=False))
-    act_ips = ctrl_ips.step(frame_m, asmt_m)
+    ctrl_ips.step(frame_m, asmt_m)
+    act_ips = ctrl_ips.step(frame_m, asmt_m)  # GPS fault is confirmed on the 2nd consecutive tick
 
     if (
         res_p.triggered
