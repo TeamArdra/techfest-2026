@@ -238,6 +238,14 @@ def _cmd_ips_bridge(args: argparse.Namespace) -> int:
     fc.start()
     gcs.start()
     bridge.start()
+    status_srv = None
+    if args.status_port:
+        from ..hal.status_server import BridgeStatusServer
+
+        try:
+            status_srv = BridgeStatusServer(bridge, args.status_port).start()
+        except OSError as exc:
+            print(f"aegis ips-bridge: cannot bind status port: {exc}", file=sys.stderr)
     print(f"aegis ips-bridge: {args.fc_port} <-> {args.gcs_port}, posture {args.defense_mode}", flush=True)
     end = None if args.seconds is None else time.monotonic() + args.seconds
     try:
@@ -247,6 +255,8 @@ def _cmd_ips_bridge(args: argparse.Namespace) -> int:
     except KeyboardInterrupt:
         pass
     finally:
+        if status_srv is not None:
+            status_srv.close()
         bridge.close()
         if store is not None:
             store.close()
@@ -350,6 +360,8 @@ def build_parser() -> argparse.ArgumentParser:
     ib.add_argument("--db", default=None, help="log alerts to this SQLite hash-chain store")
     ib.add_argument("--seconds", type=float, default=None, help="run time (default: until Ctrl-C)")
     ib.add_argument("--status-interval", type=float, default=5.0)
+    ib.add_argument("--status-port", type=int, default=0,
+                    help="serve GET /status (bridge state as JSON) on 127.0.0.1:PORT, read-only (default: off)")
     ib.set_defaults(func=_cmd_ips_bridge)
 
     v = sub.add_parser("verify-log", help="verify a SQLite event-log hash chain")

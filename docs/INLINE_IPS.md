@@ -122,3 +122,10 @@ summary seen the monitor is inert.
 Limits: sampled at 1 Hz, so a forged frame with a different `time_boot_ms` is never compared; without a key the
 summary itself can be forged; it works only if the GCS-side IDS sees the bridge summary on the same link.
 Not measured on hardware.
+
+## Status endpoint
+
+`aegis ips-bridge --status-port N` (default off) starts a read-only HTTP server on `127.0.0.1:N` (loopback only).
+`GET /status` returns the same JSON as the periodic status line (`mode`, `state`, `frames`, `latency_us`, `policy`,
+`analyser`, `last_error`) plus `"crossend": {"sent": n}`. Only GET is served (other methods: 405); there are no write
+endpoints. CORS echoes the `Origin` only for the dashboard's allowed origins (localhost dev ports, Tauri).

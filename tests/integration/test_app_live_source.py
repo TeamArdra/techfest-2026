@@ -430,24 +430,34 @@ def test_replay_source_finishes_as_ended(tmp_path):
 
 
 def test_replay_drives_mitigation_and_broadcasts_updates(tmp_path):
-    """A recorded stream with alerts (mitigation leaves NOMINAL) still reaches the end state, drives the
-    mitigation state machine and is broadcast to subscribers (Stage-2 behaviour: the dashboard twin and the
-    compact-telemetry skip apply to every source)."""
+    """A recorded stream with alerts reaches the end state, drives the mitigation state machine, broadcasts one
+    update per tick with the pipeline's own telemetry, and the simulated twin never runs."""
     tlog = _bad_fix_tlog(tmp_path)  # SYNTHETIC: GNSS-rule DOS alerts move the mitigation state off NOMINAL
     engine = make_engine(tmp_path, replay_spec(tlog))
     broadcast = []
+    ticks = []
     orig_broadcast = engine._broadcast
+    orig_process = engine._process
+
+    async def recording_process(tick):
+        await orig_process(tick)
+        ticks.append(engine.pipeline._telemetry_dict())
 
     async def recording_broadcast(msg):
         broadcast.append(msg)
         await orig_broadcast(msg)
 
+    engine._process = recording_process
     engine._broadcast = recording_broadcast
     with serve(engine) as client:
         st, _ = poll(client, lambda s: link(s)["state"] == "ended", timeout_s=30)
     assert link(st)["state"] == "ended"
     assert engine.mitigation.action_history, "the stream should have driven the mitigation state machine"
-    assert len(broadcast) > 1 and broadcast[-1]["link"]["state"] == "ended"
+    assert broadcast[-1]["link"]["state"] == "ended"
+    updates = [m for m in broadcast if m.get("type") == "update"][:len(ticks)]  # + one trailing end-state update
+    assert len(broadcast) == len(ticks) + 1 and len(ticks) > 1, (len(updates), len(ticks))  # one update per tick, none skipped
+    assert engine._cp_lat is None and engine._ips_lat is None  # twin never ran
+    assert updates[-1]["telemetry"] == ticks[-1] == updates[-1]["sanitized_telemetry"]
 
 
 # --------------------------------------------------------------------------- #
@@ -985,3 +995,65 @@ def test_ws_update_run_id_is_the_current_run(tmp_path, kind):
                     pytest.fail("no WebSocket update carried the new run id after reset")
                 assert all(ws.receive_json()["run_id"] == new_run for _ in range(3))
     assert run.startswith("replay-" if kind == "replay" else "live-")
+
+
+# --------------------------------------------------------------------------- #
+# position fidelity + checks block
+# --------------------------------------------------------------------------- #
+
+def _moving_track_tlog(tmp_path: Path, n: int = 40) -> tuple[Path, list[tuple[int, int]]]:
+    """SYNTHETIC: n GLOBAL_POSITION_INT fixes on a moving track (+ one (0,0) no-GPS fix), 5 Hz, with heartbeats."""
+    m = mav.MAVLink(None, srcSystem=1, srcComponent=1)
+    frames: list[tuple[float, bytes]] = []
+    fixes: list[tuple[int, int]] = []
+    for k in range(n + 1):
+        t = k * 0.2
+        if k % 5 == 0:
+            m.seq = (m.seq + 1) & 0xFF
+            frames.append((t, bytes(m.heartbeat_encode(2, 3, 81, 0, 4, 3).pack(m))))
+        lat, lon = (0, 0) if k == 20 else (473_977_000 + k * 137, 85_456_000 + k * 91)
+        fixes.append((lat, lon))
+        m.seq = (m.seq + 1) & 0xFF
+        frames.append((t, bytes(m.global_position_int_encode(int(t * 1000), lat, lon, 500_000, 20_000,
+                                                             0, 0, 0, 0).pack(m))))
+    return write_tlog(tmp_path / "track.tlog", frames), fixes
+
+
+def test_replay_position_is_broadcast_exactly_as_received(tmp_path):
+    tlog, fixes = _moving_track_tlog(tmp_path)
+    engine = make_engine(tmp_path, replay_spec(tlog))
+    got = []
+    orig = engine._broadcast
+
+    async def rec(msg):
+        got.append(msg)
+        await orig(msg)
+
+    engine._broadcast = rec
+    with serve(engine) as client:
+        poll(client, lambda s: link(s)["state"] == "ended", timeout_s=30)
+    ups = [m for m in got if m.get("type") == "update" and m["telemetry"].get("lat") is not None]
+    assert ups
+    seen = [(u["telemetry"]["lat"], u["telemetry"]["lon"]) for u in ups]
+    for lat, lon in fixes:
+        assert any(abs(a - lat / 1e7) < 1e-7 and abs(b - lon / 1e7) < 1e-7 for a, b in seen), (lat, lon)
+    for u in ups:
+        assert u["sanitized_telemetry"]["lat"] == u["telemetry"]["lat"]
+        assert u["sanitized_telemetry"]["lon"] == u["telemetry"]["lon"]
+        assert any(abs(u["telemetry"]["lat"] - la / 1e7) < 1e-7 and abs(u["telemetry"]["lon"] - lo / 1e7) < 1e-7
+                   for la, lo in fixes), u["telemetry"]
+    assert engine._cp_lat is None
+
+
+def test_checks_block_null_for_sim_and_shaped_for_replay(tmp_path):
+    with serve(make_engine(tmp_path, SourceSpec(kind="sim"), "sim.sqlite")) as client:
+        assert client.get("/api/status").json()["checks"] is None
+    tlog, _ = _moving_track_tlog(tmp_path)
+    with serve(make_engine(tmp_path, replay_spec(tlog))) as client:
+        st, _ = poll(client, lambda s: link(s)["state"] == "ended", timeout_s=30)
+    c = st["checks"]
+    assert set(c) == {"mission", "crossend", "receiver"}
+    assert set(c["mission"]) == {"known", "xtrack_m", "wp_seq"} and c["mission"]["known"] is False
+    assert set(c["crossend"]) == {"active", "matched", "mismatches", "last_summary_age_s"}
+    assert c["crossend"]["active"] is False
+    assert set(c["receiver"]) == {"ekf_vel_var", "ekf_pos_var", "sat_jump", "snr_spread"}

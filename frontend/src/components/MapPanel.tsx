@@ -1,4 +1,5 @@
-import type { DefenseMode, MitigationInfo, Telemetry, Threat } from "../types";
+import type { DefenseMode, Environment, MitigationInfo, Telemetry, Threat } from "../types";
+import { extentOf, fitExtent, niceScale, projectTrack, toLocal, type LatLon } from "../lib/geo";
 import { THREAT_THRESHOLD } from "../lib/constants";
 
 interface Props {
@@ -14,6 +15,8 @@ interface Props {
   mitigation?: MitigationInfo | null;
   attackActive?: string | null;
   topology?: string;
+  origin?: LatLon | null; // first valid fix of the run (local-frame origin)
+  environment?: Environment | null;
   note: string; // what the positions are (simulated / replayed / bench, not flight) — lib/source.ts
 }
 
@@ -39,11 +42,15 @@ export function MapPanel({
   mitigation,
   attackActive,
   topology,
+  origin,
+  environment,
   note,
 }: Props) {
+  const isSim = environment == null || environment === "SIM";
   const W = 680, H = 410, pad = 34;
   const active = !!threat?.threat;
-  const isIpsActive = defenseMode === "active-ips";
+  // protected / ghost / IPS-restored overlays exist only for the simulator
+  const isIpsActive = isSim && defenseMode === "active-ips";
   const isSanitizingGps = isIpsActive && !!(mitigation?.sanitize_gps || mitigation?.ekf_switched);
   const isIpsProtecting =
     isIpsActive &&
@@ -107,49 +114,32 @@ export function MapPanel({
   let spanM = 0;
   let hasDivergence = false;
 
-  if (track.length > 1) {
-    const lats = track.map((p) => p[0]);
-    const lons = track.map((p) => p[1]);
-    const lat0 = (Math.min(...lats) + Math.max(...lats)) / 2;
-    const mPerLat = 111_320;
-    const mPerLon = 111_320 * Math.cos((lat0 * Math.PI) / 180);
-    const xs = track.map((p) => (p[1] - lons[0]) * mPerLon);
-    const ys = track.map((p) => (p[0] - lats[0]) * mPerLat);
+  if (origin && track.length > 0) {
+    const pts = projectTrack(track, origin);
+    const xs = pts.map((p) => p[0]);
+    const ys = pts.map((p) => p[1]);
+    let ext = extentOf(pts);
 
-    let minX = Math.min(...xs), maxX = Math.max(...xs);
-    let minY = Math.min(...ys), maxY = Math.max(...ys);
-
-    // Compute raw spoofed coordinates in the same local metre frame
-    let rawXs: number[] = [];
-    let rawYs: number[] = [];
-    if (rawTrack && rawTrack.length > 1) {
-      rawXs = rawTrack.map((p) => (p[1] - lons[0]) * mPerLon);
-      rawYs = rawTrack.map((p) => (p[0] - lats[0]) * mPerLat);
+    let rawPts: Array<[number, number]> = [];
+    if (isSim && rawTrack && rawTrack.length > 1) {
+      rawPts = projectTrack(rawTrack, origin);
       // rawTrack is scoped to the current attack episode (see useLiveData), so compare the
       // two LATEST fixes rather than index-aligning against the full effective history.
-      const sepM = Math.hypot(rawXs[rawXs.length - 1] - xs[xs.length - 1], rawYs[rawYs.length - 1] - ys[ys.length - 1]);
+      const r = rawPts[rawPts.length - 1];
+      const sepM = Math.hypot(r[0] - xs[xs.length - 1], r[1] - ys[ys.length - 1]);
       hasDivergence = isIpsActive && isPositionAttack && (isSanitizingGps || sepM > 2.5);
-
       if (hasDivergence) {
-        // Expand viewport modestly (up to +65m margin) so the diverging spoofed ghost track
-        // is clearly visible without shrinking the main flight loop into a speck.
-        const margin = 65;
-        for (let i = 0; i < rawXs.length; i++) {
-          minX = Math.min(minX, Math.max(xs[0] - 250, Math.min(minX, rawXs[i]), minX - margin));
-          maxX = Math.max(maxX, Math.min(xs[0] + 250, Math.max(maxX, rawXs[i]), maxX + margin));
-          minY = Math.min(minY, Math.max(ys[0] - 250, Math.min(minY, rawYs[i]), minY - margin));
-          maxY = Math.max(maxY, Math.min(ys[0] + 250, Math.max(maxY, rawYs[i]), maxY + margin));
-        }
+        // include the ghost, but clamp to +-250 m of the start so the real track never shrinks to a speck
+        const clamp = (v: number, c: number) => Math.max(c - 250, Math.min(c + 250, v));
+        const all = pts.concat(rawPts.map((q): [number, number] => [clamp(q[0], xs[0]), clamp(q[1], ys[0])]));
+        ext = extentOf(all);
       }
     }
 
-    const span = Math.max(maxX - minX, maxY - minY, 20);
-    spanM = span;
-    const sx = (x: number) => pad + ((x - minX) / span) * (W - 2 * pad);
-    const sy = (y: number) => H - pad - ((y - minY) / span) * (H - 2 * pad);
-    path = track.map((_, i) => `${i ? "L" : "M"}${sx(xs[i]).toFixed(1)},${sy(ys[i]).toFixed(1)}`).join(" ");
-    // Overlay only the fixes flown under threat (index-aligned flags), so an attack
-    // recolours its own segment instead of repainting the entire flight history.
+    const fit = fitExtent(ext, W, H, pad);
+    spanM = Math.min(W - 2 * pad, H - 2 * pad) / fit.pxPerM;
+    const sx = fit.sx, sy = fit.sy;
+    path = pts.map((_, i) => `${i ? "L" : "M"}${sx(xs[i]).toFixed(1)},${sy(ys[i]).toFixed(1)}`).join(" ");
     if (trackThreat && trackThreat.length === track.length) {
       const segs: string[] = [];
       for (let i = 1; i < track.length; i++) {
@@ -161,15 +151,19 @@ export function MapPanel({
       threatPath = segs.join(" ");
     }
     head = [sx(xs[xs.length - 1]), sy(ys[ys.length - 1])];
-    start = [sx(xs[0]), sy(ys[0])];
+    const o = toLocal(origin, origin[0], origin[1]);
+    start = [sx(o[0]), sy(o[1])];
 
-    if (hasDivergence && rawXs.length > 1) {
-      rawPath = rawXs.map((_, i) => `${i ? "L" : "M"}${sx(rawXs[i]).toFixed(1)},${sy(rawYs[i]).toFixed(1)}`).join(" ");
-      const rx = Math.max(pad + 6, Math.min(W - pad - 6, sx(rawXs[rawXs.length - 1])));
-      const ry = Math.max(pad + 6, Math.min(H - pad - 6, sy(rawYs[rawYs.length - 1])));
-      rawHead = [rx, ry];
+    if (hasDivergence && rawPts.length > 1) {
+      rawPath = rawPts.map((q, i) => `${i ? "L" : "M"}${sx(q[0]).toFixed(1)},${sy(q[1]).toFixed(1)}`).join(" ");
+      const lq = rawPts[rawPts.length - 1];
+      rawHead = [
+        Math.max(pad + 6, Math.min(W - pad - 6, sx(lq[0]))),
+        Math.max(pad + 6, Math.min(H - pad - 6, sy(lq[1]))),
+      ];
     }
   }
+  const noFix = !origin || track.length === 0;
 
   // scale bar: a clean ~1/4-frame reference in metres
   const scaleM = niceScale(spanM / 4);
@@ -177,13 +171,15 @@ export function MapPanel({
 
   // -------- vertical altitude profile (0-100m) --------
   const AH = 44;
+  // SIM keeps the fixed 0-100 m strip; real data auto-scales (rel_alt in metres, floor 10 m)
+  const altMax = isSim ? 100 : Math.max(10, Math.ceil(Math.max(0, ...(altHistory ?? []).map((h) => Math.max(h.rawAlt, h.effAlt))) / 10) * 10);
   let rawAltPath = "";
   let effAltPath = "";
   let hasAltDivergence = false;
   if (altHistory && altHistory.length > 1) {
     const nA = altHistory.length;
     const ax = (i: number) => (i / (nA - 1)) * W;
-    const ay = (alt: number) => AH - Math.max(0, Math.min(100, alt)) * (AH / 100);
+    const ay = (alt: number) => AH - Math.max(0, Math.min(altMax, alt)) * (AH / altMax);
     rawAltPath = "M" + altHistory.map((h, i) => `${ax(i).toFixed(1)},${ay(h.rawAlt).toFixed(1)}`).join(" L");
     effAltPath = "M" + altHistory.map((h, i) => `${ax(i).toFixed(1)},${ay(h.effAlt).toFixed(1)}`).join(" L");
     hasAltDivergence = altHistory.some((h) => h.diverging);
@@ -208,7 +204,7 @@ export function MapPanel({
     <div className="panel">
       <header>
         <span className="panel-title">Flight Track</span>
-        <span className="panel-note">local frame · {track.length} fixes · {note}</span>
+        <span className="panel-note">local frame · {track.length} fixes · {isSim ? "" : `${environment} as received · `}{note}</span>
       </header>
 
       <div className="map-frame">
@@ -325,6 +321,13 @@ export function MapPanel({
             )}
           </g>
 
+          {noFix && (
+            <g data-testid="no-fix">
+              <text x={W / 2} y={H / 2 - 4} textAnchor="middle" fill="var(--muted)" fontSize="16" fontFamily="var(--mono)" fontWeight="700">NO POSITION FIX</text>
+              <text x={W / 2} y={H / 2 + 16} textAnchor="middle" fill="var(--faint)" fontSize="10.5" fontFamily="var(--mono)">waiting for a valid GPS position (null, 0/0 and out-of-range fixes are ignored)</text>
+            </g>
+          )}
+
           {/* scale bar */}
           {scalePx > 0 && (
             <g>
@@ -345,7 +348,7 @@ export function MapPanel({
             </g>
           )}
         </svg>
-        <span className="map-corner tl">Local Frame</span>
+        <span className="map-corner tl">Local Frame · N↑{isSim ? "" : ` · ${environment}`}</span>
         <span
           className="map-corner tr"
           style={{
@@ -359,9 +362,11 @@ export function MapPanel({
         >
           {isIpsProtecting
             ? `🛡️ IPS Protected · ${topology === "a" ? "Topology A (Sidecar)" : "Topology B (Inline)"}`
-            : active
-              ? "● Track under threat (Unprotected)"
-              : "● Nominal"}
+            : !isSim
+              ? `● ${environment} · track as received`
+              : active
+                ? "● Track under threat (Unprotected)"
+                : "● Nominal"}
         </span>
       </div>
 
@@ -369,16 +374,16 @@ export function MapPanel({
       <div className="timeline" style={{ marginBottom: 6 }}>
         <div className="tl-head" style={{ marginBottom: 2 }}>
           <span className="lbl" style={{ fontSize: 11 }}>
-            Vertical Altitude Profile (0–100 m)
+            Vertical Altitude Profile (0–{altMax} m{isSim ? "" : ", rel. home"})
           </span>
           <span className="now" style={{ fontSize: 10 }}>
-            {`eff ${fmtNum(effTele?.rel_alt, 1)}m · raw ${fmtNum(telemetry?.rel_alt, 1)}m`}
+            {isSim ? `eff ${fmtNum(effTele?.rel_alt, 1)}m · raw ${fmtNum(telemetry?.rel_alt, 1)}m` : `rel_alt ${fmtNum(telemetry?.rel_alt, 1, "—")} m`}
           </span>
         </div>
         <svg className="spark" viewBox={`0 0 ${SW} ${AH}`} style={{ height: AH }} preserveAspectRatio="none">
           {/* 60m survey baseline */}
-          <line x1="0" y1={AH - (60 / 100) * AH} x2={SW} y2={AH - (60 / 100) * AH} stroke="#273240" strokeDasharray="3 3" strokeWidth="1" />
-          <text x={SW - 32} y={AH - (60 / 100) * AH - 2} fill="#6b7280" fontSize="8.5" fontFamily="var(--mono)">60m</text>
+          {isSim && <line x1="0" y1={AH - (60 / 100) * AH} x2={SW} y2={AH - (60 / 100) * AH} stroke="#273240" strokeDasharray="3 3" strokeWidth="1" />}
+          {isSim && <text x={SW - 32} y={AH - (60 / 100) * AH - 2} fill="#6b7280" fontSize="8.5" fontFamily="var(--mono)">60m</text>}
           {/* raw alt line */}
           {rawAltPath && (
             <path
@@ -421,11 +426,3 @@ export function MapPanel({
   );
 }
 
-// round a metre span down to a clean 1/2/5 × 10ⁿ value for the scale bar
-function niceScale(x: number): number {
-  if (x <= 0) return 0;
-  const pow = Math.pow(10, Math.floor(Math.log10(x)));
-  const f = x / pow;
-  const nice = f >= 5 ? 5 : f >= 2 ? 2 : 1;
-  return nice * pow;
-}

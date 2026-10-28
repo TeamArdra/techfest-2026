@@ -8,9 +8,10 @@ interface Props {
   env: EnvView;
   link: LinkView;
   defenseMode?: DefenseMode;
+  onSettings?: () => void;
 }
 
-export function Header({ connected, clock, mlAvailable, env, link, defenseMode }: Props) {
+export function Header({ connected, clock, mlAvailable, env, link, defenseMode, onSettings }: Props) {
   const mm = Math.floor(clock / 60);
   const ss = Math.floor(clock % 60);
   const def = defenseMode || "passive";
@@ -53,6 +54,11 @@ export function Header({ connected, clock, mlAvailable, env, link, defenseMode }
           <span>Backend</span>
           <span className="val">{connected ? "Connected" : "Disconnected"}</span>
         </div>
+        {onSettings && (
+          <div className="stat">
+            <button type="button" data-testid="open-settings" onClick={onSettings} title="Backend / bridge URL settings">Settings</button>
+          </div>
+        )}
       </div>
     </header>
   );

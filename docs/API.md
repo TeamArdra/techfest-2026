@@ -104,6 +104,12 @@ Example (REPLAY of the BENCH capture 007 at its end; scratch run, 2026-10-20):
 the first decision `integrity_status` is `VALID` for SIM and `UNKNOWN` otherwise.
 `sim_time_s` is the source's tick clock (replay / monitor time for non-SIM).
 
+`checks` (in `/api/status` and every WebSocket update): `null` for SIM, else
+`{"mission":{"known","xtrack_m","wp_seq"},"crossend":{"active","matched","mismatches","last_summary_age_s"},
+"receiver":{"ekf_vel_var","ekf_pos_var","sat_jump","snr_spread"}}`, taken from the last feature frame and the
+cross-end monitor; unavailable values are `null`. For non-SIM sources `telemetry` is exactly what the pipeline
+received (no simulated twin) and every tick is broadcast.
+
 ### `GET /api/metrics`
 ```json
 {"messages_processed":1620,"decisions":300,"alerts":15,"throughput_msgs_per_s":26.7,

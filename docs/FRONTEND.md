@@ -61,3 +61,12 @@ No mock/demo data — every number comes from the backend.
 The header shows a persistent **● Simulation** badge and the footer states all
 data/attacks are local simulations — simulated attacks must never look like a
 real UAV under attack.
+
+## Running against a live link / the desktop app
+
+Start the backend on the CLI default port with the source you want (see `aegis serve --help`), e.g. `aegis serve --port 8000 ...`, then:
+
+- **Browser dev server** (`npm run dev`, :5173) proxies `/api`, `/health`, `/ws` to `VITE_BACKEND_PORT` (default 8000).
+- **Backend URL** resolution, first match wins: `window.__AEGIS_BACKEND__`, localStorage `aegis_backend_url`, build-time `VITE_BACKEND_URL`, inside the Tauri desktop app `http://127.0.0.1:8000`, otherwise same-origin. Set or clear it from the header **Settings** button (http/https URLs only; the page reloads to reconnect). The WebSocket scheme follows the URL scheme.
+- **Inline IPS bridge**: enter the bridge status URL (e.g. `http://127.0.0.1:<port>`; localStorage `aegis_bridge_url`) in Settings. The dashboard polls `<url>/status` every 2 s and shows an "Inline IPS bridge" panel (hidden when unset, "unreachable" on error).
+- For REPLAY/SITL/BENCH sources the flight track shows only the as-received positions (no protected/ghost overlay), ignores invalid fixes (null, NaN, out of range, 0/0, receiver reports no fix) and shows "NO POSITION FIX" until a valid one arrives. The origin is the first valid fix of the run. A "Checks" panel shows mission cross-track, cross-end matches/mismatches and receiver EKF/satellite health.

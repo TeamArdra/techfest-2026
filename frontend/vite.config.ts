@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-const backendPort = process.env.VITE_BACKEND_PORT || "8008";
+const backendPort = process.env.VITE_BACKEND_PORT || "8000";
 
 // The dev server proxies API + WebSocket to the FastAPI backend,
 // so `npm run dev` (on :5173) works against `aegis serve` with no CORS fuss.

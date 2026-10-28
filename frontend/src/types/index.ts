@@ -138,6 +138,23 @@ export interface LinkStatus {
   error: string | null;
 }
 
+export interface Checks {
+  mission: { known: boolean; xtrack_m: number | null; wp_seq: number | null };
+  crossend: { active: boolean; matched: number; mismatches: number; last_summary_age_s: number | null };
+  receiver: { ekf_vel_var: number | null; ekf_pos_var: number | null; sat_jump: number | null; snr_spread: number | null };
+}
+
+export interface BridgeStatus {
+  mode?: string;
+  state?: string;
+  frames?: Record<string, number>;
+  latency_us?: { p50?: number; p95?: number; max?: number; samples?: number };
+  policy?: Record<string, number | boolean | string | null>;
+  analyser?: { decisions?: number; alerts?: number; errors?: number; counter_frames_sent?: number; summary?: unknown };
+  last_error?: string | null;
+  crossend?: { sent?: number };
+}
+
 export interface Update {
   type: "update";
   sim: boolean;
@@ -148,6 +165,7 @@ export interface Update {
   topology_reasons?: string[];
   mitigation?: MitigationInfo;
   link: LinkStatus;
+  checks?: Checks | null;
   run_id: string;
   t: number;
   telemetry: Telemetry;

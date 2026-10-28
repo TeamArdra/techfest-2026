@@ -561,7 +561,7 @@ class LiveEngine:
         # Compact telemetry optimization:
         # During active mitigation (state != NOMINAL), skip intermediate non-decision ticks
         # to save companion compute and GCS network bandwidth.
-        if self.mitigation.state != MitigationState.NOMINAL and assessment is None:
+        if self.is_sim and self.mitigation.state != MitigationState.NOMINAL and assessment is None:
             return
 
         if assessment is not None:
@@ -587,7 +587,8 @@ class LiveEngine:
                 # Transmit counter-actuation frames if in ACTIVE_IPS mode
                 self._transmit(act.counter_frames)
 
-        self._step_cyber_physical_twin(tick.t, self.pipeline._telemetry_dict(), assessment)
+        if self.is_sim:  # simulated physics twin: never for a real / recorded vehicle
+            self._step_cyber_physical_twin(tick.t, self.pipeline._telemetry_dict(), assessment)
         update = self._make_update(tick.t, assessment)
         if assessment is not None:
             self._last_threat = update.get("threat", {})
@@ -884,13 +885,38 @@ class LiveEngine:
             summary=summary,
         ).to_dict()
 
+    def checks(self) -> dict | None:
+        """Live-source integrity checks (mission path, cross-end, receiver); None for SIM."""
+        if self.is_sim:
+            return None
+        f = self.pipeline.last_frame
+
+        def g(name: str):
+            return getattr(f, name, None) if f is not None else None
+
+        def r(v, n):
+            return None if v is None else round(float(v), n)
+
+        ce = getattr(self.pipeline, "crossend", None)
+        st = ce.stats() if ce is not None else None
+        sat = g("gps_sat_jump")
+        return {
+            "mission": {"known": bool(g("mission_known")), "xtrack_m": r(g("mission_xtrack_m"), 2),
+                        "wp_seq": g("mission_wp_seq")},
+            "crossend": {"active": bool(st and st["summaries"] > 0), "matched": st["matched"] if st else 0,
+                         "mismatches": st["mismatches"] if st else 0,
+                         "last_summary_age_s": r(st["last_summary_age_s"], 2) if st else None},
+            "receiver": {"ekf_vel_var": r(g("ekf_vel_var"), 4), "ekf_pos_var": r(g("ekf_pos_var"), 4),
+                         "sat_jump": None if sat is None else int(sat), "snr_spread": r(g("gps_snr_spread_db"), 2)},
+        }
+
     def _make_update(self, t: float, assessment) -> dict:
         source_desc = dict(self.spec.describe())
         source_desc["defense_mode"] = self.mitigation.mode.value
         raw_tele = self.pipeline._telemetry_dict()
         sanitized_tele = dict(raw_tele)
 
-        if self._cp_lat is not None:
+        if self.is_sim and self._cp_lat is not None:
             if self.mitigation.mode != DefenseMode.ACTIVE_IPS:
                 raw_tele["lat"] = self._cp_lat
                 raw_tele["lon"] = self._cp_lon
@@ -909,7 +935,7 @@ class LiveEngine:
                 sanitized_tele["armed"] = self._ips_armed if self._ips_armed is not None else True
                 sanitized_tele["groundspeed"] = round(self._ips_speed, 2) if self._ips_speed is not None else 12.0
 
-        if self._last_mitigation_action is not None and self.mitigation.mode == DefenseMode.ACTIVE_IPS:
+        if self.is_sim and self._last_mitigation_action is not None and self.mitigation.mode == DefenseMode.ACTIVE_IPS:
             act = self._last_mitigation_action
             if act.sub_mode == AttackSubMode.TELEM_SPEED_MISMATCH:
                 gs = math.hypot(self.mitigation.golden.vx_ms, self.mitigation.golden.vy_ms)
@@ -932,6 +958,7 @@ class LiveEngine:
             "sanitized_telemetry": sanitized_tele,
             "attack_active": self._active_attack_name,
             "distance_m": round(self._distance_m, 1),
+            "checks": self.checks(),
         }
         if assessment is not None:
             msg["threat"] = {
@@ -982,6 +1009,7 @@ class LiveEngine:
                                         (IntegrityStatus.VALID if self.is_sim else IntegrityStatus.UNKNOWN).value),
             "distance_m": round(self._distance_m, 1),
             "run_id": self._run_id,
+            "checks": self.checks(),
         }
 
     def metrics(self) -> dict:

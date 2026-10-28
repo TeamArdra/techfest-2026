@@ -125,6 +125,12 @@ class CrossEndMonitor:
         self.unmatched = 0
         self.bad_auth = 0
 
+    def stats(self) -> dict:
+        """Read-only counters + age of the last bridge summary (envelope time base)."""
+        age = None if self._last_summary_t is None else max(0.0, self._now - self._last_summary_t)
+        return {"summaries": self.summaries, "matched": self.compared, "mismatches": self.mismatches,
+                "last_summary_age_s": age}
+
     # -- ingest --------------------------------------------------------------- #
 
     def update(self, msg: MessageEnvelope) -> None:
