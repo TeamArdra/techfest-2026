@@ -177,6 +177,55 @@ def _cmd_serve(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_ips_bridge(args: argparse.Namespace) -> int:
+    """Run the inline IPS bridge between a flight controller port and a GCS/radio port."""
+    import json
+    import time
+
+    from ..hal.inline_ips import InlineIpsBridge
+    from ..sources.mavlink_serial import SerialMavlinkTransport
+
+    if args.fc_port == args.gcs_port:
+        print("aegis ips-bridge: --fc-port and --gcs-port must differ", file=sys.stderr)
+        return 2
+    try:
+        fc = SerialMavlinkTransport(args.fc_port, baudrate=args.fc_baud, allow_url=args.allow_url,
+                                    accept_unverified_ids=True)
+        gcs = SerialMavlinkTransport(args.gcs_port, baudrate=args.gcs_baud, allow_url=args.allow_url,
+                                     accept_unverified_ids=True)
+    except ValueError as exc:
+        print(f"aegis ips-bridge: {exc}", file=sys.stderr)
+        return 2
+    store = None
+    if args.db:
+        from ..logging import EventStore
+
+        store = EventStore(args.db)
+        run_id = time.strftime("ips-%Y%m%d-%H%M%S")
+        store.start_run(run_id, label="ips-bridge")
+    else:
+        run_id = "ips-bridge"
+    bridge = InlineIpsBridge(fc, gcs, config_dir=args.config_dir, mode=args.defense_mode,
+                             trusted_sysids=tuple(args.trusted_sysid) if args.trusted_sysid else None,
+                             store=store, run_id=run_id)
+    fc.start()
+    gcs.start()
+    bridge.start()
+    print(f"aegis ips-bridge: {args.fc_port} <-> {args.gcs_port}, posture {args.defense_mode}", flush=True)
+    end = None if args.seconds is None else time.monotonic() + args.seconds
+    try:
+        while end is None or time.monotonic() < end:
+            time.sleep(min(args.status_interval, 0.5) if end is not None else args.status_interval)
+            print(json.dumps(bridge.status()), flush=True)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        bridge.close()
+        if store is not None:
+            store.close()
+    return 0
+
+
 def _cmd_verify_log(args: argparse.Namespace) -> int:
     from ..logging import EventStore
 
@@ -241,6 +290,22 @@ def build_parser() -> argparse.ArgumentParser:
     sv.add_argument("--defense-mode", choices=["passive", "advisory", "active-ips"], default="passive",
                     help="defense engine posture: passive (IDS only, zero bytes sent), advisory (GCS alerts), active-ips (autonomous mitigation)")
     sv.set_defaults(func=_cmd_serve)
+
+    ib = sub.add_parser("ips-bridge", help="inline IPS between a flight controller port and a GCS/radio port")
+    ib.add_argument("--fc-port", required=True, help="serial port wired to the flight controller (e.g. /dev/ttyAMA0)")
+    ib.add_argument("--fc-baud", type=int, default=921600)
+    ib.add_argument("--gcs-port", required=True, help="serial port wired to the GCS radio (e.g. /dev/ttyUSB0)")
+    ib.add_argument("--gcs-baud", type=int, default=57600)
+    ib.add_argument("--allow-url", action="store_true", help="allow socket:// virtual ports (tests, SITL)")
+    ib.add_argument("--defense-mode", choices=["passive", "advisory", "active-ips"], default="passive",
+                    help="passive/advisory forward every frame byte-identically; active-ips filters and counter-acts")
+    ib.add_argument("--trusted-sysid", type=int, action="append",
+                    help="ground-station sysid allowed to command the vehicle (repeatable; default from detector.yaml)")
+    ib.add_argument("--config-dir", default=None)
+    ib.add_argument("--db", default=None, help="log alerts to this SQLite hash-chain store")
+    ib.add_argument("--seconds", type=float, default=None, help="run time (default: until Ctrl-C)")
+    ib.add_argument("--status-interval", type=float, default=5.0)
+    ib.set_defaults(func=_cmd_ips_bridge)
 
     v = sub.add_parser("verify-log", help="verify a SQLite event-log hash chain")
     v.add_argument("db", help="path to the SQLite event log")

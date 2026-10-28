@@ -2,8 +2,8 @@
 
 > **Status note (integration review):** this page is a design description. What is implemented, measured or only modelled is
 > recorded in `docs/VALIDATION_EVIDENCE.md` and the README. In particular: the defense layer is report-only on every live or
-> recorded source; Topology B (`InlineBridge`, `FrameSanitizer`, `rust/aegis_fastpath`) and the 150 ms fail-open watchdog are
-> not wired into any relay and have no measured figure; nothing has been measured on a companion computer; the measured decision
+> recorded source; Topology B is implemented as `aegis ips-bridge` (`docs/INLINE_IPS.md`) and tested on synthetic frames and loopback serial only; the older `InlineBridge` class, its 150 ms watchdog and `rust/aegis_fastpath` are
+> not on that path, and nothing has a measured figure on hardware; nothing has been measured on a companion computer; the measured decision
 > compute is 17.7 ms mean / 23.6 ms p95 with ML on (`artifacts/benchmarks/summary.md`, SIM).
 
 > **Pushpak Grand Challenge 2026–27 (IIT Bombay Techfest) — Security of Drones, Objective 2**  

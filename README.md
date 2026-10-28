@@ -47,7 +47,7 @@ In the simulator, the dashboard runs a **cyber-physical flight twin** and shows 
 
 - **Dual-Topology Execution Model**:
   - **Topology A (Sidecar Companion Actuator)**: *design, modelled in SIM only.* A companion on a secondary UART would issue corrective counter-commands; nothing transmits on a live source.
-  - **Topology B (Inline Bridge)**: *design, not wired.* `hal/inline_bridge.py`, `mitigation/sanitizer.py` and the Rust crate `rust/aegis_fastpath` contain frame-sanitisation code, but no relay uses them and no latency, detour or watchdog figure has been measured.
+  - **Topology B (Inline Bridge)**: `aegis ips-bridge` (`hal/inline_ips.py`, `mitigation/inline_policy.py`) sits between the flight controller port and the GCS radio port and drops hostile frames before the autopilot sees them (`docs/INLINE_IPS.md`). Tested on synthetic frames and loopback serial only; no flight controller, radio or companion-computer measurement and no hardware bypass yet. The Rust crate `rust/aegis_fastpath` is still not on the path.
   - **Topology A+B (Hybrid)**: *design only.*
   - **Topology selection**: the dashboard shows a chosen topology; no hardware or companion detection drives it.
 - **Multi-Detector Evidence Fusion**:
@@ -385,6 +385,7 @@ Detailed technical specifications and engineering logs:
 - [**Hardware Benchmarking (Pixhawk 6X)**](docs/HARDWARE_BENCH_PIXHAWK6X.md) — Physical flight controller bench performance.
 - [**Threat Model Specification**](docs/THREAT_MODEL.md): threat model and attack taxonomy.
 - [**Red-team audit**](docs/REDTEAM_AUDIT_STAGE2.md): withdrawn self-assessment (reasons inside).
+- [**Inline IPS bridge**](docs/INLINE_IPS.md) — Topology B: filtering hostile frames before the autopilot.
 - [**Testing & Quality Assurance**](docs/TESTING.md) — Test taxonomy and verification methodology.
 - [**API & WebSocket Specification**](docs/API.md) — REST endpoints and telemetry schemas.
 
