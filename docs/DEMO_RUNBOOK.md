@@ -4,6 +4,23 @@ For demonstrating the Stage 2 UAV Intrusion Detection & Autonomous Prevention
 System (IDS/IPS) for **PUSHPAK Grand Challenge 2026-27 (IIT Bombay Techfest) — Security of Drones, Objective 2**.
 A teammate can run this without the original author.
 
+> **What this demo is (2026-10-29).** Segments 1–7 run on the **SIM** source: the dashboard drives a simulator and a cyber-physical
+> *twin*. Detection times, "detour" and "vehicle remains airborne" are what that model shows; they are **not measurements** of a
+> vehicle, and no prevention metric exists (`docs/VALIDATION_EVIDENCE.md`). The map panel is a local-frame track (no tiles, no
+> internet). On live and replayed sources the defense layer is report-only (`active-ips` is refused).
+>
+> **Real-data segment (REPLAY of BENCH data, receive-only, nothing is sent anywhere)** — the 2026-10-28 capture of the powered-on vehicle:
+> ```bash
+> aegis serve --source replay --tlog data/hardware/raw/gps_hw_verify_20261029.tlog --replay-speed 1.0 --db <scratch>/replay.sqlite
+> ```
+> Checked through the API at 10× speed on 2026-10-29 (saved, coordinate-free, in
+> `artifacts/hardware/gps_hw_verify_20261029/replay/navigation_health_api/`): `environment` REPLAY, 5,130 frames, `link.gps` shows `3D_FIX`,
+> 7 satellites, `valid_fix` true **and** `horizontal_solution` false, `gps_healthy` false, `quality_flags` both set; `/api/events` count 0.
+> The header is intended to show the vehicle's own "no horizontal position solution / GPS sensor unhealthy" note beside "valid fix"
+> (wording unit-tested; not screenshotted). Say what it shows: a vehicle stated stationary and disarmed whose own telemetry reports no
+> horizontal solution and an unhealthy GPS sensor (cause not determined), and an IDS that stays quiet while stating that. It is not an
+> attack demonstration. The tlog is local and git-ignored.
+
 ## Pre-demo checklist
 ```bash
 pip install -e ".[dev]"                       # deps installed
@@ -31,22 +48,22 @@ The GCS displays:
 - **44px Vertical Altitude Profile Strip**: showing real-time 0–100 m elevation track.
 
 ## Segment 1 — Benign Flight Baseline (~20 s)
-- Point out the nominal survey pattern on the satellite map.
+- Point out the nominal survey pattern on the local-frame track panel (there is no satellite map; the dashboard needs no network).
 - Altitude strip holds flat at 60 m cruise; speed is 12 m/s.
 - Threat score sparkline remains flat at 0.0 (below 0.45 threshold); 0 false alarms.
 
 ## Segment 2 — GPS Spoofing & Synthetic Navigation Recovery
 - Click **GPS Spoofing**.
-- **Detection**: Within 360 ms, Physics + Anomaly detectors trigger (`HIGH / GPS_SPOOFING`).
+- **Detection** (SIM; the on-screen latency is not an artifact-backed figure — quote `artifacts/benchmarks/summary.md`: mean 0.361 s, p95 1.40 s): Physics + Anomaly detectors trigger (`HIGH / GPS_SPOOFING`).
 - **Autonomous Mitigation**:
-  - In **Topology B** (Inline): `FrameSanitizer` drops/clamps spoofed coordinates in-place before reaching the autopilot (0.0 m flight detour).
+  - In **Topology B** (Inline): `FrameSanitizer` drops/clamps spoofed coordinates in-place before reaching the autopilot (the SIM twin shows no detour; this is a model, not a measurement, and no inline bridge was built or flown).
   - In **Topology A** (Sidecar): `GoldenStateEstimator` dead-reckoning activates, issuing `MAV_CMD_DO_REPOSITION` counter-commands with synthetic clean coordinates.
 - Notice the vehicle track continues smoothly along the planned trajectory without jumping or diverging.
 
 ## Segment 3 — Command Injection & Failsafe Veto
 - Click **Command Injection** (e.g., unauthorized land or forced disarm).
 - **Veto Execution**: Mitigation engine detects cadence/provenance violation (`AF-SEC-01`), rejects the rogue command, and notifies the GCS via `STATUSTEXT` banner: `[AEGIS-DEFENSE] Disarm vetoed: altitude > 2m in flight`.
-- Vehicle remains airborne and continues mission uninterrupted.
+- In the SIM twin the vehicle remains airborne and continues the mission (a model of what a veto would do; nothing was vetoed on a vehicle).
 
 ## Segment 4 — Denial of Service & High-Rate Flood
 - Click **Denial of Service**.
