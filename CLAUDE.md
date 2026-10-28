@@ -20,7 +20,7 @@ aegis train                            # train models/isoforest.joblib
 aegis benchmark                        # metrics + figures -> artifacts/
 aegis serve                            # dashboard http://127.0.0.1:8000
 aegis verify-log <db.sqlite>           # check hash chain
-pytest                                 # 545 passed, 3 skipped (Windows PTY)
+pytest                                 # `pytest -q` prints the count (a few PTY tests skip on Windows)
 ruff check src tests scripts backend   # lint (keep clean)
 python scripts/run_demo.py             # narrated headless demo
 ```

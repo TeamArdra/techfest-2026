@@ -51,8 +51,8 @@ In the simulator, the dashboard runs a **cyber-physical flight twin** and shows 
   - **Topology A+B (Hybrid)**: *design only.*
   - **Topology selection**: the dashboard shows a chosen topology; no hardware or companion detection drives it.
 - **Multi-Detector Evidence Fusion**:
-  - **Protocol / Rule Engine**: MAVLink v2 framing checks, sequence gaps, frequency bounding, rogue sysid quarantine, and command cadence guards (`AF-SEC-01`: $\le 50\text{ ms}$ inter-command limit).
-  - **Cyber-Physical Consistency**: Cross-checks GPS vs barometric altitude, integrated velocity vs reported coordinates, attitude vs ground track, and 2D CUSUM micro-drift tracking (`AF-SEC-02`).
+  - **Protocol / Rule Engine**: MAVLink v2 framing checks, sequence gaps, frequency bounding, rogue sysid quarantine, and command provenance / burst checks.
+  - **Cyber-Physical Consistency**: Cross-checks GPS vs barometric altitude, integrated velocity vs reported coordinates, attitude vs ground track, and 2D CUSUM micro-drift tracking.
   - **Machine Learning Anomaly Ensemble**: Unsupervised Isolation Forest + Mahalanobis distance ensemble trained exclusively on benign flight dynamics across an 11-feature sliding window.
   - **Firmware Integrity & Cryptographic Attestation**: Real SHA-256 manifest verification and MAVLink v2 packet signing (`signing.py`).
 - **Closed-Loop Cyber-Physical Flight Twin**:
@@ -327,11 +327,11 @@ For deployment directly on a physical drone companion computer connected to a Pi
    pip install -e ".[dev]"
    ```
 
-3. **Run in Autonomous Defense Daemon Mode**:
+3. **Run the receive-only monitor on the telemetry link** (no companion deployment has been measured; `active-ips` is refused on live sources):
    ```bash
-   # Automatically discovers telemetry ports, locks onto flight controller, and enables IPS:
-   aegis serve --defense-mode active-ips --topology auto --port 8000
+   aegis serve --source serial --serial-port /dev/serial0 --baud 115200 --port 8000
    ```
+   Ports are not auto-discovered by the CLI (`hal/discovery.py` is not wired in); name the port explicitly.
 
 #### 2. NVIDIA Jetson (Orin / Nano / Xavier — JetPack 5.x / 6.x)
 - Hardware UART `/dev/ttyTHS1` (J41 40-pin header pins 8 & 10) or USB `/dev/ttyUSB0`.
@@ -361,8 +361,8 @@ ruff check src tests scripts
 ## 7. Interactive Demonstration Runbook
 
 1. **Nominal Flight**: Start `aegis serve --defense-mode active-ips`. The live altitude profile holds steady at $60\text{ m}$; speed is $12\text{ m/s}$; threat score is $0.0$.
-2. **GPS Spoofing & Dead-Reckoning Recovery**: Inject GPS spoofing via the UI. Within $360\text{ ms}$, the threat state escalates to `HIGH / GPS_SPOOFING`. In Topology B, spoofed coordinates are clamped in-place ($0.0\text{ m}$ detour); in Topology A, synthetic dead-reckoning counter-commands seamlessly maintain route heading.
-3. **Command Injection & Failsafe Veto**: Trigger unauthorized land or mid-air disarm. The mitigation engine rejects the command under rule `AF-SEC-01`, and the GCS displays `[AEGIS-DEFENSE] Disarm vetoed: altitude > 2m in flight`.
+2. **GPS Spoofing & Dead-Reckoning Recovery**: Inject GPS spoofing via the UI. In the SIM benchmark the median detection latency is 0.36 s and the threat state escalates to `HIGH / GPS_SPOOFING`. The dashboard twin then models the counter-action (Topology B: inline clamp; Topology A: dead-reckoning plus counter-command). These are SIM models, not measured prevention.
+3. **Command Injection & Failsafe Veto**: Trigger unauthorized land or mid-air disarm. The mitigation controller flags it (`VETO_DISARM` / `REPLAY_GUARD` action in the Defense HUD). It is reported, not blocked: nothing is transmitted to the vehicle.
 4. **Topology Switching**: Toggle between `Auto`, `Top-B`, `Top-A`, and `Top-A+B` in the Defense HUD; link routing and actuator status update dynamically.
 5. **Audit Ledger Verification**: In a second terminal, verify the tamper-evident hash chain:
    ```bash

@@ -176,12 +176,13 @@ Tested by `test_fusion_and_metrics.py`.
 
 ## `src/aegisflight/mitigation/` — Autonomous Prevention & IPS (CORE Stage 2)
 
-- `mitigation/engine.py` — `AutonomousMitigationEngine`: multi-action autonomous response coordinator, priority ranking (`ActuatorPriority`), posture gating (`PASSIVE`, `ADVISORY`, `ACTIVE_IPS`), GCS banner dispatch.
-- `mitigation/golden_state.py` — `GoldenStateEstimator`: synthetic dead-reckoning flight twin (`vx_ms`, `vy_ms`, `trusted_speed_ms`, `trusted_heading_deg`), speed/attitude isolation during telemetry attacks, clean GPS anchoring.
-- `mitigation/sanitizer.py` — `FrameSanitizer`: coordinate clamping (`max_step_m`), altitude delta limit, CUSUM micro-drift accumulator (`AF-SEC-02`), rogue sysid quarantine.
-- `mitigation/killswitch.py` — `KillswitchGuard`: flight-critical safety vetoes (in-flight disarm, forced landing, emergency stop rejection).
-- `mitigation/reconfiguration.py` — `DynamicLinkReconfigurator` & `FloodMitigator`: rate-limiting, link failover, priority channel allocation under DoS flood.
-- `mitigation/actions.py` — Dataclasses: `MitigationAction`, `ActuatorPriority`, `OperatingPosture`, `MitigationPlan`.
+- `mitigation/controller.py` — `MitigationController`: 4-state FSM (`NOMINAL`, `AUTO_MITIGATING`, `SAFE_HOLD`, `GCS_TAKEOVER`), posture gating (`PASSIVE`, `ADVISORY`, `ACTIVE_IPS`), per-attack playbooks, recovery after clean ticks. Counter-frames are reported, never transmitted on a live source.
+- `mitigation/types.py` — `DefenseMode`, `MitigationState`, `AttackSubMode`, `AttackParameters`, `MitigationAction`.
+- `mitigation/submode_classifier.py` — `AttackSubModeClassifier`: maps an assessment to a sub-mode; command cadence / mid-air disarm provenance check; vector CUSUM micro-drift tracker.
+- `mitigation/parameter_estimator.py` — `ParameterEstimator`: quantifies the active attack (offsets, drift rate, biases, rogue sysids).
+- `mitigation/golden_state.py` — `GoldenFlightState`: trusted-state anchor and dead-reckoning used by the dashboard twin.
+- `mitigation/sanitizer.py` — `FrameSanitizer`: coordinate / altitude clamping and rogue-sysid quarantine model. Statistics only: no relay uses it (Topology B is not wired).
+- `mitigation/actuator.py` — `MavlinkActuator`: encodes counter-commands (set mode, EKF source switch, STATUSTEXT) as MAVLink bytes; encoding only, never sent on a live source.
 
 ---
 

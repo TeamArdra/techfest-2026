@@ -40,7 +40,7 @@ The GCS displays:
 - **Detection**: Within 360 ms, Physics + Anomaly detectors trigger (`HIGH / GPS_SPOOFING`).
 - **Autonomous Mitigation**:
   - In **Topology B** (Inline): `FrameSanitizer` drops/clamps spoofed coordinates in-place before reaching the autopilot (0.0 m flight detour).
-  - In **Topology A** (Sidecar): `GoldenStateEstimator` dead-reckoning activates, issuing `MAV_CMD_DO_REPOSITION` counter-commands with synthetic clean coordinates.
+  - In **Topology A** (Sidecar): `GoldenFlightState` dead-reckoning supplies trusted coordinates and the dashboard shows the counter-command (EKF source switch / mode restore) the actuator would encode; nothing is transmitted.
 - Notice the vehicle track continues smoothly along the planned trajectory without jumping or diverging.
 
 ## Segment 3 — Command Injection & Failsafe Veto

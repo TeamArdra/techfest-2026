@@ -31,7 +31,6 @@ Exit codes: 0 ok (NOT a statement about link health: see ``link_ever_delivered_f
 from __future__ import annotations
 
 import argparse
-import contextlib
 import json
 import signal
 import sys

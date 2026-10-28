@@ -4,7 +4,7 @@
         ╱ e2e (2) ╲             full slice: sim→IDS→IPS→SQLite hash chain verify
        ╱ backend (5)╲           FastAPI API + live telemetry + defense endpoints
       ╱ integration (90+)╲      20 attack modes, proxy attacks, presence policies
-     ╱      unit (550+)     ╲   geo/config/simulator/codec/integrity/logging/
+     ╱      unit (600+)     ╲   geo/config/simulator/codec/integrity/logging/
     ╱────────────────────────╲  fusion/mitigation/hal/serial/metrics
 ```
 Run with the project venv; the suite must pass in full (the count grows with new
@@ -25,7 +25,7 @@ The suite covers raw serial framing and MAVLink parsing up to the SIM-only defen
 |---|---|---|
 | `python scripts/verify_stage2.py` | Demo of the 8 defense code paths on hand-built inputs (SIM; not validation evidence) | seconds |
 | `pytest tests/unit/test_mitigation.py tests/unit/test_hal.py` | Core Stage 2 autonomous defense and HAL tests | < 2 s |
-| `pytest tests/unit -q` | Fast unit test suite (550+ tests) | ~15 s |
+| `pytest tests/unit -q` | Fast unit test suite (600+ tests) | ~15 s |
 | `pytest tests/integration -q` | Multi-mode attack detection and pipeline tests | ~30 s |
 | `pytest tests/e2e -q` | Full end-to-end slice with SHA-256 ledger check | ~10 s |
 | `pytest` | Complete verification suite (`pytest -q` prints the count) | ~2.5 min |
@@ -35,11 +35,11 @@ The suite covers raw serial framing and MAVLink parsing up to the SIM-only defen
 
 ### Stage 2 Autonomous Prevention & HAL
 - **`test_mitigation.py` (27 tests)**:
-  - `GoldenStateEstimator`: dead-reckoning during GPS loss/spoofing, speed/attitude isolation during telemetry attacks, clean GPS anchoring during non-GPS attacks.
+  - `GoldenFlightState`: dead-reckoning during GPS loss/spoofing, speed/attitude isolation during telemetry attacks, clean GPS anchoring during non-GPS attacks.
   - `FrameSanitizer`: coordinate clamping, altitude correction, CUSUM micro-drift tracking, frame dropping for quarantined sysids.
-  - `KillswitchGuard`: disarm veto in flight, emergency motor stop veto, unauthorized mode change rejection.
-  - `CommandCadenceGuard` (`AF-SEC-01`): enforces 50 ms minimum inter-command interval to defeat command burst attacks.
-  - `AutonomousMitigationEngine`: full closed-loop response generation, priority sorting, GCS notification banner generation.
+  - Command-injection playbook: mid-air disarm and mode-change provenance are flagged and reported (not blocked).
+  - Command cadence check in `AttackSubModeClassifier`: flags burst and replayed commands.
+  - `MitigationController`: closed-loop response generation per attack sub-mode, state machine, recovery.
 - **`test_hal.py` (7 tests)**:
   - Hardware discovery across USB/serial ports (CubePilot, Pixhawk, SiK telemetry, ELRS).
   - Platform and companion compute detection (Raspberry Pi, Jetson, Rockchip).

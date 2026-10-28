@@ -130,9 +130,10 @@ def test_dead_from_start_link_still_ticks_and_reports_silence(tmp_path, restore_
     port = s.getsockname()[1]
     s.close()
     rc = run_serial_ids.main(["--port", f"socket://127.0.0.1:{port}", "--allow-url", "--out-dir", str(tmp_path),
-                              "--seconds", "3", "--reconnect-interval", "0.5"])
+                              "--seconds", "6", "--reconnect-interval", "0.5"])
     assert rc == 0
     summary = json.loads((tmp_path / "summary.json").read_text())
+    # a refused loopback connect can take ~1 s on Windows, so allow 6 s for two failed opens
     assert summary["decisions"] > 0 and summary["transport"]["open_failures"] >= 2
     assert summary["transport"]["frames_received"] == 0 and summary["passive_check"]["passed"] is True
 

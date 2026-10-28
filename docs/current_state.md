@@ -1,13 +1,19 @@
 # AegisFlight — Current State Ledger (`current_state.md`)
+
+> **Status note (integration review):** this page is a design description. What is implemented, measured or only modelled is
+> recorded in `docs/VALIDATION_EVIDENCE.md` and the README. In particular: the defense layer is report-only on every live or
+> recorded source; Topology B (`InlineBridge`, `FrameSanitizer`, `rust/aegis_fastpath`) and the 150 ms fail-open watchdog are
+> not wired into any relay and have no measured figure; nothing has been measured on a companion computer; the measured decision
+> compute is 17.7 ms mean / 23.6 ms p95 with ML on (`artifacts/benchmarks/summary.md`, SIM).
 > Authoritative system status snapshot for PUSHPAK Stage 2 (IIT Bombay Techfest). Strict Token Budget: < 1500 tokens.
 
 ## 1. System Identity & Physical Constraints
 - **Target Hardware Profile (design target, not tested)**: companion computer (e.g. Raspberry Pi Zero 2W) with a Pixhawk 6X autopilot.
 - **Physical Link (bench, as tested)**: Pixhawk 6X telemetry over USB/radio on COM7, receive-only (`docs/HARDWARE_BENCH_PIXHAWK6X.md`). A companion UART link is a design target, not tested.
-- **Strict Bench Budgets**:
+- **Strict Bench Budgets (targets unless stated)**:
   - Detection compute (host, SIM, ML on): 17.7 ms mean / 23.6 ms p95 (`artifacts/benchmarks/summary.md`); not measured on a companion computer.
-  - Telemetry Bandwidth Overhead: $\le 8\%$ (mitigation packets throttled to 1–2 Hz, 44B unsigned / 57B MAVLink-2 signed).
-  - Resident Memory (RSS): $\le 45\text{ MB}$ footprint.
+  - Telemetry Bandwidth Overhead: design target $\le 8\%$ (counter-frames are encoded but never transmitted on a live source; not measured).
+  - Resident Memory (RSS): design target, not measured.
 
 ## 2. Runtime Daemons & Active Ports
 - **Backend Service (Task: task-3140)**:
