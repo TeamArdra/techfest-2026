@@ -268,6 +268,24 @@ def test_analyser_keeps_policy_fresh_and_a_mode_change_clears_enforcement():
     assert fc.sent == [raw]                          # back in IDS mode nothing is filtered
 
 
+def test_statustext_counter_frame_goes_to_the_gcs_and_commands_go_to_the_fc():
+    from types import SimpleNamespace
+
+    from aegisflight.mitigation.actuator import MavlinkActuator
+
+    enc = MavlinkActuator(sysid=1, compid=192)
+    warn, alt_hold = enc.encode_statustext("AEGIS: GPS unreliable - do not trust position"), enc.encode_set_mode("ALT_HOLD")
+    b, fc, gcs = make_bridge("active-ips")
+    b.pipeline = SimpleNamespace(process_tick=lambda tick: SimpleNamespace(is_alert=False), last_frame=object())
+    b.controller = SimpleNamespace(
+        mode=DefenseMode.ACTIVE_IPS,
+        step=lambda frame, asmt: SimpleNamespace(counter_frames=[warn, alt_hold], summary=""),
+    )
+    b.analyse_tick(object())
+    assert gcs.sent == [warn] and fc.sent == [alt_hold]
+    assert b.counter_frames_sent == 2
+
+
 def test_status_reports_per_frame_latency():
     b, fc, gcs = make_bridge("active-ips")
     fc.feed(*[gpi() for _ in range(50)])

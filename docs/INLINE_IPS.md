@@ -40,7 +40,7 @@ The operator chooses the posture (`--defense-mode`, or `InlineIpsBridge.set_mode
 GCS), QoS shedding in a flood, GPS / altitude rewrite with a valid CRC. They apply only while the analyser keeps them
 fresh (3 s); a stalled analyser means transparent forwarding, not a stale rewrite. Signed frames are never modified.
 
-**Counter-frames** (EKF source switch, mode restore, SAFE_HOLD ALT_HOLD) go to the flight controller only.
+**Counter-frames** (EKF source switch, mode restore, SAFE_HOLD ALT_HOLD) go to the flight controller only; the GPS-ladder STATUSTEXT warning goes to the GCS side only (found in SITL: sent to the FC it never reached the pilot).
 
 ## Per attack class
 | Class | Inline effect |
@@ -279,3 +279,46 @@ an explicit `false` default, so "set if missing" did nothing; unset now means au
 baseline cannot follow a link whose rate steps up later (a stable 30 s plateau below the configured hard flood limit is now
 adopted, at most twice per session; the hard limit is never relaxed). Same flight after the fix, ground-side IDS: 1 alert
 (a heading rule one) and 0 `DOS`. One run; the bridge side was unaffected.
+
+## SITL evidence: sidecar recovery and GPS spoofing response
+
+ArduCopter SITL on loopback, `configs/ardupilot_copter`, flight in GUIDED at 30 m. Scripts: `scripts/ardupilot/inline_demo/sidecar_recovery.py`
+(Topology A) and `gps_response.py` (bridge). SERIAL1 streams come from `MAV2_*` persistent parameters loaded with
+`--defaults` (`scripts/ardupilot/sitl_defaults_monitor_port.parm`); setting them at run time over MAVLink did not produce streams. Single runs, simulated
+autopilot and GPS, loopback, no real hardware.
+
+**Test 1, Topology A** (pure sidecar `aegis serve --source serial` on SERIAL1, no bridge; pilot direct on SERIAL0, silent after takeoff;
+attacker on SERIAL2 sends `DO_SET_MODE(LAND)` once):
+
+| Run | Result |
+|---|---|
+| passive, attacker sysid 66 / 255 | LAND within 0.3 s, descended to 0 m in about 35 s, stayed in LAND; no injection alert |
+| active-ips, attacker sysid 66 / 255 | identical: LAND, never back to GUIDED; sidecar `counter_frames_sent` 0 |
+
+The sidecar never recovered the vehicle (no LAND to GUIDED time exists). Cause, from the code and the logs: the IDS raises
+`COMMAND_INJECTION` only from command frames it sees, and SERIAL1 carries only the vehicle's own output, so the attacker's frame on SERIAL2 (and the
+pilot's on SERIAL0) is invisible to the sidecar. The only trace is the HEARTBEAT mode change, which is indistinguishable from a legitimate
+pilot change made on another port, so `golden.trusted_mode` simply follows it (it read `LAND`) and there is nothing to restore. This is a design
+limit of a sidecar that does not see the command path, not a bug; recovery in Topology A needs the sidecar on the command path (the bridge) or a
+second source of command provenance. Incidental: a start-up `dos:gnss_jamming` alert (no fix yet, on the ground) occurs in every run.
+
+**Test 2, GPS response** (bridge `active-ips`; fault written to `SIM_GPS1_GLTCH_X`, degrees of latitude offset, 0.001 deg = about 111 m; other relevant SITL
+parameters: `SIM_GPS1_GLTCH_Y/Z`, `SIM_GPS1_GLTV_*`, `SIM_GPS1_DRFTALT` (altitude only), `SIM_GPS1_JAM`, `SIM_GPS1_NOISE`; no horizontal drift parameter, so drift is a scripted ramp of GLTCH_X):
+
+| Run | Detection (bridge) | GCS warning | Mode timeline | Ladder |
+|---|---|---|---|---|
+| benign, no fault | no alert in flight (3 alerts on the ground before takeoff, fix acquisition) | none | GUIDED throughout | nothing sent in flight |
+| glitch ~111 m, passive | GPS_SPOOFING HIGH at +0.7 s (EKF innovation ratio 29.6), CRITICAL at +12.7 s (position residual 30 m) | none | stays GUIDED | nothing sent (0 counter-frames) |
+| glitch ~111 m, active-ips (3 runs; warning seen in the one run after the fix) | same events | `AEGIS: GPS unreliable - do not trust position` at +0.9 s | GUIDED to ALT_HOLD (2) at +3.9 s (3.0 s after confirmation); descended to the ground | 1 warning + 1 ALT_HOLD; no AUTO/RTL/LOITER/GUIDED/POSHOLD |
+| glitch + pilot `DO_SET_MODE LOITER` after the warning | same | at +0.8 s | LOITER at +1.1 s, stays LOITER | ladder stood down: warning only, no ALT_HOLD |
+| scripted drift ~5 m/s, active-ips | EKF innovation ratio 1.3 at +0.7 s, residual 35 m at +12.7 s | at +0.9 s | ALT_HOLD at +3.9 s | warning + ALT_HOLD |
+| scripted drift ~1 m/s, active-ips | no alert at all (run before the fix below) | none | GUIDED for 110 s | none: a miss |
+
+What this shows: the ladder confirmed and acted as designed (warning, one ALT_HOLD 3 s later, no forbidden mode, pilot override honoured), with no false
+actuation in the benign flight. What it does not show: the detection evidence here is the SITL EKF's own innovation ratio (the SITL estimator reacts to the glitch, also
+switching lanes and printing `GPS Glitch or Compass error`), so this is not independent proof of a position-residual detector; a 1 m/s drift went unnoticed;
+ALT_HOLD with no pilot throttle makes SITL descend to the ground (the ladder only stops position-dependent flight; a pilot must take over). The pilot-override test uses `DO_SET_MODE` in
+`COMMAND_LONG`; a plain `SET_MODE` message (msgid 11) is not recorded as a command by the feature extractor, so it would not cancel the ladder (not changed).
+
+Bug found and fixed: the ladder's STATUSTEXT warning was sent to the flight controller only and never reached the GCS (first glitch runs: no `AEGIS` text on the GCS side). The bridge now sends STATUSTEXT
+counter-frames to the GCS transport (`hal/inline_ips.py`, regression test `test_statustext_counter_frame_goes_to_the_gcs_and_commands_go_to_the_fc`). Logs and sqlite files stay outside the repo (`C:/afsitl`).

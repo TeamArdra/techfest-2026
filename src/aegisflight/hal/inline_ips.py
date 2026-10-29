@@ -93,6 +93,16 @@ class TapTransport:
         return None
 
 
+
+def _is_statustext(frame: bytes) -> bool:
+    """True for a MAVLink STATUSTEXT (msgid 253), v1 or v2 framing."""
+    if len(frame) >= 10 and frame[0] == 0xFD:
+        return int.from_bytes(frame[7:10], "little") == mav2.MAVLINK_MSG_ID_STATUSTEXT
+    if len(frame) >= 6 and frame[0] == 0xFE:
+        return frame[5] == mav2.MAVLINK_MSG_ID_STATUSTEXT
+    return False
+
+
 class InlineIpsBridge:
     def __init__(
         self,
@@ -299,7 +309,10 @@ class InlineIpsBridge:
                     self.store.log_event(assessment, self.run_id)
         if self.controller.mode == DefenseMode.ACTIVE_IPS:
             for frame in act.counter_frames:
-                if self.fc.send(frame):  # corrective commands go to the flight controller only
+                # corrective commands go to the flight controller; a STATUSTEXT warning is for the pilot's GCS
+                # (the FC does not relay a STATUSTEXT it receives), so it goes to the GCS side only
+                link = self.gcs if _is_statustext(frame) else self.fc
+                if link.send(frame):
                     self.counter_frames_sent += 1
                 else:
                     self.send_failures += 1
