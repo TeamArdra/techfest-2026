@@ -154,3 +154,20 @@ def test_passive_advisory_send_no_control_frame(mode):
     r.run(10)
     assert not (set(r.sent) - {"TEXT"})
     assert not any(x in r.sent for x in ("EKF2", "ALT_HOLD"))
+
+
+def test_plain_set_mode_from_the_pilot_cancels_the_ladder_end_to_end():
+    """The legacy SET_MODE message, as the extractor now records it (command 176), stands the ladder down."""
+    from aegisflight.core.types import MessageEnvelope
+    from aegisflight.features.extractor import FeatureExtractor
+
+    ex = FeatureExtractor()
+    ex.update(MessageEnvelope(recv_time=1.0, sysid=255, compid=190, msgid=11, msgname="SET_MODE", seq=0, signed=False,
+                              byte_len=14, fields={"target_system": 1, "base_mode": 1, "custom_mode": 5}))
+    cmd = ex.extract(1.1).commands_recent[0]
+    r = Rig()
+    r.run(1.0)
+    r.c.classifier.allowed_sysids.add(255)
+    r.tick(cmds=[CommandEvent(recv_time=r.t, sysid=cmd.sysid, compid=cmd.compid, command=cmd.command)])
+    r.run(8)
+    assert "ALT_HOLD" not in r.sent

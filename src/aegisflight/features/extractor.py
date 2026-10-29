@@ -389,6 +389,13 @@ class FeatureExtractor:
             self._commands.append(
                 CommandEvent(t, msg.sysid, msg.compid, int(f.get("command", 0)), params)
             )
+        elif name == "SET_MODE":
+            # the older plain SET_MODE message (some ground stations still use it) is the same intent as
+            # MAV_CMD_DO_SET_MODE (176): record it as that command so provenance and pilot-override logic see it
+            self._commands.append(
+                CommandEvent(t, msg.sysid, msg.compid, 176,
+                             (float(f.get("base_mode", 0)), float(f.get("custom_mode", 0)), 0.0, 0.0, 0.0, 0.0, 0.0))
+            )
 
     # -- navigation helpers ------------------------------------------------- #
 

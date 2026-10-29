@@ -139,3 +139,14 @@ def test_velocity_disagreement_rule():
     _ticks(det, 1, gps_vel_disagree_ms=6.0)
     det.process(_frame(gps_vel_disagree_ms=0.5))  # streak broken
     assert not det.process(_frame(gps_vel_disagree_ms=6.0)).triggered
+
+
+def test_plain_set_mode_message_is_recorded_as_a_do_set_mode_command():
+    """A pilot's legacy SET_MODE message must count as a mode-change command (it cancels the GPS ladder)."""
+    from aegisflight.features.extractor import FeatureExtractor
+
+    ex = FeatureExtractor()
+    ex.update(MessageEnvelope(recv_time=1.0, sysid=255, compid=190, msgid=11, msgname="SET_MODE", seq=0,
+                              signed=False, byte_len=14, fields={"target_system": 1, "base_mode": 1, "custom_mode": 5}))
+    cmds = ex.extract(1.2).commands_recent
+    assert len(cmds) == 1 and cmds[0].command == 176 and cmds[0].sysid == 255 and cmds[0].params[1] == 5.0
