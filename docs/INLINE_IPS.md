@@ -131,7 +131,7 @@ Not measured on hardware.
 endpoints. CORS echoes the `Origin` only for the dashboard's allowed origins (localhost dev ports, Tauri).
 
 ## SITL evidence (ArduCopter SITL, loopback; environment tag `SITL`)
-One scenario, one run per posture, on this PC (`scripts/ardupilot/inline_demo/`, profile `configs/ardupilot_sitl/`):
+One scenario, one run per posture, on this PC (`scripts/ardupilot/inline_demo/`, profile `configs/ardupilot_copter/`): The profile enables `protocol.auto_rate_baseline` and sets `physics.yaw_course_enabled: false` (this disables the frozen-attitude telemetry check for that profile; see docs/DETECTION.md).
 a simulated ArduCopter took off to 30 m and flew a rectangle in GUIDED, with the bridge between the flight controller
 and a loopback "radio" hub; a rogue sysid 66 then sent a forged LAND (`DO_SET_MODE` and `SET_MODE`), two bursts.
 
@@ -153,3 +153,29 @@ an attacker using the real GCS sysid; more than one run per posture. Findings fr
 - The multirotor heading-vs-course rule raised 4 false `TELEMETRY_MANIPULATION` alarms in GUIDED (documented limit).
 - In `active-ips`, 4 redundant set-mode counter-frames (back to GUIDED) were sent after the blocked attack.
 - SITL needs a client on SERIAL0 before it opens SERIAL1, and streams nothing extra on other ports until a GCS asks.
+
+## Unsigned-link provenance (no signing key)
+
+When no `signing_key` is configured, a sysid is only a claim: anyone on the radio link can forge sysid 255 or replay a
+captured genuine frame. `InlinePolicy` therefore adds a best-effort, software-only check (`provenance=True`,
+`provenance_window=16`; active only with enforcement on and no key; with a key the signature rules decide and this
+tracker is bypassed).
+
+- **Sequence tracker.** Every uplink frame updates a per-(sysid, compid) `SeqProvenance`. After 3 frames the 8-bit
+  counter is "known". A frame is consistent if `(seq - last) mod 256` is 1..16 (tolerates radio loss); a duplicate or a
+  jump/behind is inconsistent. Inconsistent frames never move `last_seq`, so a forger cannot drag the real counter.
+- **Decision.** A sensitive command or control message from a trusted sysid with a known but inconsistent counter is
+  dropped while armed or in flight (`dropped_provenance`); on the ground it passes and is counted
+  (`suspect_provenance`). An unknown counter passes. Existing rules (untrusted sysid, in-flight plain disarm, burst)
+  are unchanged.
+- **Resync.** Three consecutive inconsistent frames that follow each other (+1..16) replace the learned counter
+  (`resyncs`), e.g. a GCS restart. Worst-case lockout of a genuine pilot: the first 2 frames after the counter jumps
+  (the third is accepted and resyncs); the same applies after more than 16 consecutive lost frames.
+- **Replay.** A byte-identical (sysid, compid, seq, payload) repeat of an already forwarded sensitive frame within 5
+  minutes (bounded to 512 entries) is dropped (`dropped_replay_unsigned`) once that source's counter is known. Re-sending
+  the same command with a new seq is not a replay.
+- **Counters** in `stats()`: `provenance_known_sources`, `dropped_provenance`, `suspect_provenance`,
+  `dropped_replay_unsigned`, `resyncs`.
+
+**Limits.** This does not stop an attacker who can see the link and tracks the real counter, nor a forger whose frames
+happen to fall in the +1..16 window. Only MAVLink-2 signing closes those.

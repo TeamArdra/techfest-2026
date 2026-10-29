@@ -51,6 +51,7 @@ class MitigationController:
 
         self._clean_streak = 0
         self._attack_streak = 0
+        self._dos_streak = 0
         self._ekf_switched = False
         self._sanitize_gps_latched = False
         self._last_cmd_t: dict[str, float] = {}
@@ -97,6 +98,7 @@ class MitigationController:
         self.state = MitigationState.NOMINAL
         self._clean_streak = 0
         self._attack_streak = 0
+        self._dos_streak = 0
         self._ekf_switched = False
         self._sanitize_gps_latched = False
         self._last_cmd_t.clear()
@@ -133,6 +135,7 @@ class MitigationController:
         # --- A. Clean or sub-threshold tick: Recovery & nominal tracking ---
         if not is_threat:
             self._attack_streak = 0
+            self._dos_streak = 0
             if self._gps_confirm_t is None:
                 self._gps_ticks = 0
             if (
@@ -233,8 +236,10 @@ class MitigationController:
         # --- B. Threat Tick: Active attack detected ---
         self._clean_streak = 0
         self._attack_streak += 1
-
         sub_mode = self.classifier.classify(frame, asmt)
+        # rate alarms never drive actuation alone: DOS evidence must persist for 3 threat ticks
+        rate_alarm = asmt.attack_type == AttackType.DOS or sub_mode == AttackSubMode.MAV_RATE_SPIKE
+        self._dos_streak = self._dos_streak + 1 if rate_alarm else 0
         params = self.estimator.estimate(frame, self.golden, sub_mode, asmt)
 
         # 4-State Escalation Logic
@@ -315,7 +320,7 @@ class MitigationController:
                     if r not in self._quarantined_sysids:
                         self._add_action(t, "QUARANTINE", f"Quarantined anomalous sender SysID {r} (packets dropped)")
                     self._quarantined_sysids.add(r)
-                if sub_mode == AttackSubMode.MAV_RATE_SPIKE:
+                if sub_mode == AttackSubMode.MAV_RATE_SPIKE and self._dos_streak >= 3:
                     rate_limit_active = True
                     self._add_action(t, "RATE_LIMIT", "Anomalous message rate spike gatekeeper engaged")
 
@@ -334,7 +339,7 @@ class MitigationController:
             # 5. DoS Flood / Jamming / Latency Blackout Playbook
             elif asmt.attack_type == AttackType.DOS or sub_mode == AttackSubMode.DOS_BLACKOUT:
                 if sub_mode in (AttackSubMode.DOS_FLOOD, AttackSubMode.MAV_RATE_SPIKE):
-                    rate_limit_active = True
+                    rate_limit_active = self._dos_streak >= 3
                     self._add_action(t, "RATE_LIMIT", "Hostile frame rate flooding gatekeeper engaged (100Hz cap)")
                 elif sub_mode == AttackSubMode.DOS_GNSS_JAMMING:
                     sanitize_gps = True
@@ -353,7 +358,14 @@ class MitigationController:
                     self._add_action(t, "PREARM_LOCK", "Autopilot pre-arm check locked: tampered firmware")
 
             # 7. Safe Hold Escalation Playbook
-            if (self.state == MitigationState.SAFE_HOLD and not (self._gps_episode and self._gps_cancelled)
+            # ALT_HOLD only inside a GPS episode (its ladder owns that case) or for command injection
+            # while the vehicle's mode really differs from the trusted one; never for rate/telemetry alarms.
+            fm = frame.snapshot.flight_mode
+            mode_differs = (bool(fm) and str(fm).upper() != "UNKNOWN" and self.golden.trusted_mode is not None
+                            and fm != self.golden.trusted_mode)
+            safe_hold_ok = self._gps_episode or (asmt.attack_type == AttackType.COMMAND_INJECTION and mode_differs)
+            if (self.state == MitigationState.SAFE_HOLD and safe_hold_ok
+                    and not (self._gps_episode and self._gps_cancelled)
                     and self._can_send_command("SET_MODE_ALT_HOLD", t)):
                 counter_frames.append(self.actuator.encode_set_mode("ALT_HOLD"))
                 self._record_command("SET_MODE_ALT_HOLD", t)

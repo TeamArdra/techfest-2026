@@ -106,9 +106,11 @@ class ParameterEstimator:
         # never counter a mode change that only an allow-listed GCS asked for (the pilot's own RTL/LAND/mode)
         mode_cmds = [c for c in frame.commands_recent if c.command in _MODE_CHANGE_COMMANDS]
         pilot_initiated = bool(mode_cmds) and all(c.sysid in self.allowed_sysids for c in mode_cmds)
-        if golden.trusted_mode is not None and not pilot_initiated and (
-            snap.flight_mode != golden.trusted_mode or sub_mode == AttackSubMode.CMD_MODE_FLIP
-        ):
+        # restore only when the vehicle's mode is KNOWN and really differs from the trusted one
+        # (a blocked command never changed it, so a counter set-mode would be redundant traffic)
+        cur_mode = snap.flight_mode
+        mode_known = bool(cur_mode) and str(cur_mode).upper() != "UNKNOWN"
+        if golden.trusted_mode is not None and not pilot_initiated and mode_known and cur_mode != golden.trusted_mode:
             target_mode = golden.trusted_mode
 
         ref_lat = (

@@ -2,7 +2,7 @@
 
     .venv/Scripts/python.exe scripts/ardupilot/replay_ap_tlog.py \
         data/ardupilot/raw/ap_benign_six_001.clean.tlog --run artifacts/ardupilot/ap_benign_six_001 \
-        [--config-dir configs/ardupilot_sitl] [--no-ml] [--json out.json]
+        [--config-dir configs/ardupilot_copter] [--no-ml] [--json out.json]
 
 Environment: REPLAY of an ArduCopter SITL capture (the capture itself is SITL; replaying it is not a
 new flight). ``--run`` points at the live run's artifact directory so decisions can be labelled

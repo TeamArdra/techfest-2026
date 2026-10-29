@@ -127,6 +127,8 @@ class LiveEngine:
         # the firmware fixture is part of the simulation; a real source has no verifier (integrity UNKNOWN)
         self.fw_dir = tempfile.mkdtemp(prefix="aegis_live_fw_") if self.is_sim else None
         p = self.cfg.detector.get("protocol", {})
+        if not self.is_sim:  # real / recorded link: learn its own normal message rate (SIM unchanged)
+            p.setdefault("auto_rate_baseline", True)
         self.link = LinkMonitor(float(p.get("heartbeat_timeout_s", 3.0)),
                                 int(p.get("min_gnss_fix_type", 3)), int(p.get("min_gnss_satellites", 5)))
         self.feed: LiveFeed | None = None

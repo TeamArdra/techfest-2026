@@ -98,6 +98,9 @@ class PhysicsDetector(Detector):
         # heading-vs-course tolerance (deg); config key added for per-vehicle profiles,
         # the default stays the Stage-1 constant 25.0
         self.yaw_course_deg = float(p.get("yaw_course_deg", 25.0))
+        # False for multirotors (yaw is independent of the track): disables the heading-vs-course
+        # (frozen-attitude) telemetry rule. Default True = Stage-1 behaviour.
+        self.yaw_course_enabled = bool(p.get("yaw_course_enabled", True))
         self.hysteresis_ticks = int(p.get("hysteresis_ticks", 2))
         self.cusum_enabled = bool(p.get("cusum_enabled", False))
         self.cusum_threshold_m = float(p.get("cusum_threshold_m", 1.2))
@@ -265,7 +268,7 @@ class PhysicsDetector(Detector):
         # ---- heading (attitude) vs course-over-ground (frozen attitude) ----
         yc = frame.yaw_course_diff_deg
         signals["yaw_course_diff_deg"] = yc
-        if yc > self.yaw_course_deg:
+        if self.yaw_course_enabled and yc > self.yaw_course_deg:
             s = ramp(yc, self.yaw_course_deg, 90.0)
             bump(AttackType.TELEMETRY_MANIPULATION, max(0.5, s))
             evidence.append(f"heading/course mismatch {yc:.0f}° (attitude inconsistent with track)")

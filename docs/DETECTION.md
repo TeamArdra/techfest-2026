@@ -262,6 +262,22 @@ ungated fix after a gated one is the *transition* fix. Each fix's residual incre
     and 0.70 m, pinned by the REPLAY-of-BENCH test).
 * `false` restores the Stage-1 rule exactly. Tests: `tests/unit/test_gps_scenarios_fused.py`.
 
+### Real-link hardening (2026-10-29): rate baseline, multirotor yaw, actuation guards
+
+* `protocol.auto_rate_baseline` (default `false`; Stage-1, SIM and replay unchanged). On: for `rate_learn_s` (20 s)
+  after the first heartbeat the median of `msg_rate_hz` is learned and rate alarms are suppressed (score-0 evidence
+  `coverage: learning link message-rate baseline`). Afterwards nominal = max(configured, median) and the flood limit =
+  max(configured, 4 x median), frozen. If during learning the rate exceeds the configured `max_msg_rate_hz` or the
+  p95 is more than 5x the median, learning is rejected (evidence line says so) and the configured thresholds stay.
+  Enabled for every non-SIM live source (`LiveEngine`, `InlineIpsBridge`). A flood that begins inside the 20 s window
+  is not alarmed on until learning ends (and is then rejected), an accepted limitation. Engineering default, not calibrated.
+* `physics.yaw_course_enabled` (default `true`). `false` disables the heading-vs-course rule, i.e. the
+  frozen-attitude telemetry check, for that profile. Used by `configs/ardupilot_copter/` because a multirotor's
+  yaw is independent of its track.
+* Mitigation: a counter set-mode is sent only when the vehicle mode is known and differs from the trusted one; the
+  generic SAFE_HOLD -> ALT_HOLD only inside a GPS episode or for command injection with a real mode difference;
+  rate limiting needs the DOS evidence on 3 consecutive threat ticks.
+
 ### EKF-health and GPS receiver-signature rules (2026-10-28, additive)
 
 Software-only checks on messages any flight controller already streams (`EKF_STATUS_REPORT`,

@@ -31,12 +31,18 @@ rollout). A valid signature, not the sysid, is then what makes a sender trusted.
 (``state_path``) so a restart does not reopen a replay window; ``max_age_s`` additionally rejects frames older than
 that on the bridge's clock (leave it off if the companion has no real-time clock). A signed frame cannot be altered
 by a rewrite, and a frame the attacker merely *delays* keeps a valid signature until ``max_age_s`` lapses.
+
+**Unsigned-link provenance (no key, ``provenance=True``).** Each (sysid, compid) uplink source gets a ``SeqProvenance``
+sequence-counter tracker. A sensitive command / control message from a trusted sysid whose counter is known but
+inconsistent is dropped while armed or in flight and only counted on the ground; a byte-identical repeat of a
+forwarded sensitive frame is dropped as a replay. Best effort only: signing is the real fix (see docs/INLINE_IPS.md).
 Any exception in a rule forwards the original frame (fail-open).
 """
 
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import json
 import os
 import struct
@@ -119,6 +125,50 @@ def _command(raw: bytes, msgid: int) -> tuple[int, float, float] | None:
     return None
 
 
+class SeqProvenance:
+    """Learn one source's 8-bit MAVLink sequence counter and judge later frames against it.
+
+    Known after 3 consecutive consistent frames. A frame is consistent if ``(seq - last) mod 256`` is in
+    ``1..window``. Inconsistent frames never move ``last`` (a forger must not drag the real counter); 3
+    consecutive inconsistent frames that follow each other consistently replace the counter (``resyncs``).
+    """
+
+    __slots__ = ("last", "count", "bad", "window", "resyncs")
+
+    def __init__(self, window: int = 16) -> None:
+        self.last = -1
+        self.count = 0
+        self.bad: list[int] = []
+        self.window = window
+        self.resyncs = 0
+
+    @property
+    def known(self) -> bool:
+        return self.count >= 3
+
+    def observe(self, seq: int) -> str:
+        """``unknown`` | ``consistent`` | ``inconsistent`` (the third frame of a resync run is consistent)."""
+        if not self.known:
+            ok = self.count > 0 and 1 <= (seq - self.last) % 256 <= self.window
+            self.count = self.count + 1 if ok else 1
+            self.last = seq
+            return "unknown"
+        if 1 <= (seq - self.last) % 256 <= self.window:
+            self.last = seq
+            self.bad.clear()
+            return "consistent"
+        if self.bad and 1 <= (seq - self.bad[-1]) % 256 <= self.window:
+            self.bad.append(seq)
+        else:
+            self.bad = [seq]
+        if len(self.bad) >= 3:
+            self.last = seq
+            self.bad.clear()
+            self.resyncs += 1
+            return "consistent"
+        return "inconsistent"
+
+
 class InlinePolicy:
     """Thread-safe uplink/downlink filter for an inline bridge. See the module docstring."""
 
@@ -137,6 +187,8 @@ class InlinePolicy:
         max_age_s: float | None = None,
         state_path: str | os.PathLike[str] | None = None,
         clock: Callable[[], float] = time.monotonic,
+        provenance: bool = True,
+        provenance_window: int = 16,
     ) -> None:
         self.sanitizer = sanitizer or FrameSanitizer()
         self.trusted_sysids = frozenset(int(s) for s in trusted_sysids)
@@ -167,6 +219,15 @@ class InlinePolicy:
         self.dropped_unsigned = 0
         self.dropped_bad_signature = 0
         self.dropped_replay = 0
+        # unsigned-link provenance (sequence-counter tracker + byte-identical replay set)
+        self.provenance = bool(provenance)
+        self.provenance_window = int(provenance_window)
+        self._seq: dict[tuple[int, int], SeqProvenance] = {}
+        self._seen: dict[bytes, float] = {}
+        self.dropped_provenance = 0
+        self.suspect_provenance = 0
+        self.dropped_replay_unsigned = 0
+        self.resyncs = 0
         # counters
         self.dropped_untrusted_control = 0
         self.dropped_inflight_disarm = 0
@@ -182,6 +243,8 @@ class InlinePolicy:
             self.enforce = bool(enforce)
             if not enforce:
                 self._last_cmd.clear()
+                self._seq.clear()
+                self._seen.clear()
 
     def touch(self) -> None:
         """The analyser calls this after every controller step; it keeps the dynamic rules fresh."""
@@ -211,7 +274,10 @@ class InlinePolicy:
                 "in_flight": self.in_flight, "dropped_untrusted_control": self.dropped_untrusted_control,
                 "dropped_inflight_disarm": self.dropped_inflight_disarm, "dropped_burst": self.dropped_burst,
                 "dropped_dynamic": self.dropped_dynamic, "rewritten": self.rewritten,
-                "hook_errors": self.hook_errors}
+                "hook_errors": self.hook_errors,
+                "provenance_known_sources": sum(1 for t in self._seq.values() if t.known),
+                "dropped_provenance": self.dropped_provenance, "suspect_provenance": self.suspect_provenance,
+                "dropped_replay_unsigned": self.dropped_replay_unsigned, "resyncs": self.resyncs}
 
     # -- hooks --------------------------------------------------------------- #
 
@@ -258,9 +324,18 @@ class InlinePolicy:
                     pass  # rollout mode: an unsigned frame from a trusted sysid still passes
                 else:
                     return []
+            track = self.provenance and self._verifier is None
+            verdict = self._observe_seq(ctx) if track else "unknown"
             if msgid in CONTROL_MSGIDS and not trusted:
                 self.dropped_untrusted_control += 1
                 return []
+            if needs_auth and track:
+                if verdict == "inconsistent" and trusted:
+                    if self.armed or self.in_flight:
+                        self.dropped_provenance += 1
+                        return []
+                    self.suspect_provenance += 1
+                return self._replay_filter(ctx, self._after_provenance(ctx, trusted, cmd))
             if cmd is not None and cmd[0] in SENSITIVE_COMMANDS:
                 return self._command_rule(ctx, trusted, *cmd)
             if self.dynamic_fresh and self.sanitizer.active and not trusted:
@@ -274,6 +349,45 @@ class InlinePolicy:
             return [ctx.raw]
 
     # -- internals ----------------------------------------------------------- #
+
+    def _observe_seq(self, ctx: FrameContext) -> str:
+        key = (ctx.sysid, ctx.compid)
+        with self._lock:
+            t = self._seq.get(key)
+            if t is None:
+                if len(self._seq) >= 256:
+                    self._seq.pop(next(iter(self._seq)))
+                t = self._seq[key] = SeqProvenance(self.provenance_window)
+            before = t.resyncs
+            verdict = t.observe(ctx.seq)
+            self.resyncs += t.resyncs - before
+        return verdict
+
+    def _after_provenance(self, ctx: FrameContext, trusted: bool, cmd: tuple[int, float, float] | None) -> list[bytes]:
+        if cmd is not None and cmd[0] in SENSITIVE_COMMANDS:
+            return self._command_rule(ctx, trusted, *cmd)
+        return [ctx.raw]
+
+    def _replay_filter(self, ctx: FrameContext, out: list[bytes]) -> list[bytes]:
+        """Drop a byte-identical repeat (same sysid, compid, seq, payload) of a frame already forwarded."""
+        if not out:
+            return out
+        h = hashlib.blake2b(
+            bytes((ctx.sysid, ctx.compid, ctx.seq & 0xFF)) + (_payload(ctx.raw) or ctx.raw), digest_size=16).digest()
+        now = self._clock()
+        with self._lock:
+            t = self._seen.get(h)
+            src = self._seq.get((ctx.sysid, ctx.compid))
+            # only once the source's counter is known: before that, an identical re-send is indistinguishable
+            # from a pilot repeating a command on a restarted counter
+            if t is not None and now - t <= 300.0 and src is not None and src.known:
+                self.dropped_replay_unsigned += 1
+                return []
+            self._seen.pop(h, None)
+            self._seen[h] = now
+            while len(self._seen) > 512 or (self._seen and now - next(iter(self._seen.values())) > 300.0):
+                self._seen.pop(next(iter(self._seen)))
+        return out
 
     def _check_signature(self, ctx: FrameContext) -> str:
         """``ok`` | ``unsigned`` | ``bad_signature`` | ``replay`` (each counted)."""
