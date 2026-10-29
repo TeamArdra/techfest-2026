@@ -169,8 +169,11 @@ tracker is bypassed).
   (`suspect_provenance`). An unknown counter passes. Existing rules (untrusted sysid, in-flight plain disarm, burst)
   are unchanged.
 - **Resync.** Three consecutive inconsistent frames that follow each other (+1..16) replace the learned counter
-  (`resyncs`), e.g. a GCS restart. Worst-case lockout of a genuine pilot: the first 2 frames after the counter jumps
-  (the third is accepted and resyncs); the same applies after more than 16 consecutive lost frames.
+  (`resyncs`), e.g. a GCS restart, but only when the learned counter has seen no consistent frame for 2 s
+  (`SeqProvenance.quiet_s`). A live genuine stream therefore keeps the counter: a forger that sends its own
+  consecutive sequence next to the pilot cannot take it over (found in SITL, see below). Worst-case lockout of a genuine
+  pilot after a restart: its first 2 frames, and at least 2 s after its previous frame; the same applies after more than
+  16 consecutive lost frames.
 - **Replay.** A byte-identical (sysid, compid, seq, payload) repeat of an already forwarded sensitive frame within 5
   minutes (bounded to 512 entries) is dropped (`dropped_replay_unsigned`) once that source's counter is known. Re-sending
   the same command with a new seq is not a replay.
@@ -179,3 +182,58 @@ tracker is bypassed).
 
 **Limits.** This does not stop an attacker who can see the link and tracks the real counter, nor a forger whose frames
 happen to fall in the +1..16 window. Only MAVLink-2 signing closes those.
+
+## SITL evidence: signing and unsigned smart attacker
+
+Same rig as above (ArduCopter SITL, loopback hub, `configs/ardupilot_copter`-style profile, GUIDED flight at 30 m;
+scripts in `scripts/ardupilot/inline_demo/`: `run_signing.sh`, `run_unsigned.sh`). Two runs per active scenario, one
+passive run each. Single runs, one simulated autopilot, loopback only: no radio, no real GCS software.
+
+**Scenario A, MAVLink-2 signing** (random 32-byte key provisioned with `SETUP_SIGNING` over SERIAL0, SITL restarted,
+`ips-bridge --signing-key-file --signing-state`, pilot and GCS-side `aegis serve` with the same key). Per active run
+(two runs, identical counters):
+
+| check | result |
+|---|---|
+| signed pilot: GUIDED, arm, takeoff 30 m, leg, signed LOITER then GUIDED | all succeeded; `signed_ok` 16 |
+| unsigned forged LAND, sysid 66 and sysid 255, MAVLink 2 and MAVLink 1 (10 frames each) | 40 `dropped_unsigned`; mode stayed GUIDED |
+| LAND signed with a wrong key (sysid 255, 10 frames) | 10 `dropped_bad_signature`; GUIDED |
+| byte-identical replay (3x) of a captured signed SET_MODE(LOITER) | 3 `dropped_replay`; GUIDED, no second LOITER |
+| uplink frames | 70 in, 17 forwarded, 53 dropped (= 40 + 10 + 3); no pilot command failed |
+| downlink | 24,386 and 24,524 frames forwarded, 0 dropped |
+| GCS-side cross-end check | 168 and 169 matched, 0 mismatches |
+| IDS inside the bridge | 4 `TELEMETRY_MANIPULATION` (the known heading/course false alarm in GUIDED) and no alerts for the dropped attack frames, which never reach the tap; 4 counter-frames sent |
+| `passive`, same key | all 70 uplink frames forwarded; the flight controller itself rejected every unsigned, wrong-key and replayed frame (mode stayed GUIDED); the IDS reported the same 4 heading/course alerts and nothing about the attacks; cross-end 165 matched, 0 mismatches |
+
+Not shown: the FC rejecting these in passive is inferred from its mode, not read from its log; the replay is dropped by
+the bridge and would also be refused by the FC's own timestamp check, so "FC does not act twice" is not isolated from
+the bridge; no wrong-sysid-with-valid-signature case; no key rotation or clock skew.
+
+**Scenario B, smart attacker on an unsigned link** (no key anywhere; sysid 255 / compid 190 forged; the pilot sends a
+1 Hz heartbeat and a benign DO_SET_MODE(GUIDED) every 5 s as probe of lock-out). `passive` is the control.
+
+| attack | `passive` (run 1) | `active-ips` (2 runs after the fix) |
+|---|---|---|
+| (1) forged LAND, own counter, 10 frames | vehicle went to LAND | 10 `dropped_provenance`, no LAND (before the fix: 5 dropped, 2 `resyncs`, LAND reached the FC) |
+| (2) replay of the pilot's captured SET_MODE(LOITER), 3x | vehicle went to LOITER | 3 dropped (counted as `dropped_provenance`: the replayed seq is behind the counter; `dropped_replay_unsigned` stayed 0); no LOITER |
+| (3) counter-tracking forged LAND (next expected seq, 10 attempts) | vehicle went to LAND | PASSED: LAND reached the FC in both runs (1 and 2 frames `dropped_provenance` in that stage) |
+| (4) pilot restarts its counter at 0 | first LOITER command accepted | first command dropped, second accepted 3.4 s and 3.5 s after the restart (1 `resync`); GUIDED restored |
+| `dropped_untrusted_control` / `suspect_provenance` / `dropped_replay_unsigned` | 0 / 0 / 0 | 0 / 0 / 0 |
+| totals over the run | 214 of 214 uplink frames forwarded | `dropped_provenance` 15 and 16, `resyncs` 1; 206 and 204 forwarded |
+
+Legitimate frames dropped: 1 per run at the pilot restart (the lock-out above); in the second active run one benign
+probe (BEAT 11) got no acknowledgement during the tracking stage, which may have been a duplicate-seq collision with the
+attacker; the drops in the tracking stage were not attributed to sender. All other probes were acknowledged.
+
+What this shows: with a key, every forged, wrongly-keyed and replayed uplink frame in these runs was dropped and the
+pilot kept working. Without a key the software check stops a naive forger and naive replay, and does nothing against an
+attacker that can read the real pilot's counter (3); that remains the case until signing is on. What it does not show:
+a real radio, a real GCS (QGroundControl and others behave differently on restart and heartbeat), other attackers'
+timing, or more than the stated number of runs.
+
+**Bug found and fixed.** The unsigned resync rule let a forger take over the counter: 3 consecutive own-counter frames
+next to the live pilot replaced the learned counter (first run: LAND reached the FC after 5 drops, and the pilot's
+own frames were then treated as inconsistent). `SeqProvenance` now resyncs only after the learned counter has been quiet
+for 2 s. Regression tests: `test_forger_consecutive_counter_next_to_live_pilot_cannot_take_over` and
+`test_seq_provenance_quiet_period_gates_resync` in `tests/unit/test_inline_provenance.py`. No bug was found in the
+signing path.

@@ -4,9 +4,11 @@
                                   --5802--> observers (read-only copy of the downlink: the dashboard)
 Everything binds to 127.0.0.1 only.
 """
+import os
 import selectors
 import socket
 
+TAP = open(os.environ["HUB_TAP"], "ab") if os.environ.get("HUB_TAP") else None  # optional uplink capture
 sel = selectors.DefaultSelector()
 bridge = None
 gcs, obs = [], []
@@ -69,6 +71,9 @@ while True:
                 except OSError:
                     drop(c)
         elif tag == "gcs" and bridge is not None:
+            if TAP is not None:
+                TAP.write(data)
+                TAP.flush()
             try:
                 bridge.sendall(data)
             except OSError:

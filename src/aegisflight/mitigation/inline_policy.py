@@ -130,39 +130,49 @@ class SeqProvenance:
 
     Known after 3 consecutive consistent frames. A frame is consistent if ``(seq - last) mod 256`` is in
     ``1..window``. Inconsistent frames never move ``last`` (a forger must not drag the real counter); 3
-    consecutive inconsistent frames that follow each other consistently replace the counter (``resyncs``).
+    consecutive inconsistent frames that follow each other consistently replace the counter (``resyncs``), but only
+    once the learned counter has been quiet for ``quiet_s`` seconds: a live genuine stream keeps the counter, so a
+    forger that sends its own consecutive sequence next to it cannot take it over (SITL finding; a restarted GCS has
+    no live old stream). ``now`` is the caller's monotonic clock; ``None`` disables the quiet check.
     """
 
-    __slots__ = ("last", "count", "bad", "window", "resyncs")
+    __slots__ = ("last", "count", "bad", "window", "resyncs", "quiet_s", "last_t")
 
-    def __init__(self, window: int = 16) -> None:
+    def __init__(self, window: int = 16, quiet_s: float = 2.0) -> None:
         self.last = -1
         self.count = 0
         self.bad: list[int] = []
         self.window = window
         self.resyncs = 0
+        self.quiet_s = quiet_s
+        self.last_t = 0.0
 
     @property
     def known(self) -> bool:
         return self.count >= 3
 
-    def observe(self, seq: int) -> str:
+    def observe(self, seq: int, now: float | None = None) -> str:
         """``unknown`` | ``consistent`` | ``inconsistent`` (the third frame of a resync run is consistent)."""
+        t = 0.0 if now is None else now
         if not self.known:
             ok = self.count > 0 and 1 <= (seq - self.last) % 256 <= self.window
             self.count = self.count + 1 if ok else 1
             self.last = seq
+            self.last_t = t
             return "unknown"
         if 1 <= (seq - self.last) % 256 <= self.window:
             self.last = seq
+            self.last_t = t
             self.bad.clear()
             return "consistent"
         if self.bad and 1 <= (seq - self.bad[-1]) % 256 <= self.window:
             self.bad.append(seq)
+            del self.bad[:-3]
         else:
             self.bad = [seq]
-        if len(self.bad) >= 3:
+        if len(self.bad) >= 3 and (now is None or t - self.last_t >= self.quiet_s):
             self.last = seq
+            self.last_t = t
             self.bad.clear()
             self.resyncs += 1
             return "consistent"
@@ -359,7 +369,7 @@ class InlinePolicy:
                     self._seq.pop(next(iter(self._seq)))
                 t = self._seq[key] = SeqProvenance(self.provenance_window)
             before = t.resyncs
-            verdict = t.observe(ctx.seq)
+            verdict = t.observe(ctx.seq, self._clock())
             self.resyncs += t.resyncs - before
         return verdict
 

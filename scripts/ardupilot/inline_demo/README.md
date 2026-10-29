@@ -11,3 +11,12 @@ Topology: SITL SERIAL1 (tcp 5762) <- `aegis ips-bridge` -> `hub.py` (5800) -> pi
 `aegis serve` dashboard (5802). `attack.py` sends a forged LAND from sysid 66. `holder.py` keeps SERIAL0 connected
 (SITL waits for it before opening its other ports). Everything binds to loopback, except SITL's own listeners, which
 the ArduPilot build opens on all interfaces: stop it when done.
+
+## Signing and unsigned smart-attacker scenarios
+
+- `sign_setup.py <keyfile>`: provision MAVLink-2 signing into a fresh SITL over SERIAL0 (5760), then restart SITL with the
+  same `eeprom.bin`. Keys are random 32-byte files you create yourself; never commit them.
+- `run_signing.sh <label> <passive|active-ips>` with `fly_signed.py` (signed pilot) and `attack_signed.py` (unsigned,
+  wrong-key and replay attacks). `hub.py` records the uplink to `$HUB_TAP` so the replay attacker has a capture.
+- `run_unsigned.sh <label> <passive|active-ips>` with `fly_unsigned.py` (pilot with 1 Hz heartbeat, GCS restart) and
+  `attack2.py` (own-counter forgery, replay, counter-tracking attacker). Wipes `eeprom.bin` so signing is off.

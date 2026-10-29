@@ -92,6 +92,7 @@ def test_unknown_counter_passes(pol):
 def test_gcs_restart_resyncs_after_three_frames(pol):
     feed(pol, range(100, 106))
     arm(pol)
+    pol._clock.t += 3.0  # the old stream is gone (restart), so the quiet period has passed
     assert pol.up(_ctx(land(255, 0))) == []
     pol.up(_ctx(hb(255, 1)))
     pol.up(_ctx(hb(255, 2)))  # third mutually consistent frame resyncs
@@ -160,3 +161,26 @@ def test_seq_provenance_wraparound_and_duplicate():
         t.observe(s)
     assert t.observe(2) == "consistent"      # wraps, +6
     assert t.observe(2) == "inconsistent"    # duplicate
+
+
+def test_forger_consecutive_counter_next_to_live_pilot_cannot_take_over(pol):
+    """SITL finding: a forger sending 3+ consecutive own-counter frames next to a live pilot must not resync."""
+    feed(pol, range(100, 106))
+    arm(pol)
+    for i in range(6):                                 # forger: its own consecutive counter 0..5
+        assert pol.up(_ctx(land(255, i))) == []
+        pol._clock.t += 0.3
+        if i % 3 == 2:
+            feed(pol, [106 + i // 3])                  # the live pilot keeps sending its own frames
+    assert pol.resyncs == 0
+    raw = land(255, 108)                               # the genuine pilot is not locked out
+    assert pol.up(_ctx(raw)) == [raw]
+
+
+def test_seq_provenance_quiet_period_gates_resync():
+    t = SeqProvenance(16, quiet_s=2.0)
+    for i, s in enumerate((10, 11, 12)):
+        t.observe(s, float(i))
+    assert [t.observe(s, 3.0 + 0.1 * k) for k, s in enumerate((200, 201, 202))] == ["inconsistent"] * 3
+    assert t.resyncs == 0
+    assert t.observe(203, 5.0) == "consistent" and t.resyncs == 1
