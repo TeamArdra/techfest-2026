@@ -237,3 +237,37 @@ own frames were then treated as inconsistent). `SeqProvenance` now resyncs only 
 for 2 s. Regression tests: `test_forger_consecutive_counter_next_to_live_pilot_cannot_take_over` and
 `test_seq_provenance_quiet_period_gates_resync` in `tests/unit/test_inline_provenance.py`. No bug was found in the
 signing path.
+
+## SITL evidence: wrap-around replay and contested source
+
+Unsigned link, `active-ips`, ArduCopter SITL on loopback through `scripts/ardupilot/inline_demo/` (`run_wrap.sh`,
+`run_contested.sh`, `fly_wrap.py`, `attack_wrap.py`, `watch_alarm.py`; the pilot is a pymavlink script as sysid 255).
+
+**Replay memory.** The byte-identical replay set is now count-bounded (`replay_memory`, default the last 4096 forwarded
+sensitive/control frames, `--replay-memory`), with no time limit and no need for the source counter to be known. An exact
+(sysid, compid, seq, payload) forwarded once is never forwarded again. Cost: a GCS that legitimately sends the same
+control frame with the same seq after exactly 256 frames (rare) is dropped once.
+
+**Wrap-around replay (1 run).** The pilot sent a genuine DO_SET_MODE(GUIDED) at seq 104 (hub capture), went back to
+LOITER, sent 247 filler heartbeats at about 20/s (15 s) until its counter was at 101, then the attacker replayed the
+captured bytes (seq 104 is inside the +1..16 window, so the provenance check alone would accept it). Result:
+`dropped_replay_unsigned` +1, `dropped_provenance` 0, vehicle stayed in LOITER (5); the pilot's next legitimate
+DO_SET_MODE(GUIDED) (new seq) was forwarded and acked (ack 0, mode 4). Whole run: 374 uplink frames, 1 dropped.
+
+**Counter-tracking attacker (1 run per mode, 10 forged DO_SET_MODE(LAND) each, sent with the pilot's next seq).**
+- `alert`: every attempt produced a same-seq/different-payload event (`contested_events` 10), one rate-limited alarm
+  (`contested_alarms` 1); the STATUSTEXT (severity 4) was seen at the GCS side and the console printed an ALARM line.
+  The attack was NOT stopped: 1 forged frame dropped by provenance, 9 forwarded, vehicle went to LAND (9); the pilot's
+  next beat restored GUIDED.
+- `drop-sensitive`: same detection and alarm. `dropped_contested` 12: the vehicle still entered LAND (the first forged
+  frame passes before a duplicate proves two senders), then forged frames and the pilot's own DO_SET_MODE beats (3 of 3,
+  ack None) were dropped, so the real pilot could NOT take the vehicle out of LAND while the source was contested
+  (60 s hold, refreshed by each event). The RC radio remains the override.
+- So the detector only detects the counter-tracking attacker once the race yields a duplicate; it does not stop its
+  first frames, and `drop-sensitive` can lock out the real GCS. A forced disarm (magic 21196) is never dropped. Only
+  signing removes the problem; `ips-bridge` prints a warning when `active-ips` runs without `--signing-key-file`.
+  The alarm text stays below the 50-byte STATUSTEXT limit.
+
+**What this does not show:** single runs, a simulated autopilot, loopback with no radio latency or loss, a pymavlink
+pilot rather than real GCS software, and an attacker script that reads the capture file directly (a real one needs a
+radio sniffer).

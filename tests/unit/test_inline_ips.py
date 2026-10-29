@@ -137,7 +137,14 @@ def test_identical_sensitive_command_burst_is_dropped_once_per_window(policy):
     assert up(policy, raw) == []                     # same payload inside cadence_s
     assert up(policy, command_long(255, MAV_CMD_DO_SET_MODE, 1, 5)) != []  # a different command is a different intent
     policy.clock.t += 0.2                            # type: ignore[attr-defined]
-    assert up(policy, raw) == [raw]
+    # a byte-identical resend (same seq) is now a replay and stays dropped (memory is count-bounded, not timed); the
+    # same intent with a fresh seq is a new frame and passes once the burst window has lapsed
+    assert up(policy, raw) == []
+    m = _enc(255, 190)
+    m.seq = 7
+    policy.clock.t += 0.2                            # type: ignore[attr-defined]
+    fresh = bytes(m.command_long_encode(1, 1, MAV_CMD_DO_SET_MODE, 0, 1, 4, 0, 0, 0, 0, 0).pack(m))
+    assert up(policy, fresh) == [fresh]
     assert policy.dropped_burst == 1
 
 

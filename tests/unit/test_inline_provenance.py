@@ -184,3 +184,120 @@ def test_seq_provenance_quiet_period_gates_resync():
     assert [t.observe(s, 3.0 + 0.1 * k) for k, s in enumerate((200, 201, 202))] == ["inconsistent"] * 3
     assert t.resyncs == 0
     assert t.observe(203, 5.0) == "consistent" and t.resyncs == 1
+
+
+# -- wrap-around replay (count-bounded replay memory) --------------------------------------------------------- #
+
+def _set_mode(sysid: int, seq: int, mode: int | None = None) -> bytes:
+    m = _m(sysid, seq)
+    return bytes(m.command_long_encode(1, 1, 176, 0, 1, seq if mode is None else mode, 0, 0, 0, 0, 0).pack(m))
+
+
+def _disarm(sysid: int, seq: int, magic: float = 0.0) -> bytes:
+    m = _m(sysid, seq)
+    return bytes(m.command_long_encode(1, 1, 400, 0, 0.0, magic, 0, 0, 0, 0, 0).pack(m))
+
+
+def test_replay_after_counter_wrap_is_dropped_by_filter_not_provenance(pol):
+    feed(pol, range(10, 15))
+    cap = _set_mode(255, 15)
+    assert pol.up(_ctx(cap)) == [cap]
+    pol._clock.t += 3600.0  # no time limit any more
+    feed(pol, [s % 256 for s in range(16, 16 + 255)])  # 255 fillers: the counter is back just below 15 (seq 14)
+    assert pol.up(_ctx(cap)) == []
+    assert pol.dropped_replay_unsigned == 1 and pol.dropped_provenance == 0
+
+
+def test_replay_filter_applies_even_when_source_counter_unknown(pol):
+    raw = _set_mode(255, 40)
+    assert pol.up(_ctx(raw)) == [raw]
+    assert pol.up(_ctx(raw)) == []
+
+
+def test_replay_memory_is_count_bounded():
+    p = InlinePolicy(FrameSanitizer(), clock=Clock(), replay_memory=4)
+    p.set_enforce(True)
+    first = _set_mode(255, 1)
+    p.up(_ctx(first))
+    for s in range(2, 7):
+        p.up(_ctx(_set_mode(255, s)))
+    assert len(p._seen) == 4
+    assert p.up(_ctx(first)) == [first]  # evicted by count only
+
+
+def test_repeated_legit_command_with_new_seq_passes_after_wrap(pol):
+    feed(pol, range(10, 15))
+    for s in (15, 16, 17):
+        raw = _set_mode(255, s)
+        assert pol.up(_ctx(raw)) == [raw]
+
+
+# -- contested source (two transmitters) --------------------------------------------------------------------- #
+
+def _contest(p: InlinePolicy) -> None:
+    feed(p, range(10, 15))
+    p.up(_ctx(hb(255, 15)))
+    p.up(_ctx(_set_mode(255, 15)))  # same seq, different payload, same instant
+
+
+def test_same_seq_different_payload_marks_contested_and_alarms_once(pol):
+    _contest(pol)
+    assert pol.contested_events == 1 and pol.is_contested(255)
+    assert pol.take_alarms() == [255]
+    pol._clock.t += 1.0
+    feed(pol, [16])
+    pol.up(_ctx(_set_mode(255, 16)))  # a second event inside the alarm interval: counted, not re-alarmed
+    assert pol.contested_events == 2 and pol.take_alarms() == []
+    assert pol.stats()["contested_sources"] == 1 and pol.contested_alarms == 1
+    pol._clock.t += 11.0  # past the alarm interval and still inside the hold: next event alarms again
+    feed(pol, [17])
+    pol.up(_ctx(_set_mode(255, 17)))
+    assert pol.take_alarms() == [255]
+
+
+def test_contested_expires_after_hold(pol):
+    _contest(pol)
+    pol._clock.t += 61.0
+    assert not pol.is_contested(255)
+
+
+def test_same_seq_same_payload_is_not_contested(pol):
+    feed(pol, range(10, 15))
+    pol.up(_ctx(hb(255, 15)))
+    pol.up(_ctx(hb(255, 15)))
+    assert pol.contested_events == 0
+
+
+def test_alert_mode_never_drops_contested(pol):
+    _contest(pol)
+    arm(pol)
+    raw = _set_mode(255, 16)
+    assert pol.up(_ctx(raw)) == [raw] and pol.dropped_contested == 0
+
+
+def test_drop_sensitive_drops_in_flight_only():
+    p = InlinePolicy(FrameSanitizer(), clock=Clock(), contested_policy="drop-sensitive")
+    p.set_enforce(True)
+    _contest(p)
+    raw = _set_mode(255, 16)
+    assert p.up(_ctx(raw)) == [raw]  # on the ground: not dropped
+    arm(p)
+    assert p.up(_ctx(_set_mode(255, 17, mode=9))) == []
+    assert p.dropped_contested == 1
+    hbf = hb(255, 18)
+    assert p.up(_ctx(hbf)) == [hbf]  # non-sensitive traffic still flows
+
+
+def test_drop_sensitive_never_drops_forced_disarm():
+    p = InlinePolicy(FrameSanitizer(), clock=Clock(), contested_policy="drop-sensitive")
+    p.set_enforce(True)
+    _contest(p)
+    arm(p)
+    forced = _disarm(255, 16, magic=21196.0)
+    assert p.up(_ctx(forced)) == [forced]
+    assert p.up(_ctx(_disarm(255, 17))) == []
+
+
+def test_bad_contested_policy_rejected():
+    with pytest.raises(ValueError):
+        InlinePolicy(FrameSanitizer(), contested_policy="kill")

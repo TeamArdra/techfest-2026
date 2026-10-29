@@ -234,7 +234,9 @@ def _cmd_ips_bridge(args: argparse.Namespace) -> int:
                              store=store, run_id=run_id, secret_key=key,
                              allow_unsigned_from_trusted=args.signing_permissive,
                              signing_max_age_s=args.signing_max_age_s, signing_state_path=args.signing_state,
-                             ekf_secondary=args.ekf_secondary, crossend_interval_s=args.crossend_interval)
+                             ekf_secondary=args.ekf_secondary, crossend_interval_s=args.crossend_interval,
+                             contested_policy=args.contested_policy, replay_memory=args.replay_memory,
+                             on_alarm=lambda m: print(f"aegis ips-bridge: ALARM {m}", flush=True))
     fc.start()
     gcs.start()
     bridge.start()
@@ -247,6 +249,10 @@ def _cmd_ips_bridge(args: argparse.Namespace) -> int:
         except OSError as exc:
             print(f"aegis ips-bridge: cannot bind status port: {exc}", file=sys.stderr)
     print(f"aegis ips-bridge: {args.fc_port} <-> {args.gcs_port}, posture {args.defense_mode}", flush=True)
+    if args.defense_mode == "active-ips" and key is None:
+        print("aegis ips-bridge: WARNING active-ips without --signing-key-file: an unsigned link cannot be fully protected "
+              "(a counter-tracking attacker passes the provenance checks); use MAVLink-2 signing (--signing-key-file)",
+              flush=True)
     end = None if args.seconds is None else time.monotonic() + args.seconds
     try:
         while end is None or time.monotonic() < end:
@@ -356,6 +362,11 @@ def build_parser() -> argparse.ArgumentParser:
     ib.add_argument("--crossend-interval", type=float, default=1.0,
                     help="seconds between cross-end summaries of the last forwarded GLOBAL_POSITION_INT sent to the GCS "
                          "side only (0 = off); lets a GCS-side 'aegis serve' detect telemetry altered after the bridge")
+    ib.add_argument("--contested-policy", choices=["alert", "drop-sensitive"], default="alert",
+                    help="unsigned link, two transmitters on one sysid: alert = STATUSTEXT only; drop-sensitive = also drop "
+                         "sensitive/control frames from that source in flight (can block the real pilot; forced disarm passes)")
+    ib.add_argument("--replay-memory", type=int, default=4096,
+                    help="unsigned link: number of forwarded sensitive frames remembered for the byte-identical replay filter")
     ib.add_argument("--config-dir", default=None)
     ib.add_argument("--db", default=None, help="log alerts to this SQLite hash-chain store")
     ib.add_argument("--seconds", type=float, default=None, help="run time (default: until Ctrl-C)")

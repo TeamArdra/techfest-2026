@@ -35,7 +35,11 @@ by a rewrite, and a frame the attacker merely *delays* keeps a valid signature u
 **Unsigned-link provenance (no key, ``provenance=True``).** Each (sysid, compid) uplink source gets a ``SeqProvenance``
 sequence-counter tracker. A sensitive command / control message from a trusted sysid whose counter is known but
 inconsistent is dropped while armed or in flight and only counted on the ground; a byte-identical repeat of a
-forwarded sensitive frame is dropped as a replay. Best effort only: signing is the real fix (see docs/INLINE_IPS.md).
+forwarded sensitive frame is dropped as a replay (count-bounded memory of the last ``replay_memory`` frames, no time
+limit, so a frame replayed after the 8-bit counter wraps is still caught). Two transmitters under one (sysid, compid)
+(same seq, different payload within 2 s) mark the source ``contested`` for ``contested_hold_s``: an operator alarm is
+queued (``take_alarms``) and, with ``contested_policy='drop-sensitive'``, sensitive/control frames from it are dropped
+in flight (a forced disarm never). Best effort only: signing is the real fix (see docs/INLINE_IPS.md).
 Any exception in a rule forwards the original frame (fail-open).
 """
 
@@ -48,6 +52,8 @@ import os
 import struct
 import threading
 import time
+import zlib
+from collections import deque
 from collections.abc import Callable, Iterable
 from pathlib import Path
 
@@ -199,7 +205,13 @@ class InlinePolicy:
         clock: Callable[[], float] = time.monotonic,
         provenance: bool = True,
         provenance_window: int = 16,
+        replay_memory: int = 4096,
+        contested_policy: str = "alert",
+        contested_hold_s: float = 60.0,
+        contested_alarm_interval_s: float = 10.0,
     ) -> None:
+        if contested_policy not in ("alert", "drop-sensitive"):
+            raise ValueError("contested_policy must be 'alert' or 'drop-sensitive'")
         self.sanitizer = sanitizer or FrameSanitizer()
         self.trusted_sysids = frozenset(int(s) for s in trusted_sysids)
         self.vehicle_sysids = frozenset(int(s) for s in vehicle_sysids)
@@ -238,6 +250,18 @@ class InlinePolicy:
         self.suspect_provenance = 0
         self.dropped_replay_unsigned = 0
         self.resyncs = 0
+        self.replay_memory = max(1, int(replay_memory))
+        # dual-transmitter detection ("contested" source)
+        self.contested_policy = contested_policy
+        self.contested_hold_s = float(contested_hold_s)
+        self.contested_alarm_interval_s = float(contested_alarm_interval_s)
+        self.contested_events = 0
+        self.dropped_contested = 0
+        self.contested_alarms = 0
+        self._recent: dict[tuple[int, int], deque[tuple[float, int, int]]] = {}
+        self._contested_until: dict[tuple[int, int], float] = {}
+        self._alarm_last: dict[tuple[int, int], float] = {}
+        self._alarms: list[int] = []
         # counters
         self.dropped_untrusted_control = 0
         self.dropped_inflight_disarm = 0
@@ -255,6 +279,22 @@ class InlinePolicy:
                 self._last_cmd.clear()
                 self._seq.clear()
                 self._seen.clear()
+                self._recent.clear()
+                self._contested_until.clear()
+                self._alarms.clear()
+
+    def take_alarms(self) -> list[int]:
+        """Sysids with a new contested alarm to raise (rate-limited per source); the bridge sends the STATUSTEXT."""
+        if not self._alarms:
+            return []
+        with self._lock:
+            out, self._alarms = self._alarms, []
+        return out
+
+    def is_contested(self, sysid: int, compid: int | None = None) -> bool:
+        now = self._clock()
+        return any(k[0] == sysid and (compid is None or k[1] == compid) and now < u
+                   for k, u in self._contested_until.items())
 
     def touch(self) -> None:
         """The analyser calls this after every controller step; it keeps the dynamic rules fresh."""
@@ -287,7 +327,11 @@ class InlinePolicy:
                 "hook_errors": self.hook_errors,
                 "provenance_known_sources": sum(1 for t in self._seq.values() if t.known),
                 "dropped_provenance": self.dropped_provenance, "suspect_provenance": self.suspect_provenance,
-                "dropped_replay_unsigned": self.dropped_replay_unsigned, "resyncs": self.resyncs}
+                "dropped_replay_unsigned": self.dropped_replay_unsigned, "resyncs": self.resyncs,
+                "replay_memory": self.replay_memory, "contested_policy": self.contested_policy,
+                "contested_events": self.contested_events,
+                "contested_sources": sum(1 for u in list(self._contested_until.values()) if self._clock() < u),
+                "contested_alarms": self.contested_alarms, "dropped_contested": self.dropped_contested}
 
     # -- hooks --------------------------------------------------------------- #
 
@@ -336,6 +380,14 @@ class InlinePolicy:
                     return []
             track = self.provenance and self._verifier is None
             verdict = self._observe_seq(ctx) if track else "unknown"
+            if track:
+                self._observe_dual(ctx)
+                if (needs_auth and self.contested_policy == "drop-sensitive" and self.in_flight
+                        and self.is_contested(ctx.sysid, ctx.compid)
+                        and not (cmd is not None and cmd[0] == MAV_CMD_COMPONENT_ARM_DISARM
+                                 and cmd[1] == 0.0 and cmd[2] == FORCE_MAGIC)):
+                    self.dropped_contested += 1
+                    return []
             if msgid in CONTROL_MSGIDS and not trusted:
                 self.dropped_untrusted_control += 1
                 return []
@@ -373,6 +425,29 @@ class InlinePolicy:
             self.resyncs += t.resyncs - before
         return verdict
 
+    def _observe_dual(self, ctx: FrameContext) -> None:
+        """Same (sysid, compid) and same seq but a different payload within 2 s: two transmitters share the identity."""
+        key = (ctx.sysid, ctx.compid)
+        h = zlib.crc32(_payload(ctx.raw) or ctx.raw)
+        now = self._clock()
+        with self._lock:
+            ring = self._recent.get(key)
+            if ring is None:
+                if len(self._recent) >= 256:
+                    self._recent.pop(next(iter(self._recent)))
+                ring = self._recent[key] = deque(maxlen=32)
+            hit = any(now - t <= 2.0 and s == ctx.seq and ph != h for t, s, ph in ring)
+            ring.append((now, ctx.seq, h))
+            if not hit:
+                return
+            was = now < self._contested_until.get(key, 0.0)
+            self._contested_until[key] = now + self.contested_hold_s
+            self.contested_events += 1
+            if not was or now - self._alarm_last.get(key, -1e18) >= self.contested_alarm_interval_s:
+                self._alarm_last[key] = now
+                self.contested_alarms += 1
+                self._alarms.append(ctx.sysid)
+
     def _after_provenance(self, ctx: FrameContext, trusted: bool, cmd: tuple[int, float, float] | None) -> list[bytes]:
         if cmd is not None and cmd[0] in SENSITIVE_COMMANDS:
             return self._command_rule(ctx, trusted, *cmd)
@@ -387,15 +462,13 @@ class InlinePolicy:
         now = self._clock()
         with self._lock:
             t = self._seen.get(h)
-            src = self._seq.get((ctx.sysid, ctx.compid))
-            # only once the source's counter is known: before that, an identical re-send is indistinguishable
-            # from a pilot repeating a command on a restarted counter
-            if t is not None and now - t <= 300.0 and src is not None and src.known:
+            # count-bounded, no time limit: a frame replayed after the 8-bit counter wrapped is still caught. Known or
+            # not, an exact (sysid, compid, seq, payload) already forwarded is never forwarded twice.
+            if t is not None:
                 self.dropped_replay_unsigned += 1
                 return []
-            self._seen.pop(h, None)
             self._seen[h] = now
-            while len(self._seen) > 512 or (self._seen and now - next(iter(self._seen.values())) > 300.0):
+            while len(self._seen) > self.replay_memory:
                 self._seen.pop(next(iter(self._seen)))
         return out
 

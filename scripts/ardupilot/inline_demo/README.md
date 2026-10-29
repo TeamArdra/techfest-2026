@@ -20,3 +20,4 @@ the ArduPilot build opens on all interfaces: stop it when done.
   wrong-key and replay attacks). `hub.py` records the uplink to `$HUB_TAP` so the replay attacker has a capture.
 - `run_unsigned.sh <label> <passive|active-ips>` with `fly_unsigned.py` (pilot with 1 Hz heartbeat, GCS restart) and
   `attack2.py` (own-counter forgery, replay, counter-tracking attacker). Wipes `eeprom.bin` so signing is off.
+- `run_wrap.sh <label>` and `run_contested.sh <label> <alert|drop-sensitive>` (unsigned, active-ips): wrap-around replay (`fly_wrap.py`, `attack_wrap.py`) and counter-tracking attacker (`attack2.py track`, `watch_alarm.py` STATUSTEXT observer). See docs/INLINE_IPS.md.

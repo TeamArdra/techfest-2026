@@ -49,6 +49,7 @@ from ..detectors.crossend import (
     pack_summary,
 )
 from ..mavlink.signing import MavlinkSignatureVerifier
+from ..mitigation.actuator import MavlinkActuator
 from ..mitigation.controller import MitigationController
 from ..mitigation.inline_policy import InlinePolicy
 from ..mitigation.types import DefenseMode
@@ -114,6 +115,9 @@ class InlineIpsBridge:
         ekf_secondary: bool | None = None,
         clock_ns: Callable[[], int] = time.monotonic_ns,
         crossend_interval_s: float = 1.0,
+        contested_policy: str = "alert",
+        replay_memory: int = 4096,
+        on_alarm: Callable[[str], None] | None = None,
     ) -> None:
         self.fc, self.gcs = fc, gcs
         self._secret_key = secret_key
@@ -129,7 +133,11 @@ class InlineIpsBridge:
             vehicle_sysids=vehicle_sysids if vehicle_sysids is not None else tuple(proto.get("expected_sysids", (1,))),
             signing_key=secret_key, allow_unsigned_from_trusted=allow_unsigned_from_trusted,
             max_age_s=signing_max_age_s, state_path=signing_state_path,
+            contested_policy=contested_policy, replay_memory=replay_memory,
         )
+        self.on_alarm = on_alarm
+        self._alarm_enc = MavlinkActuator(sysid=1, compid=192, secret_key=secret_key)
+        self.alarms_sent = 0
         self.policy.set_enforce(self.controller.mode == DefenseMode.ACTIVE_IPS)
         self.tap = TapTransport()
         self.rate_hz = sample_rate_hz
@@ -207,7 +215,19 @@ class InlineIpsBridge:
             n += self._handle(stamp, data, "down")
         for stamp, data in self.gcs.poll():
             n += self._handle(stamp, data, "up")
+        self._send_alarms()
         return n
+
+    def _send_alarms(self) -> None:
+        """Contested-source alarm: STATUSTEXT (warning) to the GCS side only, signed when a key is configured."""
+        for sysid in self.policy.take_alarms():
+            text = f"AEGIS: two senders using sysid {sysid} on the uplink"
+            if self.gcs.send(self._alarm_enc.encode_statustext(text, severity=4)):
+                self.alarms_sent += 1
+            else:
+                self.send_failures += 1
+            if self.on_alarm is not None:
+                self.on_alarm(text)
 
     def _handle(self, stamp: int, data: bytes, direction: str) -> int:
         frames, _bad = split_frames(data)
@@ -342,7 +362,7 @@ class InlineIpsBridge:
                            "samples": len(lat)},
             "policy": self.policy.stats(),
             "analyser": {"decisions": self.decisions, "alerts": self.alerts, "errors": self.analyser_errors,
-                         "counter_frames_sent": self.counter_frames_sent, "crossend_sent": self.crossend_sent, "summary": self.last_summary,
+                         "counter_frames_sent": self.counter_frames_sent, "alarms_sent": self.alarms_sent, "crossend_sent": self.crossend_sent, "summary": self.last_summary,
                          "ekf_secondary": self.controller.ekf_secondary_available},
             "last_error": self.last_error,
         }
