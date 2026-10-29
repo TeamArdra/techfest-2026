@@ -13,7 +13,7 @@ for name, val in (("SR1_POSITION", 5), ("SR1_EXTRA1", 5), ("SR1_EXTRA2", 5), ("S
                   ("SR1_EXT_STAT", 2), ("SR1_EXTRA3", 2), ("ARMING_CHECK", 0)):
     m.param_set_send(name, val)
     time.sleep(0.2)
-truth = open("C:/afsitl/truth_%s.jsonl" % sys.argv[1], "w")
+truth = open(f"C:/afsitl/truth_{sys.argv[1]}.jsonl", "w")
 state = {"alt": 0.0, "armed": False, "mode": None, "fix": 0}
 
 

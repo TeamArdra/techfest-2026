@@ -1,6 +1,8 @@
 """Hostile uplink from a rogue sysid (66): force LAND (DO_SET_MODE) and a position target."""
-import sys, time
+import time
+
 from pymavlink import mavutil
+
 a = mavutil.mavlink_connection("tcp:127.0.0.1:5801", source_system=66, source_component=190)
 time.sleep(1)
 for _ in range(5):
