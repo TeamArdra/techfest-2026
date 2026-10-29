@@ -21,6 +21,29 @@ the draft is `docs/stage2_report_draft.md` · claim classes and environment tags
 * The known gap "poor GPS/estimator health is silent" is now addressed by a **narrow, passive, tested** change (section 6).
   It adds no alert and changes no detector or benchmark result.
 
+## 0a. Hardware-free sprint status (2026-10-29, branch `sprint/hardware-free-20261029`)
+
+Everything below was done without touching hardware: software tests, simulation, offline replay of the existing capture, a local dashboard. Nothing was sent to a
+vehicle, no flight parameter or mode was touched, no attack was injected into a live link.
+
+| Task | Status | What exists / what blocks it |
+|---|---|---|
+| Root `LICENSE` | **DONE** (holder line **human to confirm**) | MIT, consistent with `pyproject.toml`; "Team Ardra" taken from `authors` |
+| Third-party notices | **PARTIAL** | `THIRD_PARTY_NOTICES.md`: Python and npm licences read from installed metadata / `package-lock.json`; *unverified*: pyulog, dev tools, Rust crates, Tauri icons, SITL platforms; licence texts not audited |
+| Archive manifest | **DONE** (decisions **HUMAN**) | `docs/SUBMISSION_ARCHIVE_MANIFEST.md`; raw bench captures, model file and dataset inclusion need a team decision |
+| Team ID, date, signature, final targets, AI-use verification, integrity declaration | **HUMAN ACTION REQUIRED** | placeholders left; `docs/SUBMISSION_ARCHIVE_MANIFEST.md` §4 lists exactly what is needed |
+| Report audit and corrections | **DONE** (re-review recommended) | label-independence wording, gate wording, defense wording, platform coverage, saved-artifact references; see §4 (C14–C19) |
+| Reproducible evidence for prose-only figures | **DONE for `SIM`; BLOCKED for SITL/hardware** | `artifacts/validation/submission_rerun_20261029/` (baseline 378/378, extended re-run, session-level Wilson intervals, per-class time to first alert, GPS drift sweep ML on/off, test-suite run). SITL batches need WSL/PX4/ArduPilot and were not regenerated; ALFA/PX4 replays need fetched logs and `pyulog` |
+| Confidence intervals | **PARTIAL** | session level on `SIM` only (n = 4 per mode: wide); none for `SITL`, replay or hardware |
+| Latency distribution / detection-vs-magnitude | **PARTIAL** | per-class min/median/max (no p95: < 20 sessions per class); magnitude sweep for GPS drift only; no latency-distribution plot |
+| Baseline comparison (simple threshold / autopilot checks) | **NOT DONE** | unchanged P1 |
+| Label-independence evidence | **DONE** | `tests/unit/test_label_independence.py` (behavioural + structural), `SIM`, five classes; firmware class excluded by design |
+| Detector weaknesses: sudden offset, slow drift, `gcs_replay`, informed impersonation, PX4 drift | **REPRODUCED, no detector change; fixes BLOCKED** | see §6a: each is an information limit of unauthenticated telemetry (needs signing or an independent sensor), not a tuning problem; changing thresholds would be tuning to the test |
+| Dashboard states and wording | **PARTIAL** | healthy / unhealthy / unknown / stale / null / older-backend cases unit-tested (11 frontend tests); real browser render of SIM and REPLAY checked and screenshotted; "usable fix", "(unauthenticated)" and "Replaying" wording added. No browser-driven component test library exists |
+| Software-only demo script | **DONE (plan)** | `docs/DEMO_SCRIPT_SOFTWARE_ONLY.md`; **no video was recorded** (HUMAN ACTION) |
+| Clean-machine reproducibility | **NOT DONE** | all checks ran in the existing environment |
+| Healthy-estimator hardware capture, own flights, companion-computer measurement, attack on a real vehicle | **BLOCKED (hardware / flight)** | outside this sprint's scope by design |
+
 ## 1. Facts verified against the repository (the brief's leads)
 
 | Lead in the brief | Verified value | Source |
@@ -108,9 +131,15 @@ for tuning", a latency target, a false-alarm target, or a benign "distance" defi
 | C8 | `DEMO_RUNBOOK.md` "satellite map", "within 360 ms", "0.0 m detour", "vehicle remains airborne" | `MapPanel.tsx` says "no tiles, not a geographic map"; the figures belong to the SIM twin and have no artifact | qualified |
 | C9 | Stage-1 headline "FPR 0.0002, accuracy 0.997" | `SIM`; did not transfer to real or SITL links (100 % threat rate with production config on ALFA); the "nothing tuned" v2 benchmark has recall 0.889 and 1.1 % FPR with no grace | draft quotes both, tagged, with the no-grace FPR (0.0110), the link-stress rows (61.28 % / 99.97 %) and the artifact's 2026-09-24 date (reviewer pass fixed an earlier omission) |
 | C10 | "Detects all six attack classes" | `SIM`: yes. `SITL`: telemetry manipulation and firmware integrity have no live harness; GPS drift on PX4 is detected **at release only**; `gcs_replay` and informed impersonation unsigned are open gaps | draft §5.2 per class |
-| C11 | README title "Autonomous … Intrusion Detection **& Prevention** System" | body states prevention is "SIM model only; not measured" | **open (P2)**: reword the title before submission |
+| C11 | README title "Autonomous … Intrusion Detection **& Prevention** System" | body states prevention is "SIM model only; not measured" | **fixed in the hardware-free sprint** (README title, `DEMO_RUNBOOK.md` intro) |
 | C12 | "0 alerts" on the 2026-10-28 capture | not evidence that coordinates were authentic: the gate hides < 30 m/fix forged-status walks (`docs/DETECTION.md`) | stated beside the result |
 | C13 | `scripts/verify_stage2.py` "8/8 suites" | hand-built inputs | labelled demo |
+| C14 | Draft §2.1 / §5.1: "no detector reads labels: `grep …` returns nothing" | the grep has one hit (a comment, `features/extractor.py:70`); and an import grep cannot prove behaviour | replaced by `tests/unit/test_label_independence.py` (identical decisions with ground truth scrubbed, five classes; plus an import check) and an honest scope statement |
+| C15 | "gate removed 4 **false** alerts / 0 alerts" (draft §1, §6.2, §6.3, §7) | "false" rested on the vehicle's own velocity and the operator's statement, both unauthenticated; the gate was developed on this capture; 0 alerts is not evidence of detection | reworded to "judged non-attacks, not proven", in-sample, with the gate's adversarial cost |
+| C16 | 899/902 test counts, "378 of 378", no-grace FP 463 vs 470 existed only in prose | not reproducible from a saved artifact | regenerated and saved (`artifacts/validation/submission_rerun_20261029/`); counts now 907 / 910 |
+| C17 | Executive row "Detection accuracy on data not used for tuning" held `SIM` numbers | the simulator, attacks and detectors are the team's; template gives such data "limited weight" | row now states "design evidence only; not independent" |
+| C18 | Dashboard header "valid fix yes" next to unauthenticated GPS; a replay shown as link "Live" | reads as verified truth / as a live link | now "GPS as reported (unauthenticated) … usable fix", stale-status note, "Replaying" |
+| C19 | README title "Autonomous … Intrusion Detection & Prevention System"; runbook "8/8 suites in ~40 ms" | prevention is a SIM model; the suite measured 1,949.9 ms here | title and runbook corrected |
 
 ## 5. Technical completeness
 
@@ -154,11 +183,27 @@ the Stage-1 result cannot move.
 `artifacts/hardware/gps_hw_verify_20261029/replay/navigation_health_loopback/` — 453 decisions during the stream, **0 alerts**, both
 conditions flagged on 452. Its one later alert is the silent tail of the 95 s window used for that run (disclosed in the bundle README). The API output is preserved in `replay/navigation_health_api/`.
 
-**Remaining limits.** (1) The dashboard rendering is covered by a unit test of the wording, not by a screenshot or a render
-test (no render-test library in `frontend/`). (2) The `/api/status` block is live only on serial/UDP/replay sources. (3) The
+**Remaining limits.** (1) The dashboard rendering is covered by a unit test of the wording and, since the hardware-free sprint, by one real-browser render of the REPLAY page
+(`demo/screenshots/dashboard_REPLAY_bench_capture_gps_health_note.png`); there is still no automated render test (no render-test library in `frontend/`). The threat card on that page reads "NORMAL / nominal flight"
+next to the unconfirmed-position note, which means only that no detector fired. (2) The `/api/status` block is live only on serial/UDP/replay sources. (3) The
 flags are **vehicle-stated and unauthenticated**: a spoofer can report a clean fix and a forged status report; forged
 `EKF_STATUS_REPORT` is already the documented cost of the gate. (4) No healthy-estimator capture exists, so the "quiet" branch is
 tested only on synthetic frames.
+
+## 6a. Detector weaknesses reproduced (hardware-free sprint)
+
+Each weakness was reproduced before anything was considered; **no detector, threshold or config was changed** and no benchmark number moved (baseline 378/378 identical).
+All `SIM` unless stated.
+
+| Weakness | Reproduction (command, fixture, config) | Baseline outcome | Classification | Action |
+|---|---|---|---|---|
+| Sudden GPS offset: only the jump is visible | extended re-run `gps_spoofing:sudden_offset` (`extended_rerun/summary.md`); `pytest tests/unit/test_gps_scenarios_fused.py -k offset` | 4/4 sessions flagged, decision recall **12.63 %**, time to first alert 0.0 s; later decisions are indistinguishable from a consistent trajectory | information limit: a consistent offset carries no cross-sensor contradiction; pinned by tests | documented; fix needs an independent position source |
+| Slow / velocity-consistent drift | `scripts/sweep_gps_drift.py` (ML off / on); `pytest … -k "slow or velocity_consistent"` | ML off: 0/10 at 0.5–3 m/s, 10/10 ≥ 4 m/s; ML on: 0/10 at 0.5–1 m/s, 10/10 ≥ 2 m/s with 1/10 benign sessions showing a false-positive decision; velocity-consistent drift undetected in both | detector limit **and** unavailable evidence (ML is off on live sources; no real drift data) | documented; lowering a threshold to flip this would be tuning to the test (not done) |
+| `gcs_replay` | `run_session` with `command_injection.mode = gcs_replay`, seed 7; live console after 50 s; extended re-run | 0 of 100 attack decisions flagged with and without ML; 0 persisted alerts live; 0/4 sessions [0.00, 0.49] | information limit: the sender is the legitimate GCS identity; **needs MAVLink-2 signing** (PX4 SITL rejects an unsigned forgery, one command, n = 10) | documented; blocked on authenticated telemetry |
+| Informed impersonation | `artifacts/sitl/P2_gcs_impersonation_summary.md` (SITL, original batch) | informed 0/10 detected; naive 10/10 | same | not re-run (needs WSL + PX4); cited |
+| PX4 GPS drift detected at release only | `artifacts/sitl/P2_summary.md` (SITL, n = 10) | 10/10 at or after the window closed, 0 pre-onset alerts | PX4's position/velocity are estimator outputs, so the cross-check loses independence | not re-run; cited; evidence of a different kind (an independent raw sensor) is needed |
+| Existing DoS / command-injection coverage | extended re-run; `artifacts/sitl/` | DoS 16/16 sessions [0.81, 1.00]; command injection 12/16 [0.51, 0.90] (the four misses are all `gcs_replay`) | fine on `SIM`; SITL n = 3–10 | none |
+| Stage-1 regression parity | `aegis benchmark --out <scratch> --no-figures` + `scripts/compare_benchmark_runs.py` | 6535 / 4 / 16826 / 65; 378/378 cells | — | pass |
 
 ## 7. Gaps
 
@@ -166,7 +211,7 @@ tested only on synthetic frames.
 | # | Gap | Why P0 | Owner / action |
 |---|---|---|---|
 | P0-1 | **No demonstration video** ("screen recording of a real run"; the archive must contain it) | mandatory, §9 and §10 | human: record (plan, step 1) |
-| P0-2 | **No `LICENSE` file** though `pyproject.toml` declares MIT; no third-party notices | §10 "dependency list with licences", §11.2 | add `LICENSE` + `THIRD_PARTY_NOTICES` (Python licences were read from installed metadata; see draft §11.2) |
+| P0-2 | ~~No `LICENSE` file; no third-party notices~~ | §10 "dependency list with licences", §11.2 | **added in the hardware-free sprint** (`LICENSE`, `THIRD_PARTY_NOTICES.md`); the copyright-holder line and the *unverified* rows in the notices are for the team to confirm |
 | P0-3 | Risk-register fabricated sign-offs and non-existent mitigations (C1–C4) | integrity declaration; mandatory deliverable | **fixed here** |
 | P0-4 | Stale numbers contradicting artifacts in `current_state.md` / `next_state.md` / `DEMO_RUNBOOK.md` (C5–C8) | factual error | **fixed here** |
 | P0-5 | Raw hardware captures are git-ignored ("holds vehicle position") but the template wants flight logs and datasets in the archive; ALFA/PX4 logs are fetched, not stored | "a link alone is not sufficient" | team decision: include the captures (position privacy), or redacted copies + SHA-256 (the manifests record them); include the trained model `models/isoforest.joblib` (git-ignored; retraining may not reproduce it bit-for-bit); commit or replace the template PDF |
@@ -176,12 +221,12 @@ tested only on synthetic frames.
 ### P1 — important evidence or explanation missing
 | # | Gap | Action |
 |---|---|---|
-| P1-1 | **No confidence intervals** on per-class results (template §5.3) | generate Wilson intervals from the session/decision counts with a script into `artifacts/`; quote only that file |
+| P1-1 | **Confidence intervals: partly done** (`SIM`, session level, `extended_rerun/stats/`); none for SITL, replay or hardware | n = 4 per mode: the intervals are wide and say so |
 | P1-2 | **No simple-threshold / autopilot-checks baseline** (template §5.1, §5.3) | the only comparison is ML on/off; run a one-rule baseline through the benchmark or keep "not done" (the draft does) |
 | P1-3 | **No false-alarms-per-hour with an upper bound** | exposure is too small: 90 s of hardware live; ALFA only ~0.64 h of author-labelled benign time (derived, draft §7). Do not report a rate |
 | P1-4 | **No healthy-estimator hardware capture** | one receive-only capture with a valid horizontal solution (open sky; no arming, no writes) |
 | P1-5 | **No own-flight data**, no attack on a real vehicle | cannot be fixed this week without a flight; stay explicit |
-| P1-6 | Detection-vs-magnitude plot and per-class latency distribution | generate from `artifacts/benchmarks_extended/` |
+| P1-6 | Detection-vs-magnitude plot and per-class latency distribution | **partly done**: GPS-drift sweep + plot (ML off / on), per-class min/median/max; no distribution plot, no sweep for the other five classes |
 | P1-7 | Architecture and workflow diagrams are Mermaid source, not rendered; no operator screenshot (`demo/screenshots/` is empty) | render; capture a REPLAY-of-BENCH screenshot labelled BENCH |
 | P1-8 | Clean-machine re-run (the committee re-runs the tests) | fresh venv, `pip install -e ".[dev,external]"`; `pyulog` is **not installed** in this venv, so the PX4 ULog replays cannot be re-run here |
 | P1-9 | Companion-computer resource figures: **none** | state "not measured"; do not carry over the withdrawn Pi figures |
@@ -202,7 +247,7 @@ the loopback replay; consolidate the `docs/` status ledgers; `REPORT_ALIGNMENT.m
   *disarmed* PX4 SITL vehicle was rejected and flagged 10/10 (signing rule: 10/400 pre-onset false alarms; any rule 307/400); replay of a
   signed frame and other commands were not tested (`artifacts/sitl/`).
 * Stage-1 thresholds **do not transfer** to real links; the failure, its cause and a per-vehicle calibration are documented (`REPLAY`).
-* The estimator gate removed 4 false `GPS_SPOOFING` alerts on one real stationary capture; **in-sample**, one capture (`REPLAY`).
+* On one replayed stationary bench capture the estimator gate removes 4 `GPS_SPOOFING` alerts that the team judged to be non-attacks (stationary per the vehicle's own unauthenticated velocity and the operator); **in-sample**, one capture (`REPLAY`). This is not evidence that spoofing is detected, prevented or absent.
 * Tamper-evident alert log (SHA-256 hash chain, unsigned); software-enforced receive-only operation on the serial path.
 * The IDS now reports vehicle-stated GPS/estimator health without alerting (`REPLAY` of `BENCH`, claim class none).
 
@@ -258,6 +303,19 @@ wander stated as undetermined; the API check now preserved (`replay/navigation_h
 reviewer notes left as stated limits: the committed extended-benchmark artifact keeps its 2026-09-24 numbers (the scratch re-run is cited, not committed; regenerate
 `artifacts/benchmarks_extended/` deliberately if the team wants it refreshed), tests that need git-ignored captures skip without them (an archive re-run will show more than 3 skips), and the `DEMO_RUNBOOK.md` title still
 says "Prevention" (C11).
+
+### Hardware-free sprint verification (2026-10-29, same machine, all new)
+
+| Check | Command | Result |
+|---|---|---|
+| Full Python suite | `python -m pytest -p no:cacheprovider -o addopts= -q -rfE --junitxml=<scratch>` | **907 passed, 3 skipped, 0 failed**, 910 collected (unit 811, integration 92, e2e 2, backend 5), 155.3 s; the 3 skips are POSIX PTY tests (`artifacts/validation/submission_rerun_20261029/test_suite_run.json`) |
+| Lint | `ruff check src tests scripts backend` | All checks passed (after one import-order fix in the new sweep script) |
+| Frontend | `npm --prefix frontend test` · `npm --prefix frontend run build` | 11 passed · `tsc --noEmit` + `vite build` ok |
+| Stage-1 regression | `aegis benchmark --out <scratch> --no-figures` + `scripts/compare_benchmark_runs.py` | 6535 / 4 / 16826 / 65, 378 of 378 non-timing cells equal |
+| Stage-2 verification suites | `python scripts/verify_stage2.py` | 8 suites passed, 1,949.9 ms (`SIM`, hand-built inputs) |
+| Extended benchmark | `scripts/benchmark_extended.py --workers 4` | 5 s-grace rows identical; no-grace FP 463 (committed 470); `sessions.csv` identical up to `detected` |
+| Label independence | `pytest tests/unit/test_label_independence.py` | 8 passed |
+| Live dashboard, browser | `aegis serve` (SIM) and `aegis serve --source replay` on the local capture, headless Chrome | SIM: attack injected, HIGH / GPS SPOOFING, hash chain OK; REPLAY: "Replaying", the unauthenticated-GPS line, the unconfirmed-position note, 0 persisted alerts, **0 coordinate-like numbers on the page**; screenshots in `demo/screenshots/` |
 
 **Not done:** no clean-machine run; no
 network fetch of external datasets, so the ALFA / PX4 replays were **cited, not regenerated** (`pyulog` is not installed in this venv); the SITL

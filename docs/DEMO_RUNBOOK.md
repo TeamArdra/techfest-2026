@@ -1,8 +1,10 @@
 # AegisFlight — Stage 2 Demonstration Runbook
 
-For demonstrating the Stage 2 UAV Intrusion Detection & Autonomous Prevention
-System (IDS/IPS) for **PUSHPAK Grand Challenge 2026-27 (IIT Bombay Techfest) — Security of Drones, Objective 2**.
+For demonstrating the Stage 2 UAV Intrusion Detection System (with a **simulation-only** defense model; no prevention
+is demonstrated on any vehicle) for **PUSHPAK Grand Challenge 2026-27 (IIT Bombay Techfest) — Security of Drones, Objective 2**.
 A teammate can run this without the original author.
+**For recording the submission video use `docs/DEMO_SCRIPT_SOFTWARE_ONLY.md`** (a narrated, step-by-step plan with environment labels
+and a limitation segment); this file is the longer feature tour.
 
 > **What this demo is (2026-10-29).** Segments 1–7 run on the **SIM** source: the dashboard drives a simulator and a cyber-physical
 > *twin*. Detection times, "detour" and "vehicle remains airborne" are what that model shows; they are **not measurements** of a
@@ -92,7 +94,7 @@ The GCS displays:
   ```bash
   python scripts/verify_stage2.py
   ```
-- 8/8 suites pass in ~40 ms:
+- 8/8 suites pass in about 2 s (1,949.9 ms measured 2026-10-29; hand-built `SIM` inputs, not validation evidence):
   1. GoldenState dead-reckoning test
   2. FrameSanitizer coordinate clamping test
   3. Killswitch disarm & land veto test

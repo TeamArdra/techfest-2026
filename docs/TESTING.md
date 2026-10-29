@@ -11,7 +11,11 @@ Run with the project venv; the suite must pass in full (the count grows with new
 features — `pytest -q` prints it). The pyramid above shows the Stage-1 layout and its
 historic counts.
 
-**Latest full run (2026-10-29, branch `docs/submission-readiness-20261029`, `evidence/gps-hw-verify-20261029` c849012 plus the passive GPS-health change):** 899 passed, 3 skipped, 0 failed, 902 collected
+**Latest full run (2026-10-29, hardware-free sprint, branch `sprint/hardware-free-20261029` from `docs/submission-readiness-20261029` d0d134b plus uncommitted sprint changes):** 907 passed, 3 skipped, 0 failed, 910 collected
+(`tests/unit` 811 incl. the 8 label-independence tests, `tests/integration` 92, `tests/e2e` 2, `backend/tests` 5), 155.3 s; frontend 11 passed; saved in
+`artifacts/validation/submission_rerun_20261029/test_suite_run.json`. The run below it (899 / 902) is the previous one on the same branch family.
+
+**Previous full run (2026-10-29, branch `docs/submission-readiness-20261029`, `evidence/gps-hw-verify-20261029` c849012 plus the passive GPS-health change):** 899 passed, 3 skipped, 0 failed, 902 collected
 (`tests/unit` 803, `tests/integration` 92, `tests/e2e` 2, `backend/tests` 5; the 3 skips are POSIX PTY tests in `tests/unit/test_mavlink_serial.py`), 149.6 s,
 same command as below. +16 tests: `tests/unit/test_gps_health.py` (13), `tests/unit/test_run_serial_ids.py` (+3). Frontend: `npm --prefix frontend test` 10 passed (+2),
 `npm --prefix frontend run build` ok. Stage-1 regression (`aegis benchmark --out <scratch> --no-figures`): 6535 / 4 / 16826 / 65, 378 of 378 non-timing cells equal.
