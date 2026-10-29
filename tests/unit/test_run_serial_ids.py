@@ -92,6 +92,42 @@ def test_runs_receive_only_writes_outputs_and_exits_zero(tmp_path, restore_signa
     assert len((tmp_path / "health.jsonl").read_text().splitlines()) >= 2
 
 
+def _tlog_frames(path: Path) -> list[bytes]:
+    """Split a repo tlog (8-byte big-endian microseconds + one MAVLink 2 frame, repeated) into frames."""
+    raw, out, i = path.read_bytes(), [], 0
+    while i < len(raw):
+        i += 8
+        assert raw[i] == 0xFD
+        n = 12 + raw[i + 1] + (13 if raw[i + 2] & 1 else 0)
+        out.append(raw[i:i + n])
+        i += n
+    return out
+
+
+def test_tlog_tees_the_clean_downlink_and_stays_receive_only(tmp_path, restore_signals):
+    sent = _frames(20)
+    dev = Device(sent)
+    tlog = tmp_path / "raw" / "link.tlog"
+    rc = run_serial_ids.main(["--port", f"socket://127.0.0.1:{dev.port}", "--allow-url", "--out-dir", str(tmp_path / "run"),
+                              "--seconds", "5", "--health-interval", "1", "--tlog", str(tlog)])
+    dev.close()
+    assert rc == 0 and dev.received == 0
+    s = json.loads((tmp_path / "run" / "summary.json").read_text())
+    assert s["passive_check"]["passed"] is True and s["tlog"] == str(tlog)
+    got = _tlog_frames(tlog)
+    assert got == sent[:len(got)] and len(got) == s["transport"]["frames_received"] >= 20
+
+
+def test_existing_tlog_is_never_overwritten(tmp_path, restore_signals, capsys):
+    tlog = tmp_path / "link.tlog"
+    tlog.write_bytes(b"previous capture")
+    rc = run_serial_ids.main(["--port", "socket://127.0.0.1:1", "--allow-url", "--out-dir", str(tmp_path / "run"),
+                              "--seconds", "1", "--tlog", str(tlog)])
+    assert rc == 2 and tlog.read_bytes() == b"previous capture"
+    assert not (tmp_path / "run" / "events.sqlite").exists()  # refused before anything was created
+    assert "already exists" in capsys.readouterr().err
+
+
 def test_telemetry_coverage_is_persisted_in_summary_and_health(tmp_path, restore_signals):
     """A coverage condition (P1/P2: never-received position is not an alert by default) must still be
     persisted somewhere the operator can read: summary.json and every health.jsonl line."""

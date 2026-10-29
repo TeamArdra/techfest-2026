@@ -1,0 +1,20 @@
+{
+  "tlog": "data/hardware/raw/gps_hw_verify_20261029.tlog",
+  "config_dir": "configs (Stage-1 default)",
+  "ml_enabled": false,
+  "clock_offset_s_used_for_phases": 0.0,
+  "decisions": 450,
+  "threat_decisions": 0,
+  "alert_decisions": 0,
+  "alert_rate_per_decision": 0.0,
+  "by_phase": {
+    "boot": {
+      "decisions": 450,
+      "threat": 0,
+      "alerts": 0
+    }
+  },
+  "detector_ge_0.5": {},
+  "alert_types": {},
+  "alert_evidence_top": []
+}

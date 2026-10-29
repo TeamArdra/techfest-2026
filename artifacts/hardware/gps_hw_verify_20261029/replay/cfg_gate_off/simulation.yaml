@@ -1,0 +1,34 @@
+# AegisFlight - flight simulator configuration
+# All values here override the built-in defaults in src/aegisflight/config.py.
+# The simulator is fully deterministic given `seed`.
+
+seed: 42
+sample_rate_hz: 10.0          # simulator tick rate (Hz)
+duration_s: 120.0             # session length (seconds)
+
+home:                          # takeoff point (near IIT Bombay campus)
+  lat: 19.1334
+  lon: 72.9133
+  alt_msl: 12.0               # metres above mean sea level
+
+cruise_alt_m: 60.0            # target relative cruise altitude
+cruise_speed_ms: 12.0        # nominal ground speed
+route: survey_box            # survey_box | out_and_back | perimeter
+battery_capacity_v: 25.2     # 6S pack nominal voltage
+
+noise:                        # 1-sigma sensor noise added to ground truth
+  gps_pos_m: 0.6             # horizontal GPS position noise (m)
+  gps_alt_m: 1.2             # GPS altitude noise (m)
+  vel_ms: 0.15               # velocity noise (m/s)
+  attitude_rad: 0.01         # attitude noise (rad)
+  baro_m: 0.8                # barometric altitude noise (m)
+  hdop: 0.05                 # HDOP jitter
+
+# Per-message decimation relative to sample_rate_hz (emit every N ticks).
+message_rates:
+  HEARTBEAT: 10              # 1 Hz
+  GLOBAL_POSITION_INT: 2     # 5 Hz
+  ATTITUDE: 1                # 10 Hz
+  VFR_HUD: 2                 # 5 Hz
+  SYS_STATUS: 5              # 2 Hz
+  GPS_RAW_INT: 2             # 5 Hz

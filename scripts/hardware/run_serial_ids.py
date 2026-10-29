@@ -22,7 +22,8 @@ Stage-1 model does not transfer (docs/ARDUPILOT_SITL.md). Stage-1 thresholds are
 Outputs under ``--out-dir``: ``events.sqlite`` (hash-chained alerts), ``alerts.jsonl``, ``health.jsonl``
 (one line per ``--health-interval``: transport/source counters, decision counts, process CPU/RSS,
 ``telemetry_coverage``) and ``summary.json`` (final; its key fields, incl. ``telemetry_coverage``, are also
-printed). Stop with Ctrl-C / SIGTERM (clean shutdown, exit 0) or ``--seconds N``.
+printed). ``--tlog PATH`` additionally tees the clean received frames to a tlog (never overwritten; it holds the vehicle's
+position, so keep it git-ignored). Stop with Ctrl-C / SIGTERM (clean shutdown, exit 0) or ``--seconds N``.
 Exit codes: 0 ok (NOT a statement about link health: see ``link_ever_delivered_frames`` in summary.json),
 2 bad arguments / cannot open the port with ``--no-reconnect`` / ``--out-dir`` already holds a previous run,
 3 transmit attempted, 4 alert hash chain broken. An existing run is never overwritten.
@@ -47,6 +48,7 @@ from aegisflight.config import load_config
 from aegisflight.logging import EventStore
 from aegisflight.mitigation import DefenseMode, MitigationController
 from aegisflight.pipeline import IDSPipeline
+from aegisflight.sources.frame_tap import TapTransport
 from aegisflight.sources.mavlink_live import LiveMavlinkSource
 from aegisflight.sources.mavlink_serial import SerialMavlinkTransport
 
@@ -74,12 +76,18 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--health-interval", type=float, default=10.0)
     ap.add_argument("--no-reconnect", action="store_true", help="fail instead of retrying an unopenable port")
     ap.add_argument("--reconnect-interval", type=float, default=1.0)
+    ap.add_argument("--tlog", default=None,
+                    help="also tee the clean received frames to this .tlog (refuses to overwrite). The tlog holds the "
+                         "vehicle's position: keep it in a git-ignored place (data/hardware/raw/*.tlog)")
     ap.add_argument("--gcs-notify", action="store_true", help="broadcast MAVLink STATUSTEXT alert notifications to GCS")
     ap.add_argument("--gcs-notify-host", default="127.0.0.1", help="target GCS host for UDP STATUSTEXT alerts")
     ap.add_argument("--gcs-notify-port", type=int, default=14550, help="target GCS UDP port for STATUSTEXT alerts")
     ap.add_argument("--defense-mode", choices=["passive", "advisory", "active-ips"], default="passive",
                     help="defense engine posture: passive (default, zero bytes sent), advisory, active-ips")
     a = ap.parse_args(argv)
+    if a.tlog and Path(a.tlog).exists():
+        print(f"refusing to start: --tlog {a.tlog} already exists (a capture is never overwritten)", file=sys.stderr)
+        return 2
 
     out = Path(a.out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -112,6 +120,9 @@ def main(argv: list[str] | None = None) -> int:
         tr.close()
         store.close()
         return 2
+    if a.tlog:  # same single consumer: the tap sits between the transport and the source and only reads
+        Path(a.tlog).parent.mkdir(parents=True, exist_ok=True)
+        tr = TapTransport(tr, clean_tlog=a.tlog)
     src = LiveMavlinkSource(tr, sample_rate_hz=rate, origin="start")  # a dead-from-start link still ticks
     notifier = None
     if a.gcs_notify:
@@ -207,7 +218,7 @@ def main(argv: list[str] | None = None) -> int:
     ls = sorted(lat)
     summary = {"schema": "aegisflight.serial_monitor_run/1", "started_utc": started, "port": a.port, "baud": a.baud,
                "ml_enabled": model is not None, "config_dir": a.config_dir or "configs (Stage-1 default)",
-               "defense_mode": a.defense_mode,
+               "defense_mode": a.defense_mode, "tlog": a.tlog,
                "wall_s": round(wall, 1), "cpu_s": round(cpu, 2),
                "cpu_pct_of_one_core_mean": round(100 * cpu / wall, 2) if wall else None,
                "rss_mb_max": round(rss_max / 2**20, 1), "decisions": decisions, "threat_decisions": threats,

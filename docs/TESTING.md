@@ -11,7 +11,8 @@ Run with the project venv; the suite must pass in full (the count grows with new
 features — `pytest -q` prints it). The pyramid above shows the Stage-1 layout and its
 historic counts.
 
-**Last full run (2026-10-26):** 809 passed, 3 skipped (POSIX PTY tests, skipped on Windows), 0 failed.
+**Last full run (2026-10-29, `main` a44dd9c plus the `--tlog` change to `run_serial_ids.py` and its 2 tests):** 883 passed, 3 skipped (POSIX PTY tests, skipped on Windows), 0 failed
+(`.venv/Scripts/python.exe -m pytest -p no:cacheprovider -o addopts="" -q -rfE`, 155 s). The 2026-10-26 run on the pre-integration tree was 809 passed.
 - Tree: the GPS iteration-2 tree, `HEAD` `90b9aa2` + uncommitted changes, `src`+`configs` diff sha256 `b4d434e3…7eaf`.
 - Run by the lead with `.venv/Scripts/python.exe -m pytest -p no:cacheprovider -o addopts="" -q -rfE` from the repo
   root (Windows, Python 3.13.15).
