@@ -124,6 +124,14 @@ export interface GpsLink {
   gps_raw_age_s: number | null;
   position_age_s: number | null;
   position_zero: boolean | null;
+  // vehicle-stated estimator / GPS health (core/gps_health.py); optional: absent on older backends.
+  // null = unknown. Not an authenticity check.
+  hdop?: number | null;
+  ekf_flags?: number | null;
+  ekf_age_s?: number | null;
+  horizontal_solution?: boolean | null;
+  gps_healthy?: boolean | null;
+  quality_flags?: string[];
 }
 
 // Application-level link health (backend/engine.py link_status); ages are on the source's tick clock.

@@ -123,7 +123,7 @@ its own telemetry**. Not flight, not an attack, not detection evidence.
 * **Not shown:** that the gate behaves correctly on a *healthy* hardware estimator (all of 008, 009 and this capture have
   no horizontal solution); that the IDS would detect a spoof on this vehicle (nothing was injected); real RF spoofing. The
   IDS is silent on "3D fix but poor quality / unhealthy GPS / no horizontal EKF solution": there is no coverage or health
-  evidence line for it (see Section 3).
+  evidence line for it **as of this capture; a passive `navigation_health` line was added on 2026-10-29, see Section 3**.
 
 ## 2. Simulation-only evidence
 
@@ -131,6 +131,8 @@ its own telemetry**. Not flight, not an attack, not detection evidence.
 |---|---|---|
 | Baseline fused-IDS accuracy / recall / FPR on 23,430 simulated decisions | `artifacts/benchmarks/summary.md` | 3 trajectories, default modes, 5 s grace |
 | What the ML layer adds on the same grid | `artifacts/benchmarks_ablation_no_ml/summary.md` | ML is the only FP source in the baseline |
+| Fused IDS vs a **pre-defined single-limit threshold baseline** on the same 23,430 decisions (2026-10-29): 6535 / 4 / 16826 / 65 vs 996 / 1510 / 15320 / 5604 | `artifacts/validation/baseline_comparison_20261029/` (`scripts/baseline_comparison.py`, `configs/baseline_threshold.yaml` committed before the run, `9944a57`) | `SIM`, link-level; team-written attacks. Baseline is minimal and untuned, **not** ArduPilot/PX4 failsafes (not run; no failsafe output for attacked sessions). Its non-DoS hits come from one climb-rate limit, which also causes all its benign FPs; they are not attack detections. Autopilot-check comparison: **not done** |
+| Session-level Wilson 95 % intervals for `SITL` attack trials and `REPLAY` flights (2026-10-29), derived from existing summaries only | `artifacts/validation/session_ci_sitl_replay_20261029/session_ci.md` (`scripts/make_session_ci_sitl_replay.py`) | one airframe/host/script family; n = 3 to 24; `REPLAY` rows are false-alarm evidence, not attack detection; ALFA logs < 500 decisions excluded; informed GCS impersonation 0/10 is reported. Related negative result from `artifacts/external/alfa_calibrated/results.json`: only 3 of 25 ALFA physical-fault events produced any threat decision after onset (2 by physics); fixed-wing, per-vehicle-calibrated rate, ML off; says nothing about multirotor PX4/ArduPilot rates on that configuration |
 | Detection across **all 20 attack modes**, diverse trajectories, no-grace scoring, excl. firmware | `artifacts/benchmarks_extended/summary.md` | simulated link and attacker |
 | Simultaneous attacks (4 combinations, multi-label truth) | same file, *Simultaneous attacks* | the fusion reports one primary + secondary indicators; full multi-label attribution is partial |
 | GNSS jamming detection (new fix-loss rule) | same file, `dos:gnss_jamming` | scored as DOS; trivially observable in simulation |
@@ -145,8 +147,16 @@ its own telemetry**. Not flight, not an attack, not detection evidence.
   3D with 6 to 7 satellites and `eph` ~8, the GPS-healthy bit was clear and the EKF had no horizontal solution, yet the IDS
   emitted neither an alert nor a coverage/health line (0 alerts, as designed: the gate is quiet under a no-solution
   status). The dashboard therefore cannot tell an operator that the position is untrustworthy. Not a detector defect against
-  the written design; an evidence-line gap. Follow-up: a passive, non-alerting "GPS quality / estimator solution" health line
-  (`summary.json` + `health.jsonl`), which needs an `aegis-detection` change and its own tests. Not done in this session.
+  the written design; an evidence-line gap.
+  **Addressed passively on 2026-10-29, not closed.** `core/gps_health.py` now reports the two conditions the *vehicle itself*
+  states (EKF "no horizontal solution"; `SYS_STATUS` GPS-unhealthy bit) in `navigation_health` (`summary.json` + `health.jsonl`), in the
+  dashboard's `link.gps` block and as a header note, with no alert and no detector, feature, model or benchmark change
+  (Stage-1 regression identical, 378/378 cells). `REPLAY` of the same bytes through the live runner over loopback: 453 decisions
+  during the stream, 0 alerts, both conditions flagged on 452 (`artifacts/hardware/gps_hw_verify_20261029/replay/navigation_health_loopback/`);
+  through `aegis serve --source replay`: `horizontal_solution` false, `gps_healthy` false, 0 events. Tests: `tests/unit/test_gps_health.py` (13),
+  `tests/unit/test_run_serial_ids.py` (+3), `frontend/tests/source.test.ts` (+2). **Still open:** the flags are vehicle-stated and
+  unauthenticated (a spoofer can report a clean fix); receiver HDOP/satellites are shown, not judged; the header wording is covered by a
+  unit test, not a screenshot; no healthy-estimator hardware capture exists.
 * **No healthy-estimator hardware capture exists.** 008, 009 and the 2026-10-28 capture all lack `POS_HORIZ_ABS`, so the
   un-gated Stage-1 branch has not been seen on a hardware stream.
 

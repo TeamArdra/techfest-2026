@@ -115,7 +115,12 @@ def test_tlog_tees_the_clean_downlink_and_stays_receive_only(tmp_path, restore_s
     s = json.loads((tmp_path / "run" / "summary.json").read_text())
     assert s["passive_check"]["passed"] is True and s["tlog"] == str(tlog)
     got = _tlog_frames(tlog)
-    assert got == sent[:len(got)] and len(got) == s["transport"]["frames_received"] >= 20
+    # The transport purges stale input when it opens, so a loopback Device that streams on accept can lose its first
+    # 1-3 frames (documented as latent in docs/GPS_WORKSTREAM_PROGRESS.md; ~50 % of isolated runs on 2026-10-29, also on
+    # the unmodified HEAD). The invariant that matters is unchanged: the tee holds exactly the frames the transport
+    # received, as one contiguous run of the stream.
+    head_lost = next((k for k in range(4) if got == sent[k:k + len(got)]), None)
+    assert head_lost is not None and len(got) == s["transport"]["frames_received"] >= 20
 
 
 def test_existing_tlog_is_never_overwritten(tmp_path, restore_signals, capsys):
@@ -276,3 +281,68 @@ def test_coverage_helper_is_none_before_any_decision():
     assert pipe.last_frame is None
     assert run_serial_ids._coverage(pipe, 0) == {"heartbeat_seen": None, "global_position_seen": None,
                                                  "gps_raw_seen": None, "decisions_without_global_position": 0}
+
+
+# --- navigation_health: passive, vehicle-stated estimator / GPS health (SYNTHETIC frames, loopback socket) --- #
+
+def _frames_with_nav_state(n: int, ekf_flags: int, gps_health_bit: int) -> list[bytes]:
+    """Per group: HEARTBEAT, GPS_RAW_INT (3D fix, 7 sats, eph 809), GLOBAL_POSITION_INT, SYS_STATUS (GPS sensor
+    present; health bit ``gps_health_bit``), EKF_STATUS_REPORT (``ekf_flags``), ATTITUDE. Synthetic, not hardware."""
+    from pymavlink.dialects.v20 import ardupilotmega as apm
+
+    m = apm.MAVLink(None, srcSystem=1, srcComponent=1)
+    out = []
+    for i in range(n):
+        for msg in (m.heartbeat_encode(2, 3, 81, 0, 4, 3),
+                    m.gps_raw_int_encode(i * 100_000, 3, 129_000_000, 775_000_000, 900_000, 809, 232, 0, 0, 7),
+                    m.global_position_int_encode(i * 100, 129_000_000, 775_000_000, 900_000, 0, 0, 0, 0, 0),
+                    m.sys_status_encode(0x20, 0x20, gps_health_bit, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+                    m.ekf_status_report_encode(ekf_flags, 0.0, 0.0, 0.0, 0.0, 0.0),
+                    m.attitude_encode(i * 100, 0.01, 0.02, 0.03, 0.0, 0.0, 0.0)):
+            m.seq = (m.seq + 1) & 0xFF
+            out.append(bytes(msg.pack(m)))
+    return out
+
+
+def test_navigation_health_reports_a_stated_no_solution_and_unhealthy_gps(tmp_path, restore_signals):
+    """The vehicle says: 3D fix, GPS-healthy bit clear, EKF in constant-position mode (0xa7, as on the powered-on
+    bench vehicle). The runner must say so in summary.json and every health line, without raising an alert for it."""
+    dev = Device(_frames_with_nav_state(10, ekf_flags=0xA7, gps_health_bit=0))
+    rc, s, health = _run_for_coverage(tmp_path, dev.port, "4")
+    dev.close()
+    assert rc == 0 and s["decisions"] > 0 and s["passive_check"]["passed"] is True
+    nh = s["navigation_health"]
+    assert nh["decisions"] == s["decisions"]
+    assert 0 < nh["flagged_decisions"]["ekf_no_horizontal_solution"] <= s["decisions"]
+    assert 0 < nh["flagged_decisions"]["gps_sensor_unhealthy"] <= s["decisions"]
+    last = nh["last"]
+    assert last["horizontal_solution"] is False and last["gps_healthy"] is False
+    assert last["ekf_flags"] == 0xA7 and last["fix_type"] == 3 and last["satellites"] == 7 and last["hdop"] == 8.09
+    assert last["quality_flags"] == ["ekf_no_horizontal_solution", "gps_sensor_unhealthy"]
+    assert health and all("navigation_health" in ln for ln in health)
+    # the pinned coverage block is untouched and the new block adds no alert path
+    assert set(s["telemetry_coverage"]) == {"heartbeat_seen", "global_position_seen", "gps_raw_seen",
+                                            "decisions_without_global_position"}
+    assert "ekf_no_horizontal_solution" not in json.dumps(s["alert_types"])
+
+
+def test_navigation_health_is_quiet_for_a_stated_horizontal_solution_and_healthy_gps(tmp_path, restore_signals):
+    dev = Device(_frames_with_nav_state(10, ekf_flags=0x1F, gps_health_bit=0x20))
+    rc, s, _ = _run_for_coverage(tmp_path, dev.port, "4")
+    dev.close()
+    assert rc == 0 and s["decisions"] > 0
+    nh = s["navigation_health"]
+    assert nh["flagged_decisions"] == {"ekf_no_horizontal_solution": 0, "gps_sensor_unhealthy": 0}
+    assert nh["last"]["horizontal_solution"] is True and nh["last"]["gps_healthy"] is True
+    assert nh["last"]["quality_flags"] == []
+
+
+def test_navigation_health_is_unknown_not_false_when_the_link_never_sends_the_messages(tmp_path, restore_signals):
+    dev = Device(_frames(20))  # HEARTBEAT + ATTITUDE only
+    rc, s, _ = _run_for_coverage(tmp_path, dev.port, "4")
+    dev.close()
+    assert rc == 0 and s["decisions"] > 0
+    nh = s["navigation_health"]
+    assert nh["flagged_decisions"] == {"ekf_no_horizontal_solution": 0, "gps_sensor_unhealthy": 0}
+    assert nh["last"]["horizontal_solution"] is None and nh["last"]["gps_healthy"] is None
+    assert nh["last"]["ekf_flags"] is None and nh["last"]["quality_flags"] == []

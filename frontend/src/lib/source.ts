@@ -2,7 +2,7 @@
 // decides anything — the backend derives `environment` (never user-settable) and the link `state`
 // (backend/engine.py link_status); this module only words them, so the dashboard cannot present
 // simulated, replayed or stale data as live physical telemetry. Pure functions (frontend/tests/).
-import type { Environment, LinkStatus } from "../types";
+import type { Environment, GpsLink, LinkStatus } from "../types";
 
 export interface EnvView {
   badge: Environment | "—";
@@ -97,6 +97,21 @@ function num(v: unknown): number | null {
   return typeof v === "number" ? v : null;
 }
 
+// What the VEHICLE itself reports about its position solution, worded next to the receiver's "valid
+// fix" so a 3D fix is never the only thing an operator sees. Passive: this is not an alert and not an
+// authenticity check (a spoofer can report a clean fix). null = nothing to say (healthy or unknown).
+export function gpsNote(gps: GpsLink | null | undefined): string | null {
+  const parts: string[] = [];
+  if (gps?.horizontal_solution === false) parts.push("autopilot reports no horizontal position solution");
+  if (gps?.gps_healthy === false) parts.push("autopilot marks the GPS sensor unhealthy");
+  // Stale is not healthy: once the autopilot's last position-solution report is older than the backend's 2 s
+  // freshness rule the state is unknown, and "no warning" there would read as "all clear".
+  if (gps?.horizontal_solution == null && typeof gps?.ekf_age_s === "number" && gps.ekf_age_s > 2) {
+    parts.push(`autopilot position-solution report is stale (${Math.round(gps.ekf_age_s)} s old)`);
+  }
+  return parts.length ? `${parts.join(" · ")} — treat this position as unconfirmed` : null;
+}
+
 // `updateAgeS`: seconds since the dashboard last received ANY update from the backend. The backend
 // pushes one per tick while a source runs (a dead live link still ticks), so silence there means the
 // backend itself stopped — except after "ended" / "error", which are final and send nothing more.
@@ -104,6 +119,7 @@ export function linkView(
   link: LinkStatus | null | undefined,
   backendConnected: boolean,
   updateAgeS: number | null,
+  environment?: Environment | null,
 ): LinkView {
   if (!link) {
     return backendConnected
@@ -120,7 +136,8 @@ export function linkView(
     case "simulated":
       return { label: "Simulated", tone: "sim", detail: "in-process simulator, no external link" };
     case "live":
-      return { label: "Live", tone: "on", detail: `last frame ${fmtAge(link.last_frame_age_s)} ago · ${link.frames} frames` };
+      // a replayed file is "flowing", not a live link: never word it as live
+      return { label: environment === "REPLAY" ? "Replaying" : "Live", tone: "on", detail: `last frame ${fmtAge(link.last_frame_age_s)} ago · ${link.frames} frames` };
     case "waiting":
       return { label: "Waiting for data", tone: "warn", detail: "source open, no MAVLink frame received yet" };
     case "stale":

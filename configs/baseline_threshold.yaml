@@ -1,0 +1,19 @@
+# Simple threshold baseline for the AegisFlight comparison (SIM only).
+# DEFINED BEFORE ANY COMPARISON RUN: this file was committed (git) before scripts/baseline_comparison.py
+# was executed; the run records this file's sha256. Thresholds are NOT tuned on benchmark results.
+#
+# Model of the baseline: what a plain failsafe / ground-station alarm does. One raw telemetry value is compared
+# with one fixed limit. No history, no hysteresis, no cross-checks between values, no learned model, no
+# command/identity inspection, no firmware hash. A decision is "threat" when ANY rule fires.
+# The limits are the vehicle's physical envelope / common failsafe defaults, chosen a priori:
+#   - the simulated vehicle cruises at 12 m/s and 60 m (configs/simulation.yaml)
+#   - heartbeat and GPS timeouts follow the 3 s / 2 s values typical of GCS-link failsafes
+rules:
+  heartbeat_age_s_gt: 3.0       # no HEARTBEAT for > 3 s  (link-loss failsafe)
+  gps_age_s_gt: 2.0             # no position for > 2 s    (GPS-loss failsafe)
+  loss_ratio_gt: 0.5            # more than half of the expected messages lost
+  groundspeed_ms_gt: 30.0       # above any plausible envelope for this airframe
+  abs_vertical_rate_ms_gt: 10.0 # climb/sink rate beyond envelope
+  satellites_lt: 6              # degraded GNSS fix
+  gps_fix_type_lt: 3            # no 3D fix
+  battery_remaining_pct_lt: 10  # critical-battery failsafe

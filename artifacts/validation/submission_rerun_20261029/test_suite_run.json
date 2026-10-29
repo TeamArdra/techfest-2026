@@ -1,0 +1,30 @@
+{
+  "command": "python -m pytest -p no:cacheprovider -o addopts= -q -rfE --durations=0 --junitxml=<scratch>/junit_full.xml",
+  "environment": "software tests (SIM/offline fixtures); no hardware, no network",
+  "started_utc": "2026-10-29T11:39:28.521892+05:30",
+  "collected": 910,
+  "passed": 907,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 3,
+  "duration_s": 155.276,
+  "collected_by_directory": {
+    "tests.e2e": 2,
+    "tests.integration": 92,
+    "tests.unit": 811,
+    "backend.tests": 5
+  },
+  "skipped_tests": [
+    "tests.unit.test_mavlink_serial::test_pty_fragments_bursts_and_garbage",
+    "tests.unit.test_mavlink_serial::test_pty_send_reaches_the_other_end",
+    "tests.unit.test_mavlink_serial::test_pty_device_disappearing_is_a_disconnect_not_a_crash"
+  ],
+  "skip_reason": "POSIX PTY tests; no PTY pairs on Windows (socket:// tests cover the same paths)",
+  "python": "3.13.15",
+  "pytest": "9.1.1",
+  "numpy": "2.5.3",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "git_head_base": "d0d134b3b211e0691df9c9ead18cadbaf95c9ec3",
+  "working_tree": "branch sprint/hardware-free-20261029 with uncommitted changes of this sprint (LICENSE, notices, tests/unit/test_label_independence.py, frontend wording, scripts); src/aegisflight detector/feature/fusion code unchanged",
+  "note": "a run on a clean machine has not been done; tests that need git-ignored captures skip without them"
+}

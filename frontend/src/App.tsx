@@ -24,7 +24,7 @@ export default function App() {
   const chainOk = m?.event_log.chain_ok !== false;
   // every source label below comes from the backend's own report (environment + link state)
   const env = envView(live.environment);
-  const lv = linkView(live.link, live.connected, live.updateAgeS);
+  const lv = linkView(live.link, live.connected, live.updateAgeS, live.environment);
   useEffect(() => {
     document.title = `AegisFlight — UAV IDS (${env.badge})`;
   }, [env.badge]);

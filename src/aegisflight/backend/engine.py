@@ -36,6 +36,7 @@ from ..attacks.base import NoAttack
 from ..config import AegisConfig, load_config
 from ..core.enums import AttackType, IntegrityStatus
 from ..core.geo import haversine_m, offset_latlon
+from ..core.gps_health import GpsHealthObserver
 from ..logging import EventStore
 from ..mitigation import DefenseMode, MitigationController, MitigationState
 from ..mitigation.types import AttackSubMode
@@ -70,6 +71,8 @@ class LinkMonitor:
         self.gps_raw_t: float | None = None
         self.gpi_t: float | None = None
         self.gpi_zero: bool | None = None
+        # vehicle-stated estimator / GPS-health conditions: status only, never an alert (core/gps_health.py)
+        self.health = GpsHealthObserver(stale_after_s=2.0)
 
     def observe(self, tick: TelemetryTick) -> None:
         self.t = tick.t
@@ -81,6 +84,7 @@ class LinkMonitor:
             e[0] += 1
             e[1] = tick.t
             f = m.fields
+            self.health.observe(m.msgname, f, tick.t)
             if m.msgname == "GPS_RAW_INT":
                 self.fix = int(f.get("fix_type", 0))
                 self.sats = int(f.get("satellites_visible", 0))
@@ -94,6 +98,7 @@ class LinkMonitor:
 
     def snapshot(self) -> dict:
         valid = None if self.fix is None else bool(self.fix >= self.min_fix and (self.sats or 0) >= self.min_sats)
+        h = self.health.snapshot(self.t if self.t is not None else 0.0)
         return {
             "frames": self.frames,
             "last_frame_age_s": self._age(self.last_frame_t),
@@ -102,7 +107,11 @@ class LinkMonitor:
             "gps": {"fix_type": self.fix, "fix_name": GPS_FIX_NAMES.get(self.fix) if self.fix is not None else None,
                     "satellites": self.sats, "valid_fix": valid,
                     "gps_raw_age_s": self._age(self.gps_raw_t),
-                    "position_age_s": self._age(self.gpi_t), "position_zero": self.gpi_zero},
+                    "position_age_s": self._age(self.gpi_t), "position_zero": self.gpi_zero,
+                    # additive: what the vehicle itself says about this position (not an authenticity check)
+                    "hdop": h["hdop"], "ekf_flags": h["ekf_flags"], "ekf_age_s": h["ekf_age_s"],
+                    "horizontal_solution": h["horizontal_solution"], "gps_healthy": h["gps_healthy"],
+                    "quality_flags": h["quality_flags"]},
         }
 
 # Rolling window (wall-clock seconds) used to report *current* live throughput.

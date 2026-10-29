@@ -1,0 +1,136 @@
+{
+ "environment": "REPLAY",
+ "sim": false,
+ "link": {
+  "state": "ended",
+  "frames": 5130,
+  "last_frame_age_s": 0.0,
+  "stale_after_s": 3.0,
+  "messages": {
+   "AHRS": {
+    "count": 180,
+    "age_s": 0.4
+   },
+   "AHRS2": {
+    "count": 360,
+    "age_s": 0.1
+   },
+   "ATTITUDE": {
+    "count": 360,
+    "age_s": 0.0
+   },
+   "BATTERY_STATUS": {
+    "count": 180,
+    "age_s": 0.2
+   },
+   "EKF_STATUS_REPORT": {
+    "count": 180,
+    "age_s": 0.2
+   },
+   "GLOBAL_POSITION_INT": {
+    "count": 180,
+    "age_s": 0.3
+   },
+   "GPS_RAW_INT": {
+    "count": 180,
+    "age_s": 0.2
+   },
+   "HEARTBEAT": {
+    "count": 90,
+    "age_s": 0.8
+   },
+   "MEMINFO": {
+    "count": 180,
+    "age_s": 0.3
+   },
+   "MISSION_CURRENT": {
+    "count": 180,
+    "age_s": 0.3
+   },
+   "NAV_CONTROLLER_OUTPUT": {
+    "count": 180,
+    "age_s": 0.3
+   },
+   "POWER_STATUS": {
+    "count": 180,
+    "age_s": 0.3
+   },
+   "RANGEFINDER": {
+    "count": 180,
+    "age_s": 0.2
+   },
+   "RAW_IMU": {
+    "count": 180,
+    "age_s": 0.3
+   },
+   "RC_CHANNELS": {
+    "count": 180,
+    "age_s": 0.3
+   },
+   "RC_CHANNELS_RAW": {
+    "count": 180,
+    "age_s": 0.3
+   },
+   "SCALED_IMU2": {
+    "count": 180,
+    "age_s": 0.2
+   },
+   "SCALED_IMU3": {
+    "count": 180,
+    "age_s": 0.2
+   },
+   "SCALED_PRESSURE": {
+    "count": 180,
+    "age_s": 0.2
+   },
+   "SCALED_PRESSURE2": {
+    "count": 180,
+    "age_s": 0.2
+   },
+   "SERVO_OUTPUT_RAW": {
+    "count": 180,
+    "age_s": 0.3
+   },
+   "SYSTEM_TIME": {
+    "count": 180,
+    "age_s": 0.2
+   },
+   "SYS_STATUS": {
+    "count": 180,
+    "age_s": 0.3
+   },
+   "TERRAIN_REPORT": {
+    "count": 180,
+    "age_s": 0.2
+   },
+   "VFR_HUD": {
+    "count": 360,
+    "age_s": 0.0
+   },
+   "VIBRATION": {
+    "count": 180,
+    "age_s": 0.2
+   }
+  },
+  "gps": {
+   "fix_type": 3,
+   "fix_name": "3D_FIX",
+   "satellites": 7,
+   "valid_fix": true,
+   "gps_raw_age_s": 0.2,
+   "position_age_s": 0.3,
+   "position_zero": false,
+   "hdop": 7.99,
+   "ekf_flags": 167,
+   "ekf_age_s": 0.2,
+   "horizontal_solution": false,
+   "gps_healthy": false,
+   "quality_flags": [
+    "ekf_no_horizontal_solution",
+    "gps_sensor_unhealthy"
+   ]
+  },
+  "transport": null,
+  "error": null
+ }
+}

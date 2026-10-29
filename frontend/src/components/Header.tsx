@@ -1,3 +1,4 @@
+import { gpsNote } from "../lib/source";
 import type { EnvView, LinkView } from "../lib/source";
 import type { DefenseMode, LinkStatus, SourceInfo } from "../types";
 
@@ -84,6 +85,7 @@ export function SourceBar({ source, link, linkView, runId, eventsCount }: {
     : source?.kind === "sim" ? "in-process simulator"
     : "—";
   const gps = link?.gps;
+  const note = gpsNote(gps);
   return (
     <div className="source-bar" data-testid="source-bar">
       <span><b>{source?.label ?? "Source not reported"}</b> · {where}</span>
@@ -91,10 +93,11 @@ export function SourceBar({ source, link, linkView, runId, eventsCount }: {
       <span>link <b>{linkView.label}</b>{linkView.detail ? ` — ${linkView.detail}` : ""}</span>
       {gps && gps.fix_type != null && (
         <span>
-          GPS report <b>{fmt(gps.fix_name)}</b> · {fmt(gps.satellites)} sats · valid fix{" "}
+          GPS as reported (unauthenticated) <b>{fmt(gps.fix_name)}</b> · {fmt(gps.satellites)} sats · usable fix{" "}
           <b>{gps.valid_fix ? "yes" : "no"}</b>
         </span>
       )}
+      {note && <span data-testid="gps-note" style={{ color: "var(--warn)" }}>{note}</span>}
       {source && !source.ml && source.kind !== "sim" && <span>ML off · integrity UNKNOWN (no verifier)</span>}
     </div>
   );

@@ -1,0 +1,109 @@
+{
+  "schema": "aegisflight.serial_monitor_run/1",
+  "started_utc": "2026-10-28T20:47:31.875493+00:00",
+  "port": "socket://127.0.0.1:47321",
+  "baud": 115200,
+  "ml_enabled": false,
+  "config_dir": "configs (Stage-1 default)",
+  "defense_mode": "passive",
+  "tlog": null,
+  "wall_s": 95.0,
+  "cpu_s": 2.55,
+  "cpu_pct_of_one_core_mean": 2.68,
+  "rss_mb_max": 61.3,
+  "decisions": 476,
+  "threat_decisions": 16,
+  "alert_decisions": 1,
+  "alert_types": {
+    "DOS": 1
+  },
+  "decision_latency_ms": {
+    "mean": 0.3515,
+    "p99_last_100k": 0.6994,
+    "max": 1.0096
+  },
+  "transport": {
+    "connected": false,
+    "reader_running": false,
+    "reads": 152317,
+    "bytes_received": 152317,
+    "frames_received": 5128,
+    "garbage_bytes": 0,
+    "resync_events": 0,
+    "header_rejects": 0,
+    "crc_rejects": 0,
+    "unverifiable_rejects": 0,
+    "unverified_accepted": 0,
+    "unverifiable_ids": {},
+    "unverifiable_id_overflow": 0,
+    "crc_bytes_checked": 142061,
+    "partial_timeouts": 0,
+    "reader_faults": 0,
+    "dropped_overflow": 0,
+    "dropped_overflow_bytes": 0,
+    "queue_high_water": 8,
+    "max_poll_gap_s": 0.0610221,
+    "max_frames_per_read": 1,
+    "disconnects": 1,
+    "reconnects": 0,
+    "open_failures": 0,
+    "discarded_on_disconnect_bytes": 0,
+    "bytes_sent": 0,
+    "write_errors": 0,
+    "last_error": "SerialException('read failed: socket disconnected')",
+    "raw_tap_errors": 0,
+    "raw_tap_disabled": false,
+    "raw_tap_last_error": null
+  },
+  "source": {
+    "datagrams_received": 5128,
+    "frames_received": 5128,
+    "bad_frames": 0,
+    "sig_valid": 0,
+    "sig_invalid": 0,
+    "unverified_frames": 0,
+    "ticks_emitted": 951,
+    "late_ticks": 0,
+    "late_frames": 0,
+    "dropped_overflow": 0,
+    "dropped_overflow_bytes": 0,
+    "queue_high_water": 8,
+    "max_poll_gap_s": 0.0610221
+  },
+  "link_ever_delivered_frames": true,
+  "telemetry_coverage": {
+    "heartbeat_seen": true,
+    "global_position_seen": true,
+    "gps_raw_seen": true,
+    "decisions_without_global_position": 1
+  },
+  "navigation_health": {
+    "decisions": 476,
+    "flagged_decisions": {
+      "ekf_no_horizontal_solution": 458,
+      "gps_sensor_unhealthy": 475
+    },
+    "last": {
+      "fix_type": 3,
+      "satellites": 7,
+      "hdop": 7.99,
+      "ekf_flags": 167,
+      "ekf_age_s": 5.3,
+      "horizontal_solution": null,
+      "gps_healthy": false,
+      "quality_flags": [
+        "gps_sensor_unhealthy"
+      ]
+    }
+  },
+  "passive_check": {
+    "bytes_sent": 0,
+    "write_errors": 0,
+    "passed": true
+  },
+  "hash_chain": {
+    "ok": true,
+    "length": 1
+  },
+  "exit_code": 0
+}

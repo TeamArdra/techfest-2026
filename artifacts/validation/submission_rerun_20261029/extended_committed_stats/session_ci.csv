@@ -1,0 +1,35 @@
+level,name,sessions,detected,rate,wilson95_lo,wilson95_hi
+class,combo,12,12,1.0,0.7575,1.0
+class,command_injection,16,12,0.75,0.505,0.8982
+class,dos,16,16,1.0,0.8064,1.0
+class,firmware_integrity,4,4,1.0,0.5101,1.0
+class,gps_spoofing,12,12,1.0,0.7575,1.0
+class,mavlink_anomaly,16,16,1.0,0.8064,1.0
+class,telemetry_manipulation,16,16,1.0,0.8064,1.0
+mode,command_injection:arm_disarm_burst,4,4,1.0,0.5101,1.0
+mode,command_injection:gcs_replay,4,0,0.0,0.0,0.4899
+mode,command_injection:mode_flip,4,4,1.0,0.5101,1.0
+mode,command_injection:rogue_command,4,4,1.0,0.5101,1.0
+mode,dos+telemetry_manipulation,3,3,1.0,0.4385,1.0
+mode,dos:blackout,4,4,1.0,0.5101,1.0
+mode,dos:flood,4,4,1.0,0.5101,1.0
+mode,dos:gnss_jamming,4,4,1.0,0.5101,1.0
+mode,dos:latency,4,4,1.0,0.5101,1.0
+mode,firmware_integrity:default,4,4,1.0,0.5101,1.0
+mode,gps_spoofing+command_injection,3,3,1.0,0.4385,1.0
+mode,gps_spoofing+mavlink_anomaly,3,3,1.0,0.4385,1.0
+mode,gps_spoofing:gradual_drift,4,4,1.0,0.5101,1.0
+mode,gps_spoofing:replay_freeze,4,4,1.0,0.5101,1.0
+mode,gps_spoofing:sudden_offset,4,4,1.0,0.5101,1.0
+mode,mavlink_anomaly:packet_loss,4,4,1.0,0.5101,1.0
+mode,mavlink_anomaly:rate_spike,4,4,1.0,0.5101,1.0
+mode,mavlink_anomaly:rogue_sysid,4,4,1.0,0.5101,1.0
+mode,mavlink_anomaly:seq_scramble,4,4,1.0,0.5101,1.0
+mode,telemetry_manipulation+firmware_integrity,3,3,1.0,0.4385,1.0
+mode,telemetry_manipulation:altitude_bias,4,4,1.0,0.5101,1.0
+mode,telemetry_manipulation:battery_jump,4,4,1.0,0.5101,1.0
+mode,telemetry_manipulation:frozen_attitude,4,4,1.0,0.5101,1.0
+mode,telemetry_manipulation:speed_mismatch,4,4,1.0,0.5101,1.0
+benign sessions with >=1 false-positive decision,benign,12,4,0.3333,0.1381,0.6094
+benign sessions with >=1 false-positive decision,link_fifo_benign,6,6,1.0,0.6097,1.0
+benign sessions with >=1 false-positive decision,link_reorder_benign,6,6,1.0,0.6097,1.0

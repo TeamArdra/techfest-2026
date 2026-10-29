@@ -1,7 +1,7 @@
 # AegisFlight
 
 <p align="center">
-  <strong>Autonomous Cyber-Physical Intrusion Detection & Prevention System (IDS/IPS) for Unmanned Aerial Vehicles</strong>
+  <strong>Cyber-Physical Intrusion Detection System for Unmanned Aerial Vehicles</strong> (passive; the prevention layer is a simulation-only model)
 </p>
 
 <p align="center">
@@ -404,5 +404,8 @@ No airworthiness-standard compliance (e.g. RTCA DO-326A / EUROCAE ED-202A) is cl
 
 ## 10. License
 
-No licence file is included yet (`LICENSE` is missing); add one before claiming a licence.
+AegisFlight's code is MIT-licensed: see [`LICENSE`](LICENSE) (the copyright-holder line "Team Ardra" is taken from `pyproject.toml`; the
+team should confirm it). Dependencies, datasets and models are listed, with how each licence was determined, in
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md); what a submission archive must contain is in
+[`docs/SUBMISSION_ARCHIVE_MANIFEST.md`](docs/SUBMISSION_ARCHIVE_MANIFEST.md).
 Benchmark numbers in this README come from `artifacts/benchmarks/` (SIM) and are regenerated with `aegis benchmark`.

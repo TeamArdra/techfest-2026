@@ -1,0 +1,22 @@
+{
+  "committed": "artifacts/benchmarks/results.csv",
+  "rerun": "C:/Users/RajTi/AppData/Local/Temp/claude/D--Ardra-techfest-2026-aegisflight/ad62dabf-9ea9-45d9-9001-b6f1ff315142/scratchpad/rerun_base/results.csv",
+  "committed_sha256": "1521a30997fdf5dc235f921110fb8f608eb54178994686c35544e9acd1e4cb25",
+  "rerun_sha256": "d051b7324e8b505a2954ae462df67bd58df17d5bab8c5e401385576b249f4602",
+  "shape_committed": [
+    42,
+    11
+  ],
+  "shape_rerun": [
+    42,
+    11
+  ],
+  "comparable": true,
+  "excluded_timing_columns": [
+    "throughput_msgs_per_s",
+    "mean_compute_latency_ms"
+  ],
+  "cells_compared": 378,
+  "cells_equal": 378,
+  "columns_that_differ": []
+}

@@ -22,11 +22,11 @@
 
 ### [P1] Stage 2 Final Report Document Alignment (`docs/stage2_report_draft.md`)
 - **Objective**: Sync final measured performance benchmarks into the IIT Bombay Techfest Stage 2 report template.
-- **Key Benchmarks to Embed**:
-  - Detection latency: 17.7 ms mean / 23.6 ms p95 with ML on (SIM, `artifacts/benchmarks/summary.md`).
-  - Computational footprint: not measured on a companion computer; do not quote a figure until it is.
-  - Recovery: SIM twin only; no measured recovery time exists.
-  - Zero-false-action guarantee: `PASSIVE` mode strictly outputs $0$ bytes over telemetry link.
+- **Key Benchmarks to Embed** (corrected 2026-10-29; the earlier list — 1.0 / 3.2 ms, < 45 MB, < 18 % CPU on a Cortex-A53, 1.2 s recovery — had no artifact behind it; the draft `docs/stage2_report_draft.md` already uses the values below):
+  - Decision compute: 17.7 ms mean / 23.6 ms p95 (ML on, SIM, host; `artifacts/benchmarks/summary.md`); 0.349 ms mean / 0.748 ms p99 (ML off, live runner on a laptop, BENCH stream; `live_capture/summary.json`). Time to alert: mean 0.361 s / p95 1.40 s (SIM).
+  - Computational footprint: host only, 60.7 MB peak RSS and 2.78 % of one core (live runner, ML off). **Companion computer: not measured.**
+  - Recovery time: **not measured** (the 4-stage state machine is a SIM model).
+  - `PASSIVE` mode outputs 0 bytes over the telemetry link: pinned by tests and observed as `bytes_sent` 0 on every physical capture.
   - Cryptographic tamper localization: SHA-256 block invalidation pinpoints exact block index.
 
 ### [P2] Physical Drone Hardware & Companion Deployment Testing

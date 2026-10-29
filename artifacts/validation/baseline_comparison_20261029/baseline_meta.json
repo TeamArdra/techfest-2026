@@ -1,0 +1,42 @@
+{
+  "environment": "SIM",
+  "claim_class": "link-level detection (design evidence; team-written attacks and detectors)",
+  "rules_file": "configs/baseline_threshold.yaml",
+  "rules_sha256": "c078b2fd11507b885d90b9aedd080d3a715376210b2e582577782ea55d95cac4",
+  "rules": {
+    "heartbeat_age_s_gt": 3.0,
+    "gps_age_s_gt": 2.0,
+    "loss_ratio_gt": 0.5,
+    "groundspeed_ms_gt": 30.0,
+    "abs_vertical_rate_ms_gt": 10.0,
+    "satellites_lt": 6,
+    "gps_fix_type_lt": 3,
+    "battery_remaining_pct_lt": 10
+  },
+  "git_head": "9944a57b02bfef8bd6e64f1b696b024af3cbc071",
+  "git_dirty_paths": [
+    "M .gitignore",
+    " M \"docs/Stage 2_Security of Drones, Objective 2_Report Template.pdf\"",
+    " M docs/stage2_report_draft.md"
+  ],
+  "python": "3.13.15",
+  "model": "models/isoforest.joblib",
+  "model_sha256": "3fe74cddf3689e169610ffd783b109b6539cc6c03629bd1e4bb8b1d3842939c4",
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "routes": [
+    "survey_box",
+    "out_and_back",
+    "perimeter"
+  ],
+  "warmup_s": 5.0,
+  "grace_s": 5.0,
+  "aegis_counts_equal_committed_benchmark": true,
+  "regenerate": "python scripts/baseline_comparison.py --out artifacts/validation/baseline_comparison_20261029"
+}
