@@ -129,3 +129,27 @@ Not measured on hardware.
 `GET /status` returns the same JSON as the periodic status line (`mode`, `state`, `frames`, `latency_us`, `policy`,
 `analyser`, `last_error`) plus `"crossend": {"sent": n}`. Only GET is served (other methods: 405); there are no write
 endpoints. CORS echoes the `Origin` only for the dashboard's allowed origins (localhost dev ports, Tauri).
+
+## SITL evidence (ArduCopter SITL, loopback; environment tag `SITL`)
+One scenario, one run per posture, on this PC (`scripts/ardupilot/inline_demo/`, profile `configs/ardupilot_sitl/`):
+a simulated ArduCopter took off to 30 m and flew a rectangle in GUIDED, with the bridge between the flight controller
+and a loopback "radio" hub; a rogue sysid 66 then sent a forged LAND (`DO_SET_MODE` and `SET_MODE`), two bursts.
+
+| | `passive` | `active-ips` |
+|---|---|---|
+| vehicle after the attack | switched to LAND (mode 9) and descended to 0 m | stayed in GUIDED at 30 m (44 of 44 samples) |
+| hostile frames reaching the FC | all | 0 (20 dropped as untrusted control) |
+| legitimate GCS frames forwarded | 35 of 35 | 15 of 15 |
+| downlink frames forwarded / dropped | 23,473 / 0 | 23,793 / 0 |
+| per-frame forwarding time (p50 / p95 / max, socket sends included) | 15.6 / 48 / 2,170 us | 16.4 / 49 / 1,213 us |
+| attack detected | yes, `COMMAND_INJECTION` from sys66 | yes |
+| cross-end check at the GCS-side IDS | 164 matched, 0 mismatches | 164 matched, 0 mismatches |
+| hash-chain log | intact | intact |
+
+What this does not show: a real flight controller, radio or companion computer; signed traffic (all frames unsigned);
+an attacker using the real GCS sysid; more than one run per posture. Findings from the run:
+- The Stage-1 thresholds raised about 50 false `DOS` alarms (message rate) on this link in `passive`; the profile above
+  removed them. Rate alarms must not drive actuation without a per-link profile.
+- The multirotor heading-vs-course rule raised 4 false `TELEMETRY_MANIPULATION` alarms in GUIDED (documented limit).
+- In `active-ips`, 4 redundant set-mode counter-frames (back to GUIDED) were sent after the blocked attack.
+- SITL needs a client on SERIAL0 before it opens SERIAL1, and streams nothing extra on other ports until a GCS asks.

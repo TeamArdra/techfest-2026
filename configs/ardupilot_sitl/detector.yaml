@@ -1,0 +1,6 @@
+# Overrides only (load with --config-dir configs/ardupilot_sitl). Per-vehicle profile for the ArduCopter SITL link,
+# which streams about 120-145 msg/s; the Stage-1 defaults (nominal 28 msg/s) raised ~50 false DOS alarms there.
+# An engineering default for that one link, not a calibration against real flights.
+protocol:
+  nominal_msg_rate_hz: 150
+  max_msg_rate_hz: 800
