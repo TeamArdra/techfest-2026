@@ -379,4 +379,16 @@ class InlineIpsBridge:
                          "counter_frames_sent": self.counter_frames_sent, "alarms_sent": self.alarms_sent, "crossend_sent": self.crossend_sent, "summary": self.last_summary,
                          "ekf_secondary": self.controller.ekf_secondary_available},
             "last_error": self.last_error,
+            "topology": self.topology_info(),
         }
+
+    def topology_info(self) -> dict[str, Any]:
+        from .topology_status import bridge_topology
+
+        def name(tr: Any) -> str | None:
+            n = getattr(tr, "name", None)
+            return n if isinstance(n, str) else None
+
+        return bridge_topology(self.controller.mode, fc_connected=getattr(self.fc, "connected", None),
+                               gcs_connected=getattr(self.gcs, "connected", None), gcs_frames_seen=self.frames_up,
+                               fc_name=name(self.fc), gcs_name=name(self.gcs))

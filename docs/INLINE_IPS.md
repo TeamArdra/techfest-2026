@@ -123,6 +123,14 @@ Limits: sampled at 1 Hz, so a forged frame with a different `time_boot_ms` is ne
 summary itself can be forged; it works only if the GCS-side IDS sees the bridge summary on the same link.
 Not measured on hardware.
 
+## Detected topology
+
+The dashboard does not offer a topology selector. `status()` (and `GET /status`) carries a `topology` object of kind
+`A+B`: the FC and GCS link `connected` flags come from the two transports (`null` if a transport does not report
+one). `uplink_visible` is true once frames were seen from the GCS side or the GCS link is connected;
+`can_block_frames` needs `active-ips` with both links up; `can_send_counter_commands` needs `active-ips` with the FC
+link up. A single-port `aegis serve` sidecar is reported as kind `A` (cannot block frames). See `docs/API.md`.
+
 ## Status endpoint
 
 `aegis ips-bridge --status-port N` (default off) starts a read-only HTTP server on `127.0.0.1:N` (loopback only).

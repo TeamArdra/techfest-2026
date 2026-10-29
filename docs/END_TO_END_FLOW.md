@@ -58,7 +58,7 @@ One telemetry tick, traced through the real code. (Diagram:
     a row to the per-run SHA-256 rolling block hash chain (live backend / `aegis simulate --db`).
 
 12. **Expose over REST.**
-    `backend/app.py` → `/api/status`, `/api/events`, `/api/metrics`, `/api/topology`, `/api/defense-mode` read and control the engine + store.
+    `backend/app.py` → `/api/status`, `/api/events`, `/api/metrics`, `/api/topology` (read-only, detected), `/api/defense-mode` read and control the engine + store.
 
 13. **Publish live.**
     `backend/engine.py` → `LiveEngine._loop` broadcasts an update

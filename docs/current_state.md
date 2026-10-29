@@ -18,7 +18,7 @@
 ## 2. Runtime Daemons & Active Ports
 - **Backend Service (Task: task-3140)**:
   - Command: `aegis serve --port 8008 --defense-mode active-ips`
-  - Endpoints: REST API (`http://127.0.0.1:8008/api`), WebSocket telemetry stream (`ws://127.0.0.1:8008/ws/telemetry`), Forensic bundle (`/api/events/forensic`), Topology control (`/api/topology`).
+  - Endpoints: REST API (`http://127.0.0.1:8008/api`), WebSocket telemetry stream (`ws://127.0.0.1:8008/ws/telemetry`), Forensic bundle (`/api/events/forensic`), Detected topology, read-only (`/api/topology`).
   - Hardened Control Plane: Localhost/Tauri CORS & `Origin` lockdown + optional constant-time HMAC `X-Aegis-Token` / `Bearer` authentication (`AEGIS_API_TOKEN`).
 - **Frontend Dashboard (Task: task-1878)**:
   - Vite dev server listening at `http://localhost:5173`.

@@ -152,7 +152,29 @@ export interface Checks {
   receiver: { ekf_vel_var: number | null; ekf_pos_var: number | null; sat_jump: number | null; snr_spread: number | null };
 }
 
+export type TopologyKind = "A" | "A+B" | "SIM" | "REPLAY" | "UNKNOWN";
+export type TopologySource = "detected" | "modelled" | "none";
+
+export interface TopologyLink {
+  connected: boolean | null;
+  name: string | null;
+}
+
+// Read-only wiring report produced by the backend (or the inline bridge). Never operator-selected.
+export interface TopologyInfo {
+  kind: TopologyKind;
+  label: string;
+  source: TopologySource;
+  posture: DefenseMode;
+  links: { fc?: TopologyLink; gcs?: TopologyLink };
+  uplink_visible: boolean | null;
+  can_block_frames: boolean;
+  can_send_counter_commands: boolean;
+  reasons: string[];
+}
+
 export interface BridgeStatus {
+  topology?: TopologyInfo | null;
   mode?: string;
   state?: string;
   frames?: Record<string, number>;
@@ -169,8 +191,7 @@ export interface Update {
   environment: Environment;
   source: SourceInfo;
   defense_mode?: DefenseMode;
-  topology?: string;
-  topology_reasons?: string[];
+  topology_info?: TopologyInfo | null;
   mitigation?: MitigationInfo;
   link: LinkStatus;
   checks?: Checks | null;
@@ -214,8 +235,7 @@ export interface Status {
   environment: Environment;
   source: SourceInfo;
   defense_mode?: DefenseMode;
-  topology?: string;
-  topology_reasons?: string[];
+  topology_info?: TopologyInfo | null;
   mitigation?: MitigationInfo;
   link: LinkStatus;
   sim_time_s: number;

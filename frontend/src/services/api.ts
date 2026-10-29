@@ -84,7 +84,4 @@ export const api = {
   setDefenseMode: (mode: DefenseMode) => jpost<{ ok: boolean; mode: DefenseMode }>("/api/defense/mode", { mode }),
   defenseOverride: (action: "safe_hold" | "reset_quarantine" | "ack_takeover") =>
     jpost<{ ok: boolean; action: string; mitigation: MitigationInfo }>("/api/defense/override", { action }),
-  getTopology: () => jget<{ ok: boolean; topology: string; reasons: string[]; available: string[] }>("/api/topology"),
-  setTopology: (topology: string) =>
-    jpost<{ ok: boolean; topology: string; reasons: string[] }>("/api/topology", { topology }),
 };

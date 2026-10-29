@@ -14,7 +14,6 @@ interface Props {
   defenseMode?: DefenseMode;
   mitigation?: MitigationInfo | null;
   attackActive?: string | null;
-  topology?: string;
   origin?: LatLon | null; // first valid fix of the run (local-frame origin)
   environment?: Environment | null;
   note: string; // what the positions are (simulated / replayed / bench, not flight) — lib/source.ts
@@ -41,7 +40,6 @@ export function MapPanel({
   defenseMode,
   mitigation,
   attackActive,
-  topology,
   origin,
   environment,
   note,
@@ -86,23 +84,21 @@ export function MapPanel({
     return "SPOOFED GPS (REJECTED)";
   };
 
-  const topNote =
-    topology === "a" ? " [Top-A Sidecar]" : topology === "a+b" ? " [Top-A+B Hybrid]" : " [Top-B Inline]";
 
   const getProtectedLabel = (): string => {
-    if (atk.includes("mode_flip")) return `IPS AUTO 12 m/s (LAND BLOCKED)${topNote}`;
-    if (atk.includes("gcs_replay")) return `IPS MISSION (REPLAY BLOCKED)${topNote}`;
-    if (atk.includes("rogue_command")) return `IPS SURVEY TRACK (CMD BLOCKED)${topNote}`;
-    if (atk.includes("arm_disarm")) return `IPS FLIGHT SUSTAINED (DISARM VETOED)${topNote}`;
-    if (atk.includes("rogue_sysid")) return `IPS CLEAN TRACK (SYSID QUARANTINED)${topNote}`;
-    if (atk.includes("gnss_jamming")) return `IPS DEAD-RECKONING (GNSS LOST)${topNote}`;
-    if (atk.startsWith("gps_spoofing")) return `IPS RESTORED (DEAD-RECKONING)${topNote}`;
-    if (atk.startsWith("dos")) return `IPS LINK GUARDED (RATE-LIMITED)${topNote}`;
-    if (atk.startsWith("telemetry_manipulation")) return `IPS TELEMETRY SANITIZED${topNote}`;
-    if (atk.startsWith("mavlink_anomaly")) return `IPS LINK GUARDED${topNote}`;
-    if (atk.startsWith("firmware")) return `IPS INTEGRITY ALERT${topNote}`;
-    if (threat?.attack_type === "GPS_SPOOFING") return `IPS RESTORED (DEAD-RECKONING)${topNote}`;
-    return `IPS PROTECTED${topNote}`;
+    if (atk.includes("mode_flip")) return `IPS AUTO 12 m/s (LAND BLOCKED)`;
+    if (atk.includes("gcs_replay")) return `IPS MISSION (REPLAY BLOCKED)`;
+    if (atk.includes("rogue_command")) return `IPS SURVEY TRACK (CMD BLOCKED)`;
+    if (atk.includes("arm_disarm")) return `IPS FLIGHT SUSTAINED (DISARM VETOED)`;
+    if (atk.includes("rogue_sysid")) return `IPS CLEAN TRACK (SYSID QUARANTINED)`;
+    if (atk.includes("gnss_jamming")) return `IPS DEAD-RECKONING (GNSS LOST)`;
+    if (atk.startsWith("gps_spoofing")) return `IPS RESTORED (DEAD-RECKONING)`;
+    if (atk.startsWith("dos")) return `IPS LINK GUARDED (RATE-LIMITED)`;
+    if (atk.startsWith("telemetry_manipulation")) return `IPS TELEMETRY SANITIZED`;
+    if (atk.startsWith("mavlink_anomaly")) return `IPS LINK GUARDED`;
+    if (atk.startsWith("firmware")) return `IPS INTEGRITY ALERT`;
+    if (threat?.attack_type === "GPS_SPOOFING") return `IPS RESTORED (DEAD-RECKONING)`;
+    return `IPS PROTECTED`;
   };
 
   let path = "";
@@ -361,7 +357,7 @@ export function MapPanel({
           }}
         >
           {isIpsProtecting
-            ? `🛡️ IPS Protected · ${topology === "a" ? "Topology A (Sidecar)" : "Topology B (Inline)"}`
+            ? "🛡️ IPS Protected (modelled)"
             : !isSim
               ? `● ${environment} · track as received`
               : active

@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { api } from "../services/api";
-import type { DefenseMode, MitigationActionItem, MitigationInfo, Telemetry, Threat } from "../types";
+import { describe, selectTopology } from "../lib/topology";
+import type { DefenseMode, MitigationActionItem, MitigationInfo, Telemetry, Threat, TopologyInfo } from "../types";
 
 interface Props {
   mode: DefenseMode;
   mitigation: MitigationInfo | null;
   threat: Threat | null;
   telemetry: Telemetry | null;
-  topology?: string;
-  topologyReasons?: string[];
+  topologyInfo?: TopologyInfo | null;
+  bridgeTopology?: TopologyInfo | null;
 }
 
 const MODES: Array<{ id: DefenseMode; label: string; desc: string }> = [
@@ -69,7 +70,7 @@ function getPilotAdvisory(subMode: string): string {
   return "Monitor flight parameters; standby for pilot action";
 }
 
-export function DefensePanel({ mode, mitigation, threat, telemetry, topology, topologyReasons }: Props) {
+export function DefensePanel({ mode, mitigation, threat, telemetry, topologyInfo, bridgeTopology }: Props) {
   const [busy, setBusy] = useState(false);
   const [overrideMsg, setOverrideMsg] = useState<string | null>(null);
   const [optimisticMode, setOptimisticMode] = useState<DefenseMode | null>(null);
@@ -234,63 +235,13 @@ export function DefensePanel({ mode, mitigation, threat, telemetry, topology, to
         <div className="res-badge">{resBadge}</div>
       </div>
 
-      {/* 0.1 Hardware & Routing Topology Card */}
-      <div style={{
-        marginTop: 8,
-        padding: "8px 12px",
-        borderRadius: 6,
-        background: "rgba(10,15,21,0.65)",
-        border: "1px solid rgba(255,255,255,0.08)",
-        display: "flex",
-        flexDirection: "column",
-        gap: 4,
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.06em" }}>
-              DEPLOYED TOPOLOGY
-            </span>
-            <span style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              padding: "2px 7px",
-              borderRadius: 4,
-              background: topology === "a" ? "rgba(59,130,246,0.18)" : "rgba(34,197,94,0.18)",
-              color: topology === "a" ? "#60a5fa" : "var(--ok)",
-              border: `1px solid ${topology === "a" ? "rgba(59,130,246,0.3)" : "rgba(34,197,94,0.3)"}`,
-            }}>
-              {topology === "a"
-                ? "TOPOLOGY A · SIDECAR ACTUATOR"
-                : topology === "a+b"
-                ? "TOPOLOGY A+B · HYBRID ROUTING"
-                : topology === "ids"
-                ? "TOPOLOGY IDS · PASSTHROUGH ONLY"
-                : "TOPOLOGY B · INLINE SANITIZER BRIDGE"}
-            </span>
-          </div>
-          <span style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>
-            {topology === "a"
-              ? "MAVLinkActuator Counter-Commands"
-              : "FrameSanitizer Inline Filter + Actuator"}
-          </span>
-        </div>
-        <div style={{ fontSize: 11, color: "#9ca3af", lineHeight: 1.4 }}>
-          {topology === "a"
-            ? "Sidecar configuration on secondary TELEM port: FC executes rogue frames briefly (0.4s reaction window) before counter-command overrides return vehicle to survey mission."
-            : topology === "ids"
-            ? "Zero-transmission monitoring mode: Link frames are forwarded without interception or counter-command generation."
-            : "Direct inline link between GCS radio and FC: Rogue SysID frames and unauthorized commands are dropped inline before reaching the flight controller (0.0 m detour)."}
-        </div>
-        {topologyReasons && topologyReasons.length > 0 && (
-          <div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)", marginTop: 2 }}>
-            {topologyReasons[0]}
-          </div>
-        )}
-      </div>
+      {/* 0.1 Read-only topology status (detected by the software, never operator-selected) */}
+      <TopologyCard backend={topologyInfo} bridge={bridgeTopology} />
 
       {/* 1. Operational Mode Switcher */}
       <div className="def-section">
         <div className="def-section-title">OPERATIONAL POSTURE SELECTOR</div>
+        <div className="topo-note">Posture is your choice; the Topology capability rows depend on it.</div>
         <div className="mode-toggle-group" role="radiogroup" aria-label="Defense Mode Selector">
           {MODES.map((m) => {
             const isSelected = activeMode === m.id;
@@ -678,5 +629,44 @@ export function DefensePanel({ mode, mitigation, threat, telemetry, topology, to
         {overrideMsg && <div className="override-feedback">{overrideMsg}</div>}
       </div>
     </section>
+  );
+}
+
+function TopologyCard({ backend, bridge }: { backend?: TopologyInfo | null; bridge?: TopologyInfo | null }) {
+  const sel = selectTopology(backend, bridge);
+  if (!sel) {
+    return (
+      <div className="topo-card" data-testid="topology-card">
+        <span className="topo-title">TOPOLOGY</span> <span className="topo-muted">Topology not reported</span>
+      </div>
+    );
+  }
+  const v = describe(sel);
+  return (
+    <div className="topo-card" data-testid="topology-card">
+      <div className="topo-head">
+        <span className="topo-title">TOPOLOGY</span>
+        <span className={`topo-badge topo-${v.kind === "A+B" ? "ab" : v.kind.toLowerCase()}`} data-testid="topology-badge">{v.badge}</span>
+        <span className={`topo-src topo-src-${v.source}`} data-testid="topology-source">{v.sourceText}</span>
+        <span className="topo-muted">{v.originText}</span>
+      </div>
+      <div className="topo-rows">
+        {v.caps.map((c) => (
+          <div key={c.id} className="topo-row" data-testid={`topo-${c.id}`}>
+            <span>{c.label}</span>
+            <b className={c.text === "yes" ? "topo-yes" : c.text === "no" ? "topo-no" : "topo-muted"}>{c.text.toUpperCase()}</b>
+          </div>
+        ))}
+        {v.links.map((l) => (
+          <div key={l.id} className="topo-row" data-testid={`topo-link-${l.id}`}>
+            <span>{l.label}{l.name ? ` (${l.name})` : ""}</span>
+            <b className={l.state === "connected" ? "topo-yes" : l.state === "disconnected" ? "topo-no" : "topo-muted"}>{l.state}</b>
+          </div>
+        ))}
+      </div>
+      {v.reasons.length > 0 && (
+        <ul className="topo-reasons">{v.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
+      )}
+    </div>
   );
 }

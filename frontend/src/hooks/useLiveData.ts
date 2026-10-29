@@ -2,7 +2,7 @@ import { useEffect, useReducer, useRef } from "react";
 import { api, wsUrl } from "../services/api";
 import { acceptFix, nextOrigin, type LatLon } from "../lib/geo";
 import type {
-  AlertRow, DefenseMode, Checks, Environment, LinkStatus, Metrics, MitigationInfo, SourceInfo, Telemetry, Threat, Update,
+  AlertRow, DefenseMode, Checks, Environment, LinkStatus, Metrics, MitigationInfo, SourceInfo, Telemetry, Threat, TopologyInfo, Update,
 } from "../types";
 
 export interface LiveState {
@@ -28,8 +28,7 @@ export interface LiveState {
   rawTrack: Array<[number, number]>; // raw un-sanitized GPS [lat, lon] for the CURRENT attack episode only
   scoreHistory: Array<{ t: number; score: number }>;
   altHistory: Array<{ t: number; rawAlt: number; effAlt: number; diverging: boolean }>;
-  topology: string;
-  topologyReasons: string[];
+  topologyInfo: TopologyInfo | null;
   alerts: AlertRow[];
   metrics: Metrics | null;
 }
@@ -42,8 +41,7 @@ interface ReducerState {
   environment: Environment | null;
   source: SourceInfo | null;
   defenseMode: DefenseMode;
-  topology: string;
-  topologyReasons: string[];
+  topologyInfo: TopologyInfo | null;
   mitigation: MitigationInfo | null;
   link: LinkStatus | null;
   runId: string | null;
@@ -72,8 +70,7 @@ const initialState: ReducerState = {
   environment: null,
   source: null,
   defenseMode: "passive",
-  topology: "b",
-  topologyReasons: [],
+  topologyInfo: null,
   mitigation: null,
   link: null,
   runId: null,
@@ -123,8 +120,7 @@ function liveReducer(state: ReducerState, action: Action): ReducerState {
         environment: st?.environment ?? state.environment,
         source: st?.source ?? state.source,
         defenseMode: st?.defense_mode ?? (st?.source?.defense_mode || state.defenseMode),
-        topology: st?.topology ?? state.topology,
-        topologyReasons: st?.topology_reasons ?? state.topologyReasons,
+        topologyInfo: st?.topology_info ?? state.topologyInfo,
         mitigation: st?.mitigation ?? state.mitigation,
         link: st?.link && (last == null || Date.now() - last > 1000) ? st.link : state.link,
       };
@@ -185,8 +181,7 @@ function liveReducer(state: ReducerState, action: Action): ReducerState {
         environment: msg.environment ?? state.environment,
         source: msg.source ?? state.source,
         defenseMode: msg.defense_mode ?? (msg.source?.defense_mode || state.defenseMode),
-        topology: msg.topology ?? state.topology,
-        topologyReasons: msg.topology_reasons ?? state.topologyReasons,
+        topologyInfo: msg.topology_info ?? state.topologyInfo,
         mitigation: msg.mitigation ?? state.mitigation,
         link: msg.link ?? state.link,
         runId: msg.run_id ?? state.runId,
@@ -313,8 +308,7 @@ export function useLiveData(): LiveState {
     rawTrack: state.rawTrack,
     scoreHistory: state.scoreHistory,
     altHistory: state.altHistory,
-    topology: state.topology,
-    topologyReasons: state.topologyReasons,
+    topologyInfo: state.topologyInfo,
     alerts: state.alerts,
     metrics: state.metrics,
   };

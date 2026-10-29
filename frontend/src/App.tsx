@@ -14,11 +14,12 @@ import {
   ValidationPanel,
 } from "./components/evalPanels";
 import { useLiveData } from "./hooks/useLiveData";
-import { ChecksPanel, BridgePanel } from "./components/liveChecks";
+import { ChecksPanel, BridgePanel, useBridge } from "./components/liveChecks";
 import { envView, linkView } from "./lib/source";
 
 export default function App() {
   const live = useLiveData();
+  const bridge = useBridge();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const m = live.metrics;
   const chainOk = m?.event_log.chain_ok !== false;
@@ -68,7 +69,6 @@ export default function App() {
             defenseMode={live.defenseMode}
             mitigation={live.mitigation}
             attackActive={live.attackActive}
-            topology={live.topology}
             origin={live.origin}
             environment={live.environment}
             note={env.trackNote}
@@ -85,14 +85,14 @@ export default function App() {
               mitigation={live.mitigation}
               threat={live.threat}
               telemetry={live.telemetry}
-              topology={live.topology}
-              topologyReasons={live.topologyReasons}
+              topologyInfo={live.topologyInfo}
+              bridgeTopology={bridge.st?.topology ?? null}
             />
           </ErrorBoundary>
         </section>
 
         {live.environment && live.environment !== "SIM" && <ChecksPanel checks={live.checks} />}
-        <BridgePanel />
+        <BridgePanel url={bridge.url} st={bridge.st} bad={bridge.bad} />
 
         {/* 2. secondary: runtime performance · attack-vector coverage */}
         <section className="secondary">
@@ -116,7 +116,6 @@ export default function App() {
             activeAttack={live.attackActive}
             controls={env.controls}
             environment={env.badge}
-            topology={live.topology}
           />
         </section>
 

@@ -49,7 +49,7 @@ In the simulator, the dashboard runs a **cyber-physical flight twin** and shows 
   - **Topology A (Sidecar Companion Actuator)**: *design, modelled in SIM only.* A companion on a secondary UART would issue corrective counter-commands; nothing transmits on a live source.
   - **Topology B (Inline Bridge)**: `aegis ips-bridge` (`hal/inline_ips.py`, `mitigation/inline_policy.py`) sits between the flight controller port and the GCS radio port and drops hostile frames before the autopilot sees them (`docs/INLINE_IPS.md`). Tested on synthetic frames and loopback serial only; no flight controller, radio or companion-computer measurement and no hardware bypass yet. The Rust crate `rust/aegis_fastpath` is still not on the path.
   - **Topology A+B (Hybrid)**: *design only.*
-  - **Topology selection**: the dashboard shows a chosen topology; no hardware or companion detection drives it.
+  - **Topology detection**: not selectable. The software reports `A` (single-port sidecar) or `A+B` (inline bridge) from how it is connected (`GET /api/topology`, `topology_info`); SIM and replay are labelled as such.
 - **Multi-Detector Evidence Fusion**:
   - **Protocol / Rule Engine**: MAVLink v2 framing checks, sequence gaps, frequency bounding, rogue sysid quarantine, and command provenance / burst checks.
   - **Cyber-Physical Consistency**: Cross-checks GPS vs barometric altitude, integrated velocity vs reported coordinates, attitude vs ground track, and 2D CUSUM micro-drift tracking.
@@ -366,7 +366,7 @@ ruff check src tests scripts
 1. **Nominal Flight**: Start `aegis serve --defense-mode active-ips`. The live altitude profile holds steady at $60\text{ m}$; speed is $12\text{ m/s}$; threat score is $0.0$.
 2. **GPS Spoofing & Dead-Reckoning Recovery**: Inject GPS spoofing via the UI. In the SIM benchmark the median detection latency is 0.36 s and the threat state escalates to `HIGH / GPS_SPOOFING`. The dashboard twin then models the counter-action (Topology B: inline clamp; Topology A: dead-reckoning plus counter-command). These are SIM models, not measured prevention.
 3. **Command Injection & Failsafe Veto**: Trigger unauthorized land or mid-air disarm. The mitigation controller flags it (`VETO_DISARM` / `REPLAY_GUARD` action in the Defense HUD). It is reported, not blocked: nothing is transmitted to the vehicle.
-4. **Topology Switching**: Toggle between `Auto`, `Top-B`, `Top-A`, and `Top-A+B` in the Defense HUD; link routing and actuator status update dynamically.
+4. **Detected topology**: the Defense HUD displays the detected topology (A, A+B, SIM or replay) and what it can do; there is no selector.
 5. **Audit Ledger Verification**: In a second terminal, verify the tamper-evident hash chain:
    ```bash
    aegis verify-log artifacts/aegisflight_live.sqlite

@@ -45,7 +45,7 @@ cd frontend && cargo tauri dev
 The GCS displays:
 - **● ACTIVE IPS** (Autonomous Mitigation Enabled)
 - **● Connected** (10 Hz WebSocket telemetry)
-- **Topology: Auto (Top-B: Inline Transparent Bridge)**
+- **Topology: SIM (modelled inline twin)**
 - **Live Vehicle Head Pill**: `[COPTER_MODE_GUIDED · 12.0 m/s · 60.0 m]`
 - **44px Vertical Altitude Profile Strip**: showing real-time 0–100 m elevation track.
 
@@ -72,14 +72,9 @@ The GCS displays:
 - Threat state escalates to `CRITICAL / DOS`.
 - `FloodMitigator` isolates the rogue telemetry stream; heartbeat and critical attitude frames are preserved on priority channels.
 
-## Segment 5 — Hardware Abstraction Layer & Topology Switching
-- In the **Defense HUD**, switch topology selector between:
-  - **Auto**: Discovers serial ports/VIDs and selects best topology.
-  - **Top-B (Inline Bridge)**: 0.0 m detour, zero-allocation frame filtering.
-  - **Top-A (Sidecar Actuator)**: Secondary companion telemetry override.
-  - **Top-A+B (Hybrid)**: Maximum resilience (inline filter + companion actuator).
-  - **IDS Only (Passive)**: Monitoring and forensic logging only.
-- Point out dynamic routing status cards updating instantly.
+## Segment 5 — Hardware Abstraction Layer & Topology Detection
+- In the **Defense HUD**, read the **detected topology** (no selector): `A` sidecar, `A+B` inline bridge, or SIM/REPLAY. It lists what it can do (block frames, send counter-commands) from the live link and posture.
+- Point out the status card following the posture and link state.
 
 ## Segment 6 — Tamper-Evident Hash Chain Forensics
 - In the second terminal:

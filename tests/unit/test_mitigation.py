@@ -952,19 +952,15 @@ def test_rest_topology_endpoints():
     data_get = resp_get.json()
     assert data_get["ok"] is True
     assert "topology" in data_get
-    assert "auto" in data_get["available"]
+    assert data_get["topology"] == "sim" and data_get["topology_info"]["kind"] == "SIM"
+    assert data_get["reasons"] == data_get["topology_info"]["reasons"]
+    assert "available" not in data_get
 
-    # POST valid topology
-    for top in ("a", "b", "a+b", "ids", "auto"):
-        resp_post = client.post("/api/topology", json={"topology": top})
-        assert resp_post.status_code == 200
-        assert resp_post.json()["ok"] is True
-        assert resp_post.json()["topology"] == top
-
-    # POST invalid topology
-    resp_bad = client.post("/api/topology", json={"topology": "invalid_topology"})
-    assert resp_bad.status_code == 400
-    assert resp_bad.json()["ok"] is False
+    # the selector is gone: a POST is refused (404/405), the detected topology is unchanged
+    for body in ({"topology": "a"}, {"topology": "invalid_topology"}):
+        assert client.post("/api/topology", json=body).status_code in (404, 405)
+    assert client.get("/api/topology").json()["topology"] == "sim"
+    assert client.get("/api/status").json()["topology_info"]["kind"] == "SIM"
 
 
 # --- 27. Closed-Loop Cyber-Physical Simulation & Topology A/B Verification Across All 20 Submodes ---
@@ -972,8 +968,7 @@ def test_rest_topology_endpoints():
 def test_closed_loop_topology_a_and_b_across_all_20_submodes():
     """Verify cyber-physical vehicle flight dynamics across all 20 attack sub-modes:
     1. PASSIVE (IDS): 0 bytes sent, vehicle follows unmitigated hijacked dynamics.
-    2. Topology A (Sidecar): MavlinkActuator restores AUTO, with brief reaction detour.
-    3. Topology B (Inline): FrameSanitizer drops/filters inline, 0.0 m detour.
+    2. ACTIVE_IPS (modelled inline twin): FrameSanitizer drops/filters inline, 0.0 m detour.
     """
     from aegisflight.benchmark.extended import MODES
 
@@ -1024,7 +1019,6 @@ def test_closed_loop_topology_a_and_b_across_all_20_submodes():
                 assert up_passive["telemetry"]["flight_mode"] == "GUIDED"
 
             # 2. Test ACTIVE_IPS under Topology B (Inline Bridge)
-            engine.set_topology("b")
             engine.set_defense_mode("active-ips")
             # Step twin under Topology B
             for step_i in range(5):
@@ -1032,7 +1026,7 @@ def test_closed_loop_topology_a_and_b_across_all_20_submodes():
 
             up_top_b = engine._make_update(13.0, asmt_atk)
             assert up_top_b["defense_mode"] == "active-ips"
-            assert up_top_b["topology"] == "b"
+            assert up_top_b["topology"] == "a+b" and up_top_b["topology_info"]["kind"] == "SIM"
             # In Topology B: 0.0 m detour, command attacks blocked inline, flight stays AUTO at 12 m/s
             if submode in ("mode_flip", "gcs_replay", "arm_disarm_burst", "rogue_command"):
                 assert up_top_b["sanitized_telemetry"]["flight_mode"] == "AUTO"
@@ -1040,24 +1034,14 @@ def test_closed_loop_topology_a_and_b_across_all_20_submodes():
                 assert up_top_b["sanitized_telemetry"]["rel_alt"] == 60.0
                 assert up_top_b["sanitized_telemetry"]["armed"] is True
 
-            # 3. Test ACTIVE_IPS under Topology A (Sidecar Actuator)
-            engine.set_topology("a")
-            engine.set_defense_mode("active-ips")
-            # First 0.3s: reaction detour occurs
-            engine._step_cyber_physical_twin(14.2, base_tele, asmt_atk)
-            up_top_a_early = engine._make_update(14.2, asmt_atk)
-            assert up_top_a_early["topology"] == "a"
-            if submode == "mode_flip":
-                # During early reaction window, FC starts responding to command
-                assert up_top_a_early["sanitized_telemetry"]["flight_mode"] in ("LAND", "AUTO")
-
-            # After >0.4s: counter-actuation takes effect and restores AUTO
+            # The twin models the inline (hybrid) deployment only: still AUTO later in the same mode
             for step_i in range(5):
                 engine._step_cyber_physical_twin(14.4 + (step_i + 1) * 0.2, base_tele, asmt_atk)
-            up_top_a_late = engine._make_update(15.4, asmt_atk)
+            up_top_late = engine._make_update(15.4, asmt_atk)
             if submode in ("mode_flip", "gcs_replay", "arm_disarm_burst", "rogue_command"):
-                assert up_top_a_late["sanitized_telemetry"]["flight_mode"] == "AUTO"
-                assert up_top_a_late["sanitized_telemetry"]["rel_alt"] == 60.0
+                assert up_top_late["sanitized_telemetry"]["flight_mode"] == "AUTO"
+                assert up_top_late["sanitized_telemetry"]["rel_alt"] == 60.0
+
 
 
 

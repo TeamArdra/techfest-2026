@@ -110,6 +110,27 @@ the first decision `integrity_status` is `VALID` for SIM and `UNKNOWN` otherwise
 cross-end monitor; unavailable values are `null`. For non-SIM sources `telemetry` is exactly what the pipeline
 received (no simulated twin) and every tick is broadcast.
 
+### `GET /api/topology` (read-only)
+
+The operator does not choose a topology; it is detected from how the software is connected. `POST /api/topology` was
+removed (404/405). The same `topology_info` object is in `GET /api/status` and every WebSocket `update`; the bridge
+status server (`GET /status`) carries it as `topology`. Legacy keys `topology` (`a`, `a+b`, `sim`, `replay`) and
+`reasons` remain on this route.
+
+```
+"topology_info": {"kind": "A" | "A+B" | "SIM" | "REPLAY" | "UNKNOWN", "label": str,
+  "source": "detected" | "modelled" | "none", "posture": "passive" | "advisory" | "active-ips",
+  "links": {"fc": {"connected": bool|null, "name": str|null}, "gcs": {"connected": bool|null, "name": str|null}},
+  "uplink_visible": bool|null, "can_block_frames": bool, "can_send_counter_commands": bool, "reasons": [str]}
+```
+
+- `A`: sidecar on one port (serial/UDP source). Sees only what the flight controller sends there; `uplink_visible`
+  is true only once a ground-station frame (sysid in `expected_gcs_sysids`) or a COMMAND/SET_MODE was seen;
+  never blocks frames; counter-commands only in `active-ips`.
+- `A+B`: inline bridge. `can_block_frames` needs `active-ips` and both links connected; counter-commands need
+  `active-ips` and the FC link.
+- `SIM` is a modelled inline twin; `REPLAY` has no wiring. `reasons` state only what was observed.
+
 ### `GET /api/metrics`
 ```json
 {"messages_processed":1620,"decisions":300,"alerts":15,"throughput_msgs_per_s":26.7,

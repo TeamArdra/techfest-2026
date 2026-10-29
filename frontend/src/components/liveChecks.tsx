@@ -34,7 +34,7 @@ export function ChecksPanel({ checks }: { checks: Checks | null }) {
 }
 
 // Polls the optional inline-IPS bridge /status every 2 s; hidden when no URL is configured.
-export function BridgePanel() {
+export function useBridge() {
   const url = getBridgeUrl();
   const [st, setSt] = useState<BridgeStatus | null>(null);
   const [bad, setBad] = useState(false);
@@ -57,6 +57,10 @@ export function BridgePanel() {
     poll();
     return () => { alive = false; if (id) clearTimeout(id); };
   }, [url]);
+  return { url, st, bad };
+}
+
+export function BridgePanel({ url, st, bad }: { url: string | null; st: BridgeStatus | null; bad: boolean }) {
   if (!url) return null;
   if (bad || !st) {
     return (

@@ -73,11 +73,10 @@ const DRIFT_PRESETS = [
   { val: 6.0, label: "6.0 m/s (Standard)" },
 ];
 
-export function ControlPanel({ activeAttack, controls, environment, topology }: {
+export function ControlPanel({ activeAttack, controls, environment }: {
   activeAttack: string | null;
   controls: boolean; // SIM only (lib/source.ts envView)
   environment: string;
-  topology?: string;
 }) {
   const [busy, setBusy] = useState(false);
   const [selectedAttack, setSelectedAttack] = useState<string>("gps_spoofing");
@@ -137,43 +136,6 @@ export function ControlPanel({ activeAttack, controls, environment, topology }: 
           <button className="primary" disabled={busy} onClick={() => run(api.start)}>Start</button>
           <button disabled={busy} onClick={() => run(api.stop)}>Stop</button>
           <button className="ghost-danger" disabled={busy} onClick={() => run(api.reset)}>Reset</button>
-        </div>
-      </div>
-
-      <div className="ctl-group">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-          <div className="ctl-label" style={{ marginBottom: 0 }}>Deployment Topology</div>
-          <span style={{ fontSize: 10, color: "var(--ok)", fontFamily: "var(--mono)" }}>
-            ACTIVE: {topology?.toUpperCase() || "B (INLINE)"}
-          </span>
-        </div>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {[
-            { id: "auto", label: "Auto (Optimal)", tip: "Hardware-aware auto routing" },
-            { id: "b", label: "Topology B (Inline Bridge)", tip: "Inline FrameSanitizer filtering" },
-            { id: "a", label: "Topology A (Sidecar)", tip: "MavlinkActuator counter-commands" },
-            { id: "a+b", label: "Topology A+B (Hybrid)", tip: "Inline primary + sidecar secondary" },
-            { id: "ids", label: "IDS Only", tip: "Passive stream audit only" },
-          ].map((t) => (
-            <button
-              key={t.id}
-              disabled={busy}
-              style={{
-                fontSize: 11,
-                padding: "4px 8px",
-                borderRadius: 4,
-                background: (topology || "b") === t.id ? "var(--accent)" : "rgba(255,255,255,0.06)",
-                color: (topology || "b") === t.id ? "#0a0f15" : "var(--fg)",
-                fontWeight: (topology || "b") === t.id ? 700 : 400,
-                border: "none",
-                cursor: "pointer",
-              }}
-              onClick={() => run(() => api.setTopology(t.id))}
-              title={t.tip}
-            >
-              {t.label}
-            </button>
-          ))}
         </div>
       </div>
 
