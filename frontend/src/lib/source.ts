@@ -104,6 +104,11 @@ export function gpsNote(gps: GpsLink | null | undefined): string | null {
   const parts: string[] = [];
   if (gps?.horizontal_solution === false) parts.push("autopilot reports no horizontal position solution");
   if (gps?.gps_healthy === false) parts.push("autopilot marks the GPS sensor unhealthy");
+  // Stale is not healthy: once the autopilot's last position-solution report is older than the backend's 2 s
+  // freshness rule the state is unknown, and "no warning" there would read as "all clear".
+  if (gps?.horizontal_solution == null && typeof gps?.ekf_age_s === "number" && gps.ekf_age_s > 2) {
+    parts.push(`autopilot position-solution report is stale (${Math.round(gps.ekf_age_s)} s old)`);
+  }
   return parts.length ? `${parts.join(" · ")} — treat this position as unconfirmed` : null;
 }
 
@@ -114,6 +119,7 @@ export function linkView(
   link: LinkStatus | null | undefined,
   backendConnected: boolean,
   updateAgeS: number | null,
+  environment?: Environment | null,
 ): LinkView {
   if (!link) {
     return backendConnected
@@ -130,7 +136,8 @@ export function linkView(
     case "simulated":
       return { label: "Simulated", tone: "sim", detail: "in-process simulator, no external link" };
     case "live":
-      return { label: "Live", tone: "on", detail: `last frame ${fmtAge(link.last_frame_age_s)} ago · ${link.frames} frames` };
+      // a replayed file is "flowing", not a live link: never word it as live
+      return { label: environment === "REPLAY" ? "Replaying" : "Live", tone: "on", detail: `last frame ${fmtAge(link.last_frame_age_s)} ago · ${link.frames} frames` };
     case "waiting":
       return { label: "Waiting for data", tone: "warn", detail: "source open, no MAVLink frame received yet" };
     case "stale":

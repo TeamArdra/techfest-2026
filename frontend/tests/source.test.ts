@@ -73,6 +73,7 @@ test("backend silence overrides a live-looking state, never a final one", () => 
     assert.equal(linkView(link(state), true, 10).label, "No updates", state);
   }
   assert.equal(linkView(link("live"), true, 2).label, "Live"); // within the 3 s window
+  assert.equal(linkView(link("live"), true, 2, "REPLAY").label, "Replaying"); // a replayed file is never "Live"
   assert.equal(linkView(link("ended"), true, 100).label, "Ended");
   assert.equal(linkView(link("error", { error: "x" }), true, 100).label, "Source error");
 });
@@ -89,6 +90,17 @@ test("a 3D fix is never the only thing shown when the vehicle says its position 
     "autopilot reports no horizontal position solution · autopilot marks the GPS sensor unhealthy — treat this position as unconfirmed");
   assert.match(gpsNote(gps({ horizontal_solution: false })), /no horizontal position solution/);
   assert.match(gpsNote(gps({ gps_healthy: false })), /GPS sensor unhealthy/);
+});
+
+test("a stale position-solution report is shown as stale, not as healthy", () => {
+  const stale = gpsNote({ fix_type: 3, horizontal_solution: null, gps_healthy: null, ekf_age_s: 5.3 });
+  assert.match(stale, /position-solution report is stale \(5 s old\)/);
+  assert.match(stale, /treat this position as unconfirmed/);
+  // fresh unknown (within the 2 s rule) and never-seen stay silent
+  assert.equal(gpsNote({ fix_type: 3, horizontal_solution: null, ekf_age_s: 1.0 }), null);
+  assert.equal(gpsNote({ fix_type: 3, horizontal_solution: null, ekf_age_s: null }), null);
+  // a fresh, true solution is never reported stale even with a large age value
+  assert.equal(gpsNote({ fix_type: 3, horizontal_solution: true, ekf_age_s: 9 }), null);
 });
 
 test("no note when the vehicle reports a solution, or when it is unknown (unknown is not a warning)", () => {
