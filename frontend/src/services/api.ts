@@ -2,10 +2,12 @@
 // proxied to the backend on :8000; when served by FastAPI they are same-origin.
 import type { DefenseMode, EventsResponse, Metrics, MitigationInfo, Status } from "../types";
 
+import { bridgeAuthHeaders, bridgePostureUrl, parsePostureResponse, postureBody, type PostureResult, type SigningInfo } from "../lib/posture";
 import { isHttpUrl, normalizeUrl, resolveBackend, resolveWsUrl } from "./backend";
 
 export const BACKEND_KEY = "aegis_backend_url";
 export const BRIDGE_KEY = "aegis_bridge_url";
+export const BRIDGE_TOKEN_KEY = "aegis_bridge_token";
 
 function lsGet(k: string): string | null {
   try { return window.localStorage?.getItem(k) ?? null; } catch { return null; }
@@ -25,6 +27,23 @@ export function backendBase(): string {
 
 export function wsUrl(): string {
   return resolveWsUrl(backendBase(), location.protocol, location.host);
+}
+
+export function getBridgeToken(): string { return lsGet(BRIDGE_TOKEN_KEY) ?? ""; }
+export function saveBridgeToken(v: string): void {
+  try { v.trim() ? window.localStorage.setItem(BRIDGE_TOKEN_KEY, v.trim()) : window.localStorage.removeItem(BRIDGE_TOKEN_KEY); } catch { /* storage unavailable */ }
+}
+
+/** POST <bridge>/posture; token goes only in the Authorization header. Never throws. */
+export async function setBridgePosture(url: string, token: string, mode: DefenseMode, allowUnsigned?: boolean): Promise<PostureResult> {
+  try {
+    const r = await fetch(bridgePostureUrl(url), { method: "POST", headers: bridgeAuthHeaders(token), body: postureBody(mode, allowUnsigned) });
+    let body: unknown = null;
+    try { body = await r.json(); } catch { /* non-JSON body */ }
+    return parsePostureResponse(r.status, body);
+  } catch {
+    return { kind: "error", message: "Bridge unreachable (network error)." };
+  }
 }
 
 export function getBridgeUrl(): string | null {
@@ -81,7 +100,9 @@ export const api = {
   attack: (attack: string | null, mode?: string, drift_rate_ms?: number) =>
     jpost("/api/simulation/attack", { attack, mode, drift_rate_ms }),
   forensic: (limit = 200) => jget<Record<string, unknown>>(`/api/events/forensic?limit=${limit}`),
-  setDefenseMode: (mode: DefenseMode) => jpost<{ ok: boolean; mode: DefenseMode }>("/api/defense/mode", { mode }),
+  setDefenseMode: (mode: DefenseMode, allowUnsigned?: boolean) =>
+    jpost<{ ok: boolean; mode?: DefenseMode; error?: string; message?: string; signing?: SigningInfo }>(
+      "/api/defense/mode", allowUnsigned ? { mode, allow_unsigned: true } : { mode }),
   defenseOverride: (action: "safe_hold" | "reset_quarantine" | "ack_takeover") =>
     jpost<{ ok: boolean; action: string; mitigation: MitigationInfo }>("/api/defense/override", { action }),
 };

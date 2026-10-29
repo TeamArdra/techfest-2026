@@ -8,7 +8,7 @@ HUB_TAP=C:/afsitl/tap_$LABEL.bin $PY hub.py > hub_$LABEL.log 2>&1 &
 sleep 2
 $PY holder.py > /dev/null 2>&1 &
 sleep 5
-$AEGIS ips-bridge --fc-port socket://127.0.0.1:5762 --fc-baud 115200 --gcs-port socket://127.0.0.1:5800 --gcs-baud 115200 --allow-url --defense-mode active-ips --contested-policy $CP --config-dir C:/afsitl/cfg_ap --status-port 8090 --seconds 400 --status-interval 2 > bridge_$LABEL.log 2>&1 &
+$AEGIS ips-bridge --fc-port socket://127.0.0.1:5762 --fc-baud 115200 --gcs-port socket://127.0.0.1:5800 --gcs-baud 115200 --allow-url --allow-unsigned --defense-mode active-ips --contested-policy $CP --config-dir C:/afsitl/cfg_ap --status-port 8090 --seconds 400 --status-interval 2 > bridge_$LABEL.log 2>&1 &
 sleep 4
 $PY watch_alarm.py > alarm_$LABEL.log 2>&1 &
 $PY fly_unsigned.py $LABEL > fly_$LABEL.log 2>&1 &

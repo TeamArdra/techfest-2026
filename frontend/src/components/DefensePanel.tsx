@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { api } from "../services/api";
 import { describe, selectTopology } from "../lib/topology";
-import type { DefenseMode, MitigationActionItem, MitigationInfo, Telemetry, Threat, TopologyInfo } from "../types";
+import { ActiveIpsDialog } from "./ActiveIpsDialog";
+import { needsActiveIpsDialog, signingText, type SigningInfo } from "../lib/posture";
+import type { DefenseMode, Environment, MitigationActionItem, MitigationInfo, Telemetry, Threat, TopologyInfo } from "../types";
 
 interface Props {
   mode: DefenseMode;
@@ -10,6 +12,8 @@ interface Props {
   telemetry: Telemetry | null;
   topologyInfo?: TopologyInfo | null;
   bridgeTopology?: TopologyInfo | null;
+  environment?: Environment | null;
+  signing?: SigningInfo | null;
 }
 
 const MODES: Array<{ id: DefenseMode; label: string; desc: string }> = [
@@ -70,7 +74,9 @@ function getPilotAdvisory(subMode: string): string {
   return "Monitor flight parameters; standby for pilot action";
 }
 
-export function DefensePanel({ mode, mitigation, threat, telemetry, topologyInfo, bridgeTopology }: Props) {
+export function DefensePanel({ mode, mitigation, threat, telemetry, topologyInfo, bridgeTopology, environment, signing }: Props) {
+  const [dialog, setDialog] = useState(false);
+  const [dialogErr, setDialogErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [overrideMsg, setOverrideMsg] = useState<string | null>(null);
   const [optimisticMode, setOptimisticMode] = useState<DefenseMode | null>(null);
@@ -166,19 +172,32 @@ export function DefensePanel({ mode, mitigation, threat, telemetry, topologyInfo
     }
   }
 
-  const handleModeChange = async (newMode: DefenseMode) => {
-    if (newMode === activeMode || busy) return;
+  const applyMode = async (newMode: DefenseMode, allowUnsigned?: boolean) => {
     setOptimisticMode(newMode);
     setBusy(true);
     setOverrideMsg(null);
+    setDialogErr(null);
     try {
-      await api.setDefenseMode(newMode);
+      const res = await api.setDefenseMode(newMode, allowUnsigned);
+      if (res && res.ok === false) {
+        setOptimisticMode(null);
+        const msg = res.message || res.error || "mode change refused";
+        if (res.error === "signing_required") { setDialogErr(msg); setDialog(true); } else { setOverrideMsg(`Failed to switch mode: ${msg}`); }
+      } else {
+        setDialog(false);
+      }
     } catch (err) {
       setOptimisticMode(null);
       setOverrideMsg(`Failed to switch mode: ${err}`);
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleModeChange = async (newMode: DefenseMode) => {
+    if (newMode === activeMode || busy) return;
+    if (needsActiveIpsDialog(environment, activeMode, newMode)) { setDialogErr(null); setDialog(true); return; }
+    await applyMode(newMode);
   };
 
   const handleOverride = async (action: "safe_hold" | "reset_quarantine" | "ack_takeover") => {
@@ -208,6 +227,11 @@ export function DefensePanel({ mode, mitigation, threat, telemetry, topologyInfo
 
   return (
     <section className="panel def-panel" data-testid="defense-panel">
+      {dialog && (
+        <ActiveIpsDialog signing={signing ?? null} busy={busy} error={dialogErr}
+          onCancel={() => { setDialog(false); setDialogErr(null); }}
+          onConfirm={(u) => { void applyMode("active-ips", u); }} />
+      )}
       <div className="panel-head">
         <div className="title-row">
           <h3>HYBRID AUTONOMOUS DEFENSE & RECOVERY</h3>
@@ -241,6 +265,9 @@ export function DefensePanel({ mode, mitigation, threat, telemetry, topologyInfo
       {/* 1. Operational Mode Switcher */}
       <div className="def-section">
         <div className="def-section-title">OPERATIONAL POSTURE SELECTOR</div>
+        {environment && environment !== "SIM" && (
+          <div className="topo-note" data-testid="signing-indicator" style={{ fontWeight: 700, color: signing?.configured ? "var(--ok)" : "var(--warn)" }}>{signingText(signing)}</div>
+        )}
         <div className="topo-note">Posture is your choice; the Topology capability rows depend on it.</div>
         <div className="mode-toggle-group" role="radiogroup" aria-label="Defense Mode Selector">
           {MODES.map((m) => {

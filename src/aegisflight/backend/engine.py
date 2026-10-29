@@ -181,7 +181,13 @@ class LiveEngine:
         self._last_threat: dict = {}  # last DECISION's threat block (for status)
         self._last_assessment = None
         self._last_mitigation_action = None
-        self.mitigation = MitigationController(mode=DefenseMode(self.spec.defense_mode))
+        self._signing_key: bytes | None = None
+        if self.spec.signing_key_file:
+            from ..detectors.crossend import load_signing_key
+            self._signing_key = load_signing_key(self.spec.signing_key_file)
+        self.signing_configured = self._signing_key is not None
+        self.unsigned_acknowledged = False
+        self.mitigation = MitigationController(mode=DefenseMode(self.spec.defense_mode), secret_key=self._signing_key)
         self._run_seq = 0
         self._run_id = self._new_run_id()
 
@@ -374,8 +380,29 @@ class LiveEngine:
         self._gen = self.source.stream()
         self._start_run()
 
-    def set_defense_mode(self, mode: str) -> dict:
+    def signing_info(self) -> dict:
+        return {"configured": self.signing_configured}
+
+    def signing_gate(self, mode: str, allow_unsigned: bool = False) -> dict | None:
+        """None when the posture change is allowed, else the 409 body. Only a non-SIM source going active-ips
+        without a signing key is gated; allow_unsigned=True is the operator's explicit acknowledgement."""
+        if self.is_sim or mode != "active-ips" or self.signing_configured:
+            return None
+        if allow_unsigned is not True:
+            return {"ok": False, "error": "signing_required",
+                    "message": "Unsigned links cannot stop a counter-tracking forger; provision a key and start with "
+                               "--signing-key-file, or acknowledge the risk to proceed unsigned.",
+                    "signing": self.signing_info()}
+        return None
+
+    def set_defense_mode(self, mode: str, allow_unsigned: bool = False) -> dict:
         self.mitigation.set_mode(mode)
+        if (mode == "active-ips" and not self.is_sim and not self.signing_configured and allow_unsigned is True):
+            self.unsigned_acknowledged = True
+            self.mitigation._add_action(time.time(), "UNSIGNED_ACK",
+                                        "active-ips enabled on an unsigned link (operator acknowledged)")
+        elif mode != "active-ips":
+            self.unsigned_acknowledged = False
         if self.mitigation.mode == DefenseMode.ACTIVE_IPS and self._cp_lat is not None:
             # Seed recovery from current position: for GPS attacks, use trusted dead-reckoning;
             # for command hijacks, seed from current deviated position so the drone smoothly rejoins track
@@ -957,6 +984,8 @@ class LiveEngine:
             "environment": self.spec.environment,
             "source": source_desc,
             "defense_mode": self.mitigation.mode.value,
+            "signing": self.signing_info(),
+            "unsigned_acknowledged": self.unsigned_acknowledged,
             "topology": self.topology,
             "topology_reasons": self.topology_reasons,
             "topology_info": self.topology_info(),
@@ -1001,6 +1030,8 @@ class LiveEngine:
             "environment": self.spec.environment,
             "source": source_desc,
             "defense_mode": self.mitigation.mode.value,
+            "signing": self.signing_info(),
+            "unsigned_acknowledged": self.unsigned_acknowledged,
             "topology": self.topology,
             "topology_reasons": self.topology_reasons,
             "topology_info": self.topology_info(),

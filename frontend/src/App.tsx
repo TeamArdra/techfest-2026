@@ -87,12 +87,14 @@ export default function App() {
               telemetry={live.telemetry}
               topologyInfo={live.topologyInfo}
               bridgeTopology={bridge.st?.topology ?? null}
+              environment={live.environment}
+              signing={live.signing}
             />
           </ErrorBoundary>
         </section>
 
         {live.environment && live.environment !== "SIM" && <ChecksPanel checks={live.checks} />}
-        <BridgePanel url={bridge.url} st={bridge.st} bad={bridge.bad} />
+        <BridgePanel url={bridge.url} st={bridge.st} bad={bridge.bad} setSt={bridge.setSt} />
 
         {/* 2. secondary: runtime performance · attack-vector coverage */}
         <section className="secondary">

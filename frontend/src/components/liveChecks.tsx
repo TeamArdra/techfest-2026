@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
-import { getBridgeUrl } from "../services/api";
-import type { BridgeStatus, Checks } from "../types";
+import { getBridgeToken, getBridgeUrl, setBridgePosture } from "../services/api";
+import { controlHint, signingText } from "../lib/posture";
+import { ActiveIpsDialog } from "./ActiveIpsDialog";
+import type { BridgeStatus, Checks, DefenseMode } from "../types";
+
+const POSTURES: DefenseMode[] = ["passive", "advisory", "active-ips"];
 
 const f = (v: number | null | undefined, d = 2) => (typeof v === "number" && Number.isFinite(v) ? v.toFixed(d) : "—");
 
@@ -57,10 +61,14 @@ export function useBridge() {
     poll();
     return () => { alive = false; if (id) clearTimeout(id); };
   }, [url]);
-  return { url, st, bad };
+  return { url, st, bad, setSt };
 }
 
-export function BridgePanel({ url, st, bad }: { url: string | null; st: BridgeStatus | null; bad: boolean }) {
+export function BridgePanel({ url, st, bad, setSt }: { url: string | null; st: BridgeStatus | null; bad: boolean; setSt?: (s: BridgeStatus) => void }) {
+  const [dialog, setDialog] = useState(false);
+  const [dialogErr, setDialogErr] = useState<string | null>(null);
+  const [ctlErr, setCtlErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   if (!url) return null;
   if (bad || !st) {
     return (
@@ -73,6 +81,26 @@ export function BridgePanel({ url, st, bad }: { url: string | null; st: BridgeSt
   const p = st.policy ?? {};
   const fr = st.frames ?? {};
   const n = (v: unknown) => (typeof v === "number" ? v : 0);
+  const token = getBridgeToken();
+  const canControl = st.control?.enabled === true && token.length > 0;
+  const hint = controlHint(st.control?.enabled, token.length > 0);
+  const apply = async (mode: DefenseMode, allowUnsigned?: boolean) => {
+    setBusy(true); setCtlErr(null); setDialogErr(null);
+    const r = await setBridgePosture(url, token, mode, allowUnsigned);
+    setBusy(false);
+    if (r.kind === "ok") {
+      setDialog(false);
+      if (r.status && setSt) setSt(r.status as BridgeStatus);
+    } else if (r.kind === "signing_required") {
+      setDialogErr(r.message); setDialog(true);
+    } else {
+      setDialog(false); setCtlErr(r.message);
+    }
+  };
+  const pick = (mode: DefenseMode) => {
+    if (busy || mode === st.mode) return;
+    if (mode === "active-ips") { setDialogErr(null); setDialog(true); } else void apply(mode);
+  };
   return (
     <div className="panel" data-testid="bridge-panel">
       <header><span className="panel-title">Inline IPS bridge</span><span className="panel-note">{url}</span></header>
@@ -84,7 +112,22 @@ export function BridgePanel({ url, st, bad }: { url: string | null; st: BridgeSt
         <span>rewritten <b>{n(p.rewritten)}</b> · hook errors <b style={n(p.hook_errors) > 0 ? { color: "var(--crit)" } : undefined}>{n(p.hook_errors)}</b></span>
         <span>counter-frames <b>{n(st.analyser?.counter_frames_sent)}</b></span>
         <span>last error <b>{st.last_error ?? "none"}</b></span>
+        <span data-testid="bridge-signing">{signingText(st.signing)}</span>
+        <span>remote control <b>{st.control?.enabled ? "enabled" : "disabled"}</b></span>
       </div>
+      <div className="source-bar" style={{ flexWrap: "wrap", gap: 8 }}>
+        {canControl && POSTURES.map((m) => (
+          <button key={m} type="button" disabled={busy} aria-pressed={st.mode === m} onClick={() => pick(m)}
+            style={st.mode === m ? { fontWeight: 700 } : undefined}>{m.toUpperCase()}</button>
+        ))}
+        {hint && <span className="panel-note" data-testid="bridge-control-hint">{hint}</span>}
+        {ctlErr && <span role="alert" data-testid="bridge-control-error" style={{ color: "var(--crit)" }}>{ctlErr}</span>}
+      </div>
+      {dialog && (
+        <ActiveIpsDialog signing={st.signing ?? null} busy={busy} error={dialogErr}
+          onCancel={() => { setDialog(false); setDialogErr(null); }}
+          onConfirm={(u) => { void apply("active-ips", u); }} />
+      )}
     </div>
   );
 }

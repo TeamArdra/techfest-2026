@@ -98,13 +98,13 @@ def test_live_engine_transmits_counter_frames_only_in_active_ips(tmp_path, monke
         engine.store.close()
 
 
-def test_api_accepts_active_ips_on_a_live_source(tmp_path, monkeypatch):
+def test_api_accepts_acknowledged_unsigned_active_ips_on_a_live_source(tmp_path, monkeypatch):
     engine = LiveEngine(spec=SourceSpec(kind="serial", port="COM7"), db_path=str(tmp_path / "e.sqlite"))
     monkeypatch.setattr(app_module, "engine", engine)
     try:
         client = TestClient(app_module.app)  # not entered as a context: no lifespan, the port is never opened
         assert engine.mitigation.mode == DefenseMode.PASSIVE
-        r = client.post("/api/defense/mode", json={"mode": "active-ips"})
+        r = client.post("/api/defense/mode", json={"mode": "active-ips", "allow_unsigned": True})
         assert r.status_code == 200 and engine.mitigation.mode == DefenseMode.ACTIVE_IPS
     finally:
         engine.store.close()

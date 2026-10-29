@@ -330,3 +330,18 @@ ALT_HOLD with no pilot throttle makes SITL descend to the ground (the ladder onl
 
 Bug found and fixed: the ladder's STATUSTEXT warning was sent to the flight controller only and never reached the GCS (first glitch runs: no `AEGIS` text on the GCS side). The bridge now sends STATUSTEXT
 counter-frames to the GCS transport (`hal/inline_ips.py`, regression test `test_statustext_counter_frame_goes_to_the_gcs_and_commands_go_to_the_fc`). Logs and sqlite files stay outside the repo (`C:/afsitl`).
+
+## Signing gate and remote posture control
+
+Signing is the only defence against a counter-tracking forger, so `active-ips` on a real link without a key is an
+explicit choice:
+
+- `aegis ips-bridge --defense-mode active-ips` without `--signing-key-file` exits 2 unless `--allow-unsigned` is given
+  (a one-line notice is then printed).
+- `--control-token-file PATH` enables `POST /posture` on the status API (the file holds the token; it is never printed).
+  Body `{"mode": "passive"|"advisory"|"active-ips", "allow_unsigned": bool}`, auth `Authorization: Bearer <token>` or
+  `X-Aegis-Token`. Errors: 403 `control_disabled`, 401 bad/missing token, 400 bad body, 409 `signing_required` (active-ips,
+  no key, `allow_unsigned` not `true`), 200 `{"ok": true, "status": ...}`. Browser calls are CORS-limited to the dashboard origins.
+- `--status-host HOST` (default `127.0.0.1`); a non-loopback host needs `--control-token-file` and prints a warning that the
+  status API is reachable from the network.
+- `GET /status` also returns `signing: {configured, unsigned_acknowledged}` and `control: {enabled}`.

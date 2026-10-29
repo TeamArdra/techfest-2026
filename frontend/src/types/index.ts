@@ -180,6 +180,8 @@ export interface BridgeStatus {
   frames?: Record<string, number>;
   latency_us?: { p50?: number; p95?: number; max?: number; samples?: number };
   policy?: Record<string, number | boolean | string | null>;
+  signing?: { configured: boolean; unsigned_acknowledged?: boolean };
+  control?: { enabled: boolean };
   analyser?: { decisions?: number; alerts?: number; errors?: number; counter_frames_sent?: number; summary?: unknown };
   last_error?: string | null;
   crossend?: { sent?: number };
@@ -191,6 +193,7 @@ export interface Update {
   environment: Environment;
   source: SourceInfo;
   defense_mode?: DefenseMode;
+  signing?: { configured: boolean; unsigned_acknowledged?: boolean };
   topology_info?: TopologyInfo | null;
   mitigation?: MitigationInfo;
   link: LinkStatus;
@@ -235,6 +238,7 @@ export interface Status {
   environment: Environment;
   source: SourceInfo;
   defense_mode?: DefenseMode;
+  signing?: { configured: boolean; unsigned_acknowledged?: boolean };
   topology_info?: TopologyInfo | null;
   mitigation?: MitigationInfo;
   link: LinkStatus;

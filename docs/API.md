@@ -235,3 +235,11 @@ thread that appends the alerts.
   dashboard** — the pending gate is `docs/HARDWARE_BENCH_PIXHAWK6X.md` §6.10.
 - SIM data is a simulation. A BENCH source is receive-only bench telemetry, not
   flight data, and its alerts describe that link (see `docs/DETECTION.md`).
+
+## Signing gate (`/api/defense/mode`)
+
+`GET /api/status` and every WebSocket update carry `signing: {"configured": bool}` (true when `aegis serve` got
+`--signing-key-file`; counter-frames are then signed) and `unsigned_acknowledged`. `POST /api/defense/mode` accepts an
+optional boolean `allow_unsigned`. For a non-SIM source, `active-ips` without a key and without `allow_unsigned: true`
+returns `409 {"ok": false, "error": "signing_required", "message": ..., "signing": {"configured": false}}`. SIM, `passive`
+and `advisory` are never gated. The bridge's own `POST /posture` is documented in `docs/INLINE_IPS.md`.

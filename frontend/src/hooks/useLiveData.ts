@@ -1,3 +1,4 @@
+import type { SigningInfo } from "../lib/posture";
 import { useEffect, useReducer, useRef } from "react";
 import { api, wsUrl } from "../services/api";
 import { acceptFix, nextOrigin, type LatLon } from "../lib/geo";
@@ -10,6 +11,7 @@ export interface LiveState {
   environment: Environment | null; // as reported by the backend; null until it has reported
   source: SourceInfo | null;
   defenseMode: DefenseMode;
+  signing: SigningInfo | null;
   mitigation: MitigationInfo | null;
   link: LinkStatus | null;
   runId: string | null;
@@ -41,6 +43,7 @@ interface ReducerState {
   environment: Environment | null;
   source: SourceInfo | null;
   defenseMode: DefenseMode;
+  signing: SigningInfo | null;
   topologyInfo: TopologyInfo | null;
   mitigation: MitigationInfo | null;
   link: LinkStatus | null;
@@ -70,6 +73,7 @@ const initialState: ReducerState = {
   environment: null,
   source: null,
   defenseMode: "passive",
+  signing: null,
   topologyInfo: null,
   mitigation: null,
   link: null,
@@ -120,6 +124,7 @@ function liveReducer(state: ReducerState, action: Action): ReducerState {
         environment: st?.environment ?? state.environment,
         source: st?.source ?? state.source,
         defenseMode: st?.defense_mode ?? (st?.source?.defense_mode || state.defenseMode),
+        signing: st?.signing ?? state.signing,
         topologyInfo: st?.topology_info ?? state.topologyInfo,
         mitigation: st?.mitigation ?? state.mitigation,
         link: st?.link && (last == null || Date.now() - last > 1000) ? st.link : state.link,
@@ -181,6 +186,7 @@ function liveReducer(state: ReducerState, action: Action): ReducerState {
         environment: msg.environment ?? state.environment,
         source: msg.source ?? state.source,
         defenseMode: msg.defense_mode ?? (msg.source?.defense_mode || state.defenseMode),
+        signing: msg.signing ?? state.signing,
         topologyInfo: msg.topology_info ?? state.topologyInfo,
         mitigation: msg.mitigation ?? state.mitigation,
         link: msg.link ?? state.link,
@@ -290,6 +296,7 @@ export function useLiveData(): LiveState {
     environment: state.environment,
     source: state.source,
     defenseMode: state.defenseMode,
+    signing: state.signing,
     mitigation: state.mitigation,
     link: state.link,
     runId: state.runId,

@@ -272,7 +272,13 @@ def set_defense_mode(payload: dict, request: Request) -> JSONResponse:
             content={"ok": False, "error": f"unknown defense mode '{mode}'",
                      "choices": ["passive", "advisory", "active-ips"]},
         )
-    res = get_engine().set_defense_mode(mode)
+    allow_unsigned = (payload or {}).get("allow_unsigned")
+    if allow_unsigned is not None and not isinstance(allow_unsigned, bool):
+        return JSONResponse(status_code=400, content={"ok": False, "error": "allow_unsigned must be a boolean"})
+    eng = get_engine()
+    if (gated := eng.signing_gate(mode, allow_unsigned is True)) is not None:
+        return JSONResponse(status_code=409, content=gated)
+    res = eng.set_defense_mode(mode, allow_unsigned=allow_unsigned is True)
     return JSONResponse(content={"ok": True, **res})
 
 

@@ -220,6 +220,32 @@ def _cmd_ips_bridge(args: argparse.Namespace) -> int:
         except (OSError, ValueError, UnicodeDecodeError) as exc:
             print(f"aegis ips-bridge: bad --signing-key-file: {exc}", file=sys.stderr)
             return 2
+    if args.defense_mode == "active-ips" and key is None and not args.allow_unsigned:
+        print("aegis ips-bridge: refusing --defense-mode active-ips without --signing-key-file: an unsigned link "
+              "cannot stop a counter-tracking forger. Provision a key, or pass --allow-unsigned to accept the risk.",
+              file=sys.stderr)
+        return 2
+    token = None
+    if args.control_token_file:
+        try:
+            token = Path(args.control_token_file).read_text(encoding="utf-8").strip()
+        except (OSError, UnicodeDecodeError) as exc:
+            print(f"aegis ips-bridge: bad --control-token-file: {exc}", file=sys.stderr)
+            return 2
+        if not token:
+            print("aegis ips-bridge: --control-token-file is empty", file=sys.stderr)
+            return 2
+    import ipaddress
+
+    status_host = args.status_host
+    try:
+        loopback = status_host == "localhost" or ipaddress.ip_address(status_host).is_loopback
+    except ValueError:
+        loopback = False
+    if not loopback and token is None:
+        print(f"aegis ips-bridge: refusing --status-host {status_host}: a non-loopback status API requires "
+              "--control-token-file", file=sys.stderr)
+        return 2
     store = None
     if args.db:
         from ..logging import EventStore
@@ -245,14 +271,17 @@ def _cmd_ips_bridge(args: argparse.Namespace) -> int:
         from ..hal.status_server import BridgeStatusServer
 
         try:
-            status_srv = BridgeStatusServer(bridge, args.status_port).start()
+            status_srv = BridgeStatusServer(
+                bridge, args.status_port, host=status_host, control_token=token, signing_configured=key is not None,
+                allow_unsigned=args.allow_unsigned and args.defense_mode == "active-ips").start()
+            if not loopback:
+                print(f"aegis ips-bridge: WARNING status API reachable from the network on {status_host}:"
+                      f"{args.status_port} (posture control requires the token)", flush=True)
         except OSError as exc:
             print(f"aegis ips-bridge: cannot bind status port: {exc}", file=sys.stderr)
     print(f"aegis ips-bridge: {args.fc_port} <-> {args.gcs_port}, posture {args.defense_mode}", flush=True)
     if args.defense_mode == "active-ips" and key is None:
-        print("aegis ips-bridge: WARNING active-ips without --signing-key-file: an unsigned link cannot be fully protected "
-              "(a counter-tracking attacker passes the provenance checks); use MAVLink-2 signing (--signing-key-file)",
-              flush=True)
+        print("aegis ips-bridge: NOTICE active-ips without signing acknowledged via --allow-unsigned", flush=True)
     end = None if args.seconds is None else time.monotonic() + args.seconds
     try:
         while end is None or time.monotonic() < end:
@@ -373,6 +402,12 @@ def build_parser() -> argparse.ArgumentParser:
     ib.add_argument("--status-interval", type=float, default=5.0)
     ib.add_argument("--status-port", type=int, default=0,
                     help="serve GET /status (bridge state as JSON) on 127.0.0.1:PORT, read-only (default: off)")
+    ib.add_argument("--allow-unsigned", action="store_true",
+                    help="acknowledge that active-ips without --signing-key-file cannot stop a counter-tracking forger")
+    ib.add_argument("--control-token-file", default=None,
+                    help="file holding a token; enables remote posture control (POST /posture) on the status API")
+    ib.add_argument("--status-host", default="127.0.0.1",
+                    help="bind address of the status API (default 127.0.0.1; non-loopback needs --control-token-file)")
     ib.set_defaults(func=_cmd_ips_bridge)
 
     v = sub.add_parser("verify-log", help="verify a SQLite event-log hash chain")
