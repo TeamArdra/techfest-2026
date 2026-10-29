@@ -1,0 +1,372 @@
+{
+  "sitl_session_level": [
+    {
+      "file": "artifacts/sitl/P2_delay_summary.md",
+      "section": "P2 DELAY summary - live SITL trials (generated; do not edit)",
+      "column": "detected",
+      "trials": 10,
+      "detected": 9,
+      "wilson95": [
+        0.5958,
+        0.9821
+      ],
+      "trial_ids": [
+        "p2l_n10_trial_001",
+        "p2l_n10_trial_002",
+        "p2l_n10_trial_003",
+        "p2l_n10_trial_004",
+        "p2l_n10_trial_005",
+        "p2l_n10_trial_006",
+        "p2l_n10_trial_007",
+        "p2l_n10_trial_008",
+        "p2l_n10_trial_009",
+        "p2l_n10_trial_010"
+      ],
+      "undetected": [
+        "p2l_n10_trial_009"
+      ]
+    },
+    {
+      "file": "artifacts/sitl/P2_drop_summary.md",
+      "section": "P2 DROP summary - live SITL trials (generated; do not edit)",
+      "column": "detected",
+      "trials": 10,
+      "detected": 10,
+      "wilson95": [
+        0.7225,
+        1.0
+      ],
+      "trial_ids": [
+        "p2d_n10_trial_001",
+        "p2d_n10_trial_002",
+        "p2d_n10_trial_003",
+        "p2d_n10_trial_004",
+        "p2d_n10_trial_005",
+        "p2d_n10_trial_006",
+        "p2d_n10_trial_007",
+        "p2d_n10_trial_008",
+        "p2d_n10_trial_009",
+        "p2d_n10_trial_010"
+      ],
+      "undetected": []
+    },
+    {
+      "file": "artifacts/sitl/P2_gcs_impersonation_summary.md",
+      "section": "Variant: informed (tracks real seq)",
+      "column": "any",
+      "trials": 10,
+      "detected": 0,
+      "wilson95": [
+        0.0,
+        0.2775
+      ],
+      "trial_ids": [
+        "p2g_inf_trial_001",
+        "p2g_inf_trial_002",
+        "p2g_inf_trial_003",
+        "p2g_inf_trial_004",
+        "p2g_inf_trial_005",
+        "p2g_inf_trial_006",
+        "p2g_inf_trial_007",
+        "p2g_inf_trial_008",
+        "p2g_inf_trial_009",
+        "p2g_inf_trial_010"
+      ],
+      "undetected": [
+        "p2g_inf_trial_001",
+        "p2g_inf_trial_002",
+        "p2g_inf_trial_003",
+        "p2g_inf_trial_004",
+        "p2g_inf_trial_005",
+        "p2g_inf_trial_006",
+        "p2g_inf_trial_007",
+        "p2g_inf_trial_008",
+        "p2g_inf_trial_009",
+        "p2g_inf_trial_010"
+      ]
+    },
+    {
+      "file": "artifacts/sitl/P2_gcs_impersonation_summary.md",
+      "section": "Variant: naive (own counter)",
+      "column": "any",
+      "trials": 10,
+      "detected": 10,
+      "wilson95": [
+        0.7225,
+        1.0
+      ],
+      "trial_ids": [
+        "p2g_naive_trial_001",
+        "p2g_naive_trial_002",
+        "p2g_naive_trial_003",
+        "p2g_naive_trial_004",
+        "p2g_naive_trial_005",
+        "p2g_naive_trial_006",
+        "p2g_naive_trial_007",
+        "p2g_naive_trial_008",
+        "p2g_naive_trial_009",
+        "p2g_naive_trial_010"
+      ],
+      "undetected": []
+    },
+    {
+      "file": "artifacts/sitl/P2_gnss_summary.md",
+      "section": "P2 GNSS-degradation summary - live SITL trials (generated; do not edit)",
+      "column": "detected",
+      "trials": 10,
+      "detected": 10,
+      "wilson95": [
+        0.7225,
+        1.0
+      ],
+      "trial_ids": [
+        "p2n_n10_trial_001",
+        "p2n_n10_trial_002",
+        "p2n_n10_trial_003",
+        "p2n_n10_trial_004",
+        "p2n_n10_trial_005",
+        "p2n_n10_trial_006",
+        "p2n_n10_trial_007",
+        "p2n_n10_trial_008",
+        "p2n_n10_trial_009",
+        "p2n_n10_trial_010"
+      ],
+      "undetected": []
+    },
+    {
+      "file": "artifacts/sitl/P2_injection_summary.md",
+      "section": "POST-FIX batch (relay mirrors hook-added frames to all clients)",
+      "column": "detected",
+      "trials": 10,
+      "detected": 10,
+      "wilson95": [
+        0.7225,
+        1.0
+      ],
+      "trial_ids": [
+        "p2i_fix_trial_001",
+        "p2i_fix_trial_002",
+        "p2i_fix_trial_003",
+        "p2i_fix_trial_004",
+        "p2i_fix_trial_005",
+        "p2i_fix_trial_006",
+        "p2i_fix_trial_007",
+        "p2i_fix_trial_008",
+        "p2i_fix_trial_009",
+        "p2i_fix_trial_010"
+      ],
+      "undetected": []
+    },
+    {
+      "file": "artifacts/sitl/P2_replay_v2_summary.md",
+      "section": "P2 REPLAY-v2 summary - live SITL trials (generated; do not edit)",
+      "column": "any detected",
+      "trials": 10,
+      "detected": 10,
+      "wilson95": [
+        0.7225,
+        1.0
+      ],
+      "trial_ids": [
+        "p2r_v2_trial_001",
+        "p2r_v2_trial_002",
+        "p2r_v2_trial_003",
+        "p2r_v2_trial_004",
+        "p2r_v2_trial_005",
+        "p2r_v2_trial_006",
+        "p2r_v2_trial_007",
+        "p2r_v2_trial_008",
+        "p2r_v2_trial_009",
+        "p2r_v2_trial_010"
+      ],
+      "undetected": []
+    },
+    {
+      "file": "artifacts/sitl/closure/final_delay_summary.md",
+      "section": "P2 DELAY summary - live SITL trials (generated; do not edit)",
+      "column": "detected",
+      "trials": 3,
+      "detected": 3,
+      "wilson95": [
+        0.4385,
+        1.0
+      ],
+      "trial_ids": [
+        "p2l_final_trial_001",
+        "p2l_final_trial_002",
+        "p2l_final_trial_003"
+      ],
+      "undetected": []
+    },
+    {
+      "file": "artifacts/sitl/closure/final_drift_summary.md",
+      "section": "P2 summary - first live attack trials on PX4 SITL (generated; do not edit)",
+      "column": "detected",
+      "trials": 3,
+      "detected": 3,
+      "wilson95": [
+        0.4385,
+        1.0
+      ],
+      "trial_ids": [
+        "p2_final_trial_001",
+        "p2_final_trial_002",
+        "p2_final_trial_003"
+      ],
+      "undetected": []
+    },
+    {
+      "file": "artifacts/sitl/closure/final_drop_summary.md",
+      "section": "P2 DROP summary - live SITL trials (generated; do not edit)",
+      "column": "detected",
+      "trials": 3,
+      "detected": 3,
+      "wilson95": [
+        0.4385,
+        1.0
+      ],
+      "trial_ids": [
+        "p2d_final_trial_001",
+        "p2d_final_trial_002",
+        "p2d_final_trial_003"
+      ],
+      "undetected": []
+    },
+    {
+      "file": "artifacts/sitl/closure/final_gnss_summary.md",
+      "section": "P2 GNSS-degradation summary - live SITL trials (generated; do not edit)",
+      "column": "detected",
+      "trials": 3,
+      "detected": 3,
+      "wilson95": [
+        0.4385,
+        1.0
+      ],
+      "trial_ids": [
+        "p2n_final_trial_001",
+        "p2n_final_trial_002",
+        "p2n_final_trial_003"
+      ],
+      "undetected": []
+    },
+    {
+      "file": "artifacts/sitl/closure/final_injection_summary.md",
+      "section": "POST-FIX batch (relay mirrors hook-added frames to all clients)",
+      "column": "detected",
+      "trials": 3,
+      "detected": 3,
+      "wilson95": [
+        0.4385,
+        1.0
+      ],
+      "trial_ids": [
+        "p2i_final_trial_001",
+        "p2i_final_trial_002",
+        "p2i_final_trial_003"
+      ],
+      "undetected": []
+    },
+    {
+      "file": "artifacts/sitl/closure/final_replay_summary.md",
+      "section": "P2 REPLAY-v2 summary - live SITL trials (generated; do not edit)",
+      "column": "any detected",
+      "trials": 3,
+      "detected": 3,
+      "wilson95": [
+        0.4385,
+        1.0
+      ],
+      "trial_ids": [
+        "p2r_final_trial_001",
+        "p2r_final_trial_002",
+        "p2r_final_trial_003"
+      ],
+      "undetected": []
+    }
+  ],
+  "replay_flight_level": [
+    {
+      "source": "artifacts/external/px4_review_v2/per_flight.csv",
+      "environment": "REPLAY",
+      "dataset": "PX4 Flight Review public logs, mapping px4_telemetry",
+      "claim": "false-alarm evidence on real flights (no attacks); network features absent, ML is a navigation probe",
+      "metric": "flights with any physics-detector trigger",
+      "flights": 24,
+      "k": 16,
+      "wilson95": [
+        0.4671,
+        0.8203
+      ]
+    },
+    {
+      "source": "artifacts/external/px4_review_v2/per_flight.csv",
+      "environment": "REPLAY",
+      "dataset": "PX4 Flight Review public logs, mapping px4_telemetry",
+      "claim": "false-alarm evidence on real flights (no attacks); network features absent, ML is a navigation probe",
+      "metric": "flights with physics trigger on > 1 % of airborne ticks",
+      "flights": 24,
+      "k": 12,
+      "wilson95": [
+        0.3143,
+        0.6857
+      ]
+    },
+    {
+      "source": "artifacts/external/px4_review_v2/per_flight.csv",
+      "environment": "REPLAY",
+      "dataset": "PX4 Flight Review public logs, mapping px4_telemetry",
+      "claim": "false-alarm evidence on real flights (no attacks); network features absent, ML is a navigation probe",
+      "metric": "flights with ML navigation probe alarm on > 1 % of airborne ticks",
+      "flights": 24,
+      "k": 15,
+      "wilson95": [
+        0.4271,
+        0.7884
+      ]
+    },
+    {
+      "source": "artifacts/external/alfa_calibrated/results.json",
+      "environment": "REPLAY",
+      "dataset": "ALFA held-out dates, per-vehicle calibrated protocol rate, ML off",
+      "claim": "false-alarm / fault evidence on real flights; the dataset's faults are physical, not cyber attacks",
+      "metric": "flight logs with any fused threat decision (all labelled and unlabelled decisions)",
+      "flights": 11,
+      "k": 11,
+      "excluded_short_or_empty_logs": 10,
+      "wilson95": [
+        0.7412,
+        1.0
+      ]
+    },
+    {
+      "source": "artifacts/external/alfa_calibrated/results.json",
+      "environment": "REPLAY",
+      "dataset": "ALFA held-out dates, per-vehicle calibrated protocol rate, ML off",
+      "claim": "false-alarm / fault evidence on real flights; the dataset's faults are physical, not cyber attacks",
+      "metric": "flight logs with fused threat on > 1 % of decisions (all labelled and unlabelled decisions)",
+      "flights": 11,
+      "k": 2,
+      "excluded_short_or_empty_logs": 10,
+      "wilson95": [
+        0.0514,
+        0.477
+      ]
+    }
+  ],
+  "git_head": "9944a57b02bfef8bd6e64f1b696b024af3cbc071",
+  "input_sha256": {
+    "artifacts/sitl/P2_delay_summary.md": "aa00a8f3e78cf868adc5b6ca82f51546c50db8e4959771bbbbcf7d0494792fd4",
+    "artifacts/sitl/P2_drop_summary.md": "110264d13dd99a0dc7dd90eb454d5d164be0be23d45780d3d22cd8846cbe221d",
+    "artifacts/sitl/P2_gcs_impersonation_summary.md": "649199de16e49623c05f6dc8129374a50c0516e2472a86c42dc30b7a770cbfb6",
+    "artifacts/sitl/P2_gnss_summary.md": "8ef5325ef3e50b63d0acba4fe862355d175e08b83c4246ca26fdac9540bb472d",
+    "artifacts/sitl/P2_injection_summary.md": "868cb60ee38706cacd475e3aeebca0d7ccb63522c3743e974d5975d4d42d30b2",
+    "artifacts/sitl/P2_replay_v2_summary.md": "7173766fb2b3d2c17b3e995cd0089148039ff8894227b3b2bc0720ac6e0dff08",
+    "artifacts/sitl/closure/final_delay_summary.md": "89fda39621941a43d9680687fe0581b68b9c33d3a5e7574f82b6c586325bac88",
+    "artifacts/sitl/closure/final_drift_summary.md": "b87c6a3624e9c85226a97a3e488864c470ffce7a436faffb777d8da18bd4866b",
+    "artifacts/sitl/closure/final_drop_summary.md": "7132a3f4f7ba2bf23a22cdb3fcefce2d1607b5955bccc1806b6deadc24aaa8b1",
+    "artifacts/sitl/closure/final_gnss_summary.md": "7611c60b81956996dfa254e783f8355866e2e6f1b9e905758c7308fa0eb9ec96",
+    "artifacts/sitl/closure/final_injection_summary.md": "9d6d7db586216c3f3d8e16cc4c2046760a0dad8806f89af9a970121b96a780a8",
+    "artifacts/sitl/closure/final_replay_summary.md": "35a99c308c2508fd90186c4a9602d9418f752884fea975c65500552e2ffabb6f"
+  },
+  "regenerate": "python scripts/make_session_ci_sitl_replay.py --out artifacts/validation/session_ci_sitl_replay_20261029"
+}

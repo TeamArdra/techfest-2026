@@ -29,14 +29,14 @@ vehicle, no flight parameter or mode was touched, no attack was injected into a 
 | Task | Status | What exists / what blocks it |
 |---|---|---|
 | Root `LICENSE` | **DONE** (holder line **human to confirm**) | MIT, consistent with `pyproject.toml`; "Team Ardra" taken from `authors` |
-| Third-party notices | **PARTIAL** | `THIRD_PARTY_NOTICES.md`: Python and npm licences read from installed metadata / `package-lock.json`; *unverified*: pyulog, dev tools, Rust crates, Tauri icons, SITL platforms; licence texts not audited |
+| Third-party notices | **PARTIAL** | `THIRD_PARTY_NOTICES.md`: Python and npm licences read from installed metadata / `package-lock.json`; second pass 2026-10-29: pyulog, uvloop, dev tools, PX4 / ArduPilot / Gazebo licence headers **verified** from metadata or licence files; 391 Rust crates **declared, not audited** (5 MPL-2.0); Tauri icon origin and ALFA source licence **unresolved**; licence texts not audited |
 | Archive manifest | **DONE** (decisions **HUMAN**) | `docs/SUBMISSION_ARCHIVE_MANIFEST.md`; raw bench captures, model file and dataset inclusion need a team decision |
 | Team ID, date, signature, final targets, AI-use verification, integrity declaration | **HUMAN ACTION REQUIRED** | placeholders left; `docs/SUBMISSION_ARCHIVE_MANIFEST.md` §4 lists exactly what is needed |
 | Report audit and corrections | **DONE** (re-review recommended) | label-independence wording, gate wording, defense wording, platform coverage, saved-artifact references; see §4 (C14–C19) |
 | Reproducible evidence for prose-only figures | **DONE for `SIM`; BLOCKED for SITL/hardware** | `artifacts/validation/submission_rerun_20261029/` (baseline 378/378, extended re-run, session-level Wilson intervals, per-class time to first alert, GPS drift sweep ML on/off, test-suite run). SITL batches need WSL/PX4/ArduPilot and were not regenerated; ALFA/PX4 replays need fetched logs and `pyulog` |
 | Confidence intervals | **PARTIAL** | session level on `SIM` only (n = 4 per mode: wide); none for `SITL`, replay or hardware |
 | Latency distribution / detection-vs-magnitude | **PARTIAL** | per-class min/median/max (no p95: < 20 sessions per class); magnitude sweep for GPS drift only; no latency-distribution plot |
-| Baseline comparison (simple threshold / autopilot checks) | **NOT DONE** | unchanged P1 |
+| Baseline comparison (simple threshold / autopilot checks) | **PARTIAL (second pass)** | simple single-limit baseline done in `SIM` on the same 23,430 decisions: `artifacts/validation/baseline_comparison_20261029/` (baseline 996 / 1510 / 15320 / 5604; its FPs are one climb-rate rule). **Autopilot-check comparison still NOT DONE** (no failsafe output for attacked sessions) |
 | Label-independence evidence | **DONE** | `tests/unit/test_label_independence.py` (behavioural + structural), `SIM`, five classes; firmware class excluded by design |
 | Detector weaknesses: sudden offset, slow drift, `gcs_replay`, informed impersonation, PX4 drift | **REPRODUCED, no detector change; fixes BLOCKED** | see §6a: each is an information limit of unauthenticated telemetry (needs signing or an independent sensor), not a tuning problem; changing thresholds would be tuning to the test |
 | Dashboard states and wording | **PARTIAL** | healthy / unhealthy / unknown / stale / null / older-backend cases unit-tested (11 frontend tests); real browser render of SIM and REPLAY checked and screenshotted; "usable fix", "(unauthenticated)" and "Replaying" wording added. No browser-driven component test library exists |
@@ -78,9 +78,9 @@ IDs are the template's own section numbers. **Status:** ✅ complete · 🟡 par
 | 2 | Stage 1 Baseline and Design Evolution (8) | 11-row Stage1/Stage2/Change?/Reason table | Draft §2 | ✅ |
 | 2.1 | Stage 1 Claims Revisited | each Stage-1 claim: Demonstrated / Partly / Withdrawn + reason + evidence | Draft §2.1 (from `docs/technical_proposal.md`) | 🟡 the Stage-1 *report* itself is not in the repo; the proposal is used |
 | 2.2 | Stage 1 Open Questions Addressed | question, how addressed, result, remaining uncertainty; **must state how "distance covered" is interpreted and what was measured** | Draft §2.2 | 🟡 Stage-1 evaluator questions not in repo; "distance covered" answered |
-| 3 | Updated/implemented Requirements and Architecture (7) | 8-row requirement table (target, final team target, status) + architecture description + **system architecture figure** + how flight control is not interfered with | Draft §3; `docs/ARCHITECTURE.md`; `docs/diagrams/*.mmd` | 🟡 team targets undefined in the repo; figure is Mermaid source, not rendered |
-| 4 | Integrated Methodology and Workflow (8) | **logic-flow diagram** + 7-row sub-domain table + how results from one stage changed another | Draft §4; `docs/diagrams/end-to-end-flow.mmd` | 🟡 diagram not rendered |
-| 5.1 | Methodology (§5 = 18) | 8 items: detectors per class, inputs read, thresholds & training, decision logic, latency design, baseline comparison, blind spots, limitations | Draft §5.1; `docs/DETECTION.md` | 🟡 baseline comparison is only an ML on/off ablation |
+| 3 | Updated/implemented Requirements and Architecture (7) | 8-row requirement table (target, final team target, status) + architecture description + **system architecture figure** + how flight control is not interfered with | Draft §3; `docs/ARCHITECTURE.md`; `docs/diagrams/*.mmd` | 🟡 team targets undefined in the repo; Figure 3 rendered (`docs/figures/fig3_*.png`, second pass) |
+| 4 | Integrated Methodology and Workflow (8) | **logic-flow diagram** + 7-row sub-domain table + how results from one stage changed another | Draft §4; `docs/diagrams/end-to-end-flow.mmd` | 🟡 Figure 4 rendered (`docs/figures/fig4_*.png`, second pass) |
+| 5.1 | Methodology (§5 = 18) | 8 items: detectors per class, inputs read, thresholds & training, decision logic, latency design, baseline comparison, blind spots, limitations | Draft §5.1; `docs/DETECTION.md` | 🟡 simple-threshold baseline now reported (`SIM`, caveated); autopilot checks not compared |
 | 5.2 | Attack Coverage and Test Matrix | per class: scenarios (count, magnitude incl. subtle), flight evidence, injection method + ground-truth source, detected/total | Draft §5.2 | 🟡 no flight evidence for any attack |
 | 5.3 | Required Outputs | per-class + overall results **with counts and confidence intervals** on untuned data; detection vs magnitude; latency distribution (median, p95); baseline comparison; every miss explained; confidence statement; confusion matrix + latency/magnitude plots | Draft §5.3; `artifacts/benchmarks*/`, `artifacts/figures/` | 🟡 **no confidence intervals in SIM artifacts; no detection-vs-magnitude plot; no per-class p95** |
 | 6.1 | Data Sources and Features | table: message/field, feature, detector, why, real-data evidence | Draft §6.1; `docs/FEATURES.md` | ✅ |
@@ -151,7 +151,7 @@ for tuning", a latency target, a false-alarm target, or a benign "distance" defi
 | Estimator-aware gating and its role | Yes, with its **adversarial cost** | the gate removes a documented false-alarm mechanism; the status report is unauthenticated, so it adds attacker capability (SIM) that only MAVLink-2 signing closes |
 | Defense/mitigation and safety boundary | Needs the boundary stated first | live sources are **report-only**: `active-ips` is refused and no counter-frames are sent (`README.md`, `tests/unit/test_defense_safety.py`); prevention is a SIM model |
 | Hardware topology / receive-only method | Yes | `docs/HARDWARE_BENCH_PIXHAWK6X.md`, bundle README; topology is **laptop ← telemetry radio**, not a companion UART |
-| Quantitative metrics, baselines, false positives | **Partial** | no CIs, no simple-threshold or autopilot-checks baseline, no false-alarms-per-hour |
+| Quantitative metrics, baselines, false positives | **Partial** | `SIM` session CIs, `SITL`/`REPLAY` session-level CIs (`artifacts/validation/session_ci_sitl_replay_20261029/`) and a simple-threshold baseline now exist; no autopilot-checks baseline, no false-alarms-per-hour |
 | Simulation vs hardware evidence | Yes when tags are kept | every row in the draft carries a tag |
 | Limitations, risks, failure modes, future work | Yes | `docs/VALIDATION_EVIDENCE.md` §3–4, `RISK_REGISTER.md` (now corrected) |
 | Reproducibility / demo instructions | Partial | commands exist; clean-machine re-run not done; the demo script describes a SIM twin |
@@ -222,12 +222,12 @@ All `SIM` unless stated.
 | # | Gap | Action |
 |---|---|---|
 | P1-1 | **Confidence intervals: partly done** (`SIM`, session level, `extended_rerun/stats/`); none for SITL, replay or hardware | n = 4 per mode: the intervals are wide and say so |
-| P1-2 | **No simple-threshold / autopilot-checks baseline** (template §5.1, §5.3) | the only comparison is ML on/off; run a one-rule baseline through the benchmark or keep "not done" (the draft does) |
+| P1-2 | ~~No simple-threshold baseline~~ **done in the second pass** (`SIM` only, caveated); **autopilot-checks baseline still missing** (template §5.1, §5.3) | needs failsafe/EKF-check output on attacked sessions, which no artifact holds |
 | P1-3 | **No false-alarms-per-hour with an upper bound** | exposure is too small: 90 s of hardware live; ALFA only ~0.64 h of author-labelled benign time (derived, draft §7). Do not report a rate |
 | P1-4 | **No healthy-estimator hardware capture** | one receive-only capture with a valid horizontal solution (open sky; no arming, no writes) |
 | P1-5 | **No own-flight data**, no attack on a real vehicle | cannot be fixed this week without a flight; stay explicit |
 | P1-6 | Detection-vs-magnitude plot and per-class latency distribution | **partly done**: GPS-drift sweep + plot (ML off / on), per-class min/median/max; no distribution plot, no sweep for the other five classes |
-| P1-7 | Architecture and workflow diagrams are Mermaid source, not rendered; no operator screenshot (`demo/screenshots/` is empty) | render; capture a REPLAY-of-BENCH screenshot labelled BENCH |
+| P1-7 | Architecture and workflow diagrams are Mermaid source, not rendered; ~~no operator screenshot~~ (two screenshots now tracked in `demo/screenshots/`) | diagrams **rendered in the second pass** (`docs/figures/`); nothing left except the video |
 | P1-8 | Clean-machine re-run (the committee re-runs the tests) | fresh venv, `pip install -e ".[dev,external]"`; `pyulog` is **not installed** in this venv, so the PX4 ULog replays cannot be re-run here |
 | P1-9 | Companion-computer resource figures: **none** | state "not measured"; do not carry over the withdrawn Pi figures |
 
@@ -321,3 +321,24 @@ says "Prevention" (C11).
 network fetch of external datasets, so the ALFA / PX4 replays were **cited, not regenerated** (`pyulog` is not installed in this venv); the SITL
 batches need WSL/PX4 and were not re-run; nothing was sent to, written to or armed on the vehicle at any point; the template PDF and the
 existing `stash@{0}` were not touched.
+
+## 11. Second pass (2026-10-29, same branch)
+
+Scope: baseline comparison, `SITL`/`REPLAY` session intervals, clean-environment run, rendered diagrams, licence audit, reviewer pass. No detector, threshold or config was changed; no hardware was touched; nothing was transmitted.
+
+| Task | Status | Evidence |
+|---|---|---|
+| Simple-threshold baseline | **Done (`SIM`, caveated)**; autopilot-check baseline **blocked** (no failsafe output for attacked sessions) | `artifacts/validation/baseline_comparison_20261029/`; baseline defined in git (`9944a57`) before the run, run time not independently timestamped; all baseline FPs come from one climb-rate limit |
+| `SITL` / `REPLAY` uncertainty | **Done from existing summaries**, trial / flight level | `artifacts/validation/session_ci_sitl_replay_20261029/session_ci.md`; no logs regenerated; one airframe, host and script family; n = 3 to 24 |
+| Clean-environment reproducibility | **Done (clone + venv; no container)** | `artifacts/validation/clean_install_20261029/README.md`: 899 passed, 11 skipped, 0 failed; ruff clean; newer floor-pinned dependency versions resolved than on the host |
+| Report diagrams | **Done** (Figures 3 and 4) | `docs/figures/` (`.mmd`, `.png`, `.svg`, README); rendered with mermaid-cli from a scratch install |
+| Licence audit | **Partial** | `THIRD_PARTY_NOTICES.md` status summary: verified / declared-not-audited / unresolved |
+| Reviewer pass | **Done** | invoked: `aegis-reviewer`, `aegis-security`; **not** invoked: `aegis-validation`, `aegis-detection`, `ecc:*` reviewers |
+
+**Reviewer findings and disposition.**
+- Fixed: report wording of the no-transmit claim (serial runner only; exit 3 detects, does not prevent; the `SITL` UDP transport does transmit); fail-open consequence of the forged-`EKF_STATUS_REPORT` gate stated next to the gate claim; baseline row now states FPR source, 6/6 benign sessions with a false alarm, same-author caveat and "defined in git before the run" instead of "pre-registered"; "disarmed in most batches" and "different runs, not pooled" added to the interval sentence; the PX4 physics-trigger rate (16/24 flights) stated as a limitation; ALFA negative result (3 of 25 fault events produced any threat) added to the report and `VALIDATION_EVIDENCE.md`; this audit's stale rows (baseline, diagrams, intervals, licences) and the archive manifest's figures row.
+- Reviewer claim **not substantiated**: that committed `events.sqlite` files under `artifacts/hardware` may hold bench positions. `git ls-files` lists no `.sqlite` file; they are git-ignored.
+- Open, for the team: (1) `commit [TBD at freeze]` and the test count: the draft's 907-passed run was on the uncommitted sprint tree; re-run on the frozen commit; the committed root `CLAUDE.md` still says 545 and `.claude/CLAUDE.md` 73 (not edited here). (2) About 167 tracked occurrences of `/home/astryx` and `D:\Ardra\...` paths (WSL username, team directory) in `artifacts/ardupilot/*`, `scripts/` and `THIRD_PARTY_NOTICES.md`; accept as pseudonymous or redact copies, not the evidence in place. (3) The template PDF in `docs/` is a 25-page Word export dated 2026-10-06 replacing a text file named `.pdf` in git; confirm it is the organisers' original or rename it; not committed here. (4) Build the archive from `git ls-files` / `git archive`, not a zip of the working tree (raw `.tlog` / `.rawbin` bench captures are git-ignored but present locally). (5) Tauri icon origin, ALFA source licence (manifest says CC BY 4.0; bundled README says CC0) and the `LICENSE` holder line remain unresolved. (6) `joblib` models are pickles: load only the checksummed file. (7) `make_session_ci_sitl_replay.py` reads `artifacts/` relative to the working directory: run from the repository root.
+- Not covered by any agent: whether a forged status stream plus a velocity-consistent offset evades the remaining gated checks (hypothesis, untested); template PDF page content against the draft headings.
+
+Checks run in this pass (host unless stated): `ruff check src tests scripts backend` clean; `pytest -p no:cacheprovider -q`: 907 passed, 3 skipped, 0 failed (counted from progress output); `python scripts/verify_stage2.py`: 8 of 8 suites passed (SIM, hand-built inputs); `npm test`: 11 passed; `npm run build`: ok; Stage-1 counts 6535 / 4 / 16826 / 65 reproduced by `scripts/baseline_comparison.py` (a full `aegis benchmark` re-run was not repeated: no source file changed since the earlier 378 of 378 comparison).

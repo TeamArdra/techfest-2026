@@ -29,7 +29,7 @@ Sizes were measured on 2026-10-29 with `du`; the git-tracked tree is about 5.5 M
 | `data/external/raw/px4_review/` | part of 3.1 GB | PX4 Flight Review replays | yes (fetch script) | **do not include**: no dataset licence is stated |
 | `artifacts/ardupilot/*/downlink.tlog`, `artifacts/**/events.sqlite`, `*.log` | tens of MB | raw SITL captures behind the summaries | no (needs WSL, PX4, ArduPilot) | include if size allows (SITL position is simulated); otherwise checksum |
 | Demonstration video | n/a | mandatory | not produced | **HUMAN ACTION.** Plan: `docs/DEMO_RUNBOOK.md` |
-| Rendered figures of the two Mermaid diagrams, an operator-view screenshot | n/a | template asks for them | partly: Mermaid source is in the report; `demo/screenshots/` is empty | render from the report source; label every screenshot SIM / REPLAY / SITL |
+| Rendered figures of the two Mermaid diagrams, an operator-view screenshot | n/a | template asks for them | yes (second pass): `docs/figures/` (Figure 3, 4: `.mmd`, `.png`, `.svg`); two screenshots in `demo/screenshots/` | render from the report source; label every screenshot SIM / REPLAY / SITL |
 
 ## 3. Never include
 

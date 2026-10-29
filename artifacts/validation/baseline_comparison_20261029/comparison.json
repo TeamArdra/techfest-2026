@@ -1,0 +1,327 @@
+{
+  "meta": {
+    "environment": "SIM",
+    "claim_class": "link-level detection (design evidence; team-written attacks and detectors)",
+    "rules_file": "configs/baseline_threshold.yaml",
+    "rules_sha256": "c078b2fd11507b885d90b9aedd080d3a715376210b2e582577782ea55d95cac4",
+    "rules": {
+      "heartbeat_age_s_gt": 3.0,
+      "gps_age_s_gt": 2.0,
+      "loss_ratio_gt": 0.5,
+      "groundspeed_ms_gt": 30.0,
+      "abs_vertical_rate_ms_gt": 10.0,
+      "satellites_lt": 6,
+      "gps_fix_type_lt": 3,
+      "battery_remaining_pct_lt": 10
+    },
+    "git_head": "9944a57b02bfef8bd6e64f1b696b024af3cbc071",
+    "git_dirty_paths": [
+      "M .gitignore",
+      " M \"docs/Stage 2_Security of Drones, Objective 2_Report Template.pdf\"",
+      " M docs/stage2_report_draft.md"
+    ],
+    "python": "3.13.15",
+    "model": "models/isoforest.joblib",
+    "model_sha256": "3fe74cddf3689e169610ffd783b109b6539cc6c03629bd1e4bb8b1d3842939c4",
+    "seeds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "routes": [
+      "survey_box",
+      "out_and_back",
+      "perimeter"
+    ],
+    "warmup_s": 5.0,
+    "grace_s": 5.0,
+    "aegis_counts_equal_committed_benchmark": true,
+    "regenerate": "python scripts/baseline_comparison.py --out artifacts/validation/baseline_comparison_20261029"
+  },
+  "overall": {
+    "aegisflight": {
+      "tp": 6535,
+      "fp": 4,
+      "tn": 16826,
+      "fn": 65,
+      "recall": 0.9901515151515151,
+      "fpr": 0.00023767082590612002,
+      "precision": 0.9993882856705918
+    },
+    "threshold_baseline": {
+      "tp": 996,
+      "fp": 1510,
+      "tn": 15320,
+      "fn": 5604,
+      "recall": 0.1509090909090909,
+      "fpr": 0.08972073677956031,
+      "precision": 0.3974461292897047
+    }
+  },
+  "per_class": {
+    "benign": {
+      "sessions": 6,
+      "aegis": {
+        "sessions_hit": 1,
+        "wilson95": [
+          0.030053369411815023,
+          0.5635028250257673
+        ],
+        "decisions": {
+          "tp": 0,
+          "fp": 1,
+          "tn": 3449,
+          "fn": 0,
+          "recall": null,
+          "fpr": 0.0002898550724637681,
+          "precision": 0.0
+        }
+      },
+      "baseline": {
+        "sessions_hit": 6,
+        "wilson95": [
+          0.6096657083436265,
+          1.0
+        ],
+        "decisions": {
+          "tp": 0,
+          "fp": 279,
+          "tn": 3171,
+          "fn": 0,
+          "recall": null,
+          "fpr": 0.0808695652173913,
+          "precision": 0.0
+        }
+      }
+    },
+    "gps_spoofing": {
+      "sessions": 6,
+      "aegis": {
+        "sessions_hit": 6,
+        "wilson95": [
+          0.6096657083436265,
+          1.0
+        ],
+        "decisions": {
+          "tp": 859,
+          "fp": 0,
+          "tn": 2406,
+          "fn": 41,
+          "recall": 0.9544444444444444,
+          "fpr": 0.0,
+          "precision": 1.0
+        }
+      },
+      "baseline": {
+        "sessions_hit": 6,
+        "wilson95": [
+          0.6096657083436265,
+          1.0
+        ],
+        "decisions": {
+          "tp": 41,
+          "fp": 224,
+          "tn": 2182,
+          "fn": 859,
+          "recall": 0.04555555555555556,
+          "fpr": 0.09310058187863675,
+          "precision": 0.15471698113207547
+        }
+      }
+    },
+    "mavlink_anomaly": {
+      "sessions": 6,
+      "aegis": {
+        "sessions_hit": 6,
+        "wilson95": [
+          0.6096657083436265,
+          1.0
+        ],
+        "decisions": {
+          "tp": 900,
+          "fp": 1,
+          "tn": 2405,
+          "fn": 0,
+          "recall": 1.0,
+          "fpr": 0.00041562759767248546,
+          "precision": 0.9988901220865705
+        }
+      },
+      "baseline": {
+        "sessions_hit": 6,
+        "wilson95": [
+          0.6096657083436265,
+          1.0
+        ],
+        "decisions": {
+          "tp": 83,
+          "fp": 216,
+          "tn": 2190,
+          "fn": 817,
+          "recall": 0.09222222222222222,
+          "fpr": 0.08977556109725686,
+          "precision": 0.27759197324414714
+        }
+      }
+    },
+    "command_injection": {
+      "sessions": 6,
+      "aegis": {
+        "sessions_hit": 6,
+        "wilson95": [
+          0.6096657083436265,
+          1.0
+        ],
+        "decisions": {
+          "tp": 600,
+          "fp": 1,
+          "tn": 2705,
+          "fn": 0,
+          "recall": 1.0,
+          "fpr": 0.0003695491500369549,
+          "precision": 0.9983361064891847
+        }
+      },
+      "baseline": {
+        "sessions_hit": 6,
+        "wilson95": [
+          0.6096657083436265,
+          1.0
+        ],
+        "decisions": {
+          "tp": 29,
+          "fp": 245,
+          "tn": 2461,
+          "fn": 571,
+          "recall": 0.04833333333333333,
+          "fpr": 0.09053954175905396,
+          "precision": 0.10583941605839416
+        }
+      }
+    },
+    "telemetry_manipulation": {
+      "sessions": 6,
+      "aegis": {
+        "sessions_hit": 6,
+        "wilson95": [
+          0.6096657083436265,
+          1.0
+        ],
+        "decisions": {
+          "tp": 900,
+          "fp": 0,
+          "tn": 2406,
+          "fn": 0,
+          "recall": 1.0,
+          "fpr": 0.0,
+          "precision": 1.0
+        }
+      },
+      "baseline": {
+        "sessions_hit": 6,
+        "wilson95": [
+          0.6096657083436265,
+          1.0
+        ],
+        "decisions": {
+          "tp": 41,
+          "fp": 224,
+          "tn": 2182,
+          "fn": 859,
+          "recall": 0.04555555555555556,
+          "fpr": 0.09310058187863675,
+          "precision": 0.15471698113207547
+        }
+      }
+    },
+    "dos": {
+      "sessions": 6,
+      "aegis": {
+        "sessions_hit": 6,
+        "wilson95": [
+          0.6096657083436265,
+          1.0
+        ],
+        "decisions": {
+          "tp": 600,
+          "fp": 1,
+          "tn": 2705,
+          "fn": 0,
+          "recall": 1.0,
+          "fpr": 0.0003695491500369549,
+          "precision": 0.9983361064891847
+        }
+      },
+      "baseline": {
+        "sessions_hit": 6,
+        "wilson95": [
+          0.6096657083436265,
+          1.0
+        ],
+        "decisions": {
+          "tp": 600,
+          "fp": 245,
+          "tn": 2461,
+          "fn": 0,
+          "recall": 1.0,
+          "fpr": 0.09053954175905396,
+          "precision": 0.7100591715976331
+        }
+      }
+    },
+    "firmware_integrity": {
+      "sessions": 6,
+      "aegis": {
+        "sessions_hit": 6,
+        "wilson95": [
+          0.6096657083436265,
+          1.0
+        ],
+        "decisions": {
+          "tp": 2676,
+          "fp": 0,
+          "tn": 750,
+          "fn": 24,
+          "recall": 0.9911111111111112,
+          "fpr": 0.0,
+          "precision": 1.0
+        }
+      },
+      "baseline": {
+        "sessions_hit": 6,
+        "wilson95": [
+          0.6096657083436265,
+          1.0
+        ],
+        "decisions": {
+          "tp": 202,
+          "fp": 77,
+          "tn": 673,
+          "fn": 2498,
+          "recall": 0.07481481481481482,
+          "fpr": 0.10266666666666667,
+          "precision": 0.7240143369175627
+        }
+      }
+    }
+  },
+  "baseline_rule_firings_by_scenario_rule_kind": {
+    "benign:vertical_rate:benign": 279,
+    "gps_spoofing:vertical_rate:benign": 224,
+    "gps_spoofing:vertical_rate:attack": 41,
+    "mavlink_anomaly:vertical_rate:benign": 216,
+    "mavlink_anomaly:vertical_rate:attack": 83,
+    "command_injection:vertical_rate:benign": 245,
+    "command_injection:vertical_rate:attack": 29,
+    "telemetry_manipulation:vertical_rate:benign": 224,
+    "telemetry_manipulation:vertical_rate:attack": 41,
+    "dos:vertical_rate:benign": 245,
+    "dos:loss_ratio:attack": 600,
+    "dos:vertical_rate:attack": 29,
+    "firmware_integrity:vertical_rate:benign": 77,
+    "firmware_integrity:vertical_rate:attack": 202
+  }
+}
