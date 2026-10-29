@@ -1,0 +1,10 @@
+{
+  "script": "scripts/make_submission_stats.py",
+  "input": "artifacts\\benchmarks_extended\\sessions.csv",
+  "input_sha256": "09bdada48fd365f6078692a22ac88398a99e28c71c02dcc438d5cf9792d57e1e",
+  "git_head": "d0d134b3b211e0691df9c9ead18cadbaf95c9ec3",
+  "environment": "SIM",
+  "z": 1.959964,
+  "unit": "session",
+  "note": "design evidence; attacks and detectors written by the same team; no real-vehicle data"
+}
