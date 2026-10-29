@@ -4,14 +4,25 @@
         ╱ e2e (2) ╲             full slice: sim→IDS→IPS→SQLite hash chain verify
        ╱ backend (5)╲           FastAPI API + live telemetry + defense endpoints
       ╱ integration (90+)╲      20 attack modes, proxy attacks, presence policies
-     ╱      unit (550+)     ╲   geo/config/simulator/codec/integrity/logging/
+     ╱      unit (600+)     ╲   geo/config/simulator/codec/integrity/logging/
     ╱────────────────────────╲  fusion/mitigation/hal/serial/metrics
 ```
 Run with the project venv; the suite must pass in full (the count grows with new
 features — `pytest -q` prints it). The pyramid above shows the Stage-1 layout and its
 historic counts.
 
-**Last full run (2026-10-29, `main` a44dd9c plus the `--tlog` change to `run_serial_ids.py` and its 2 tests):** 883 passed, 3 skipped (POSIX PTY tests, skipped on Windows), 0 failed
+**Latest full run (2026-10-29, hardware-free sprint, branch `sprint/hardware-free-20261029` from `docs/submission-readiness-20261029` d0d134b plus uncommitted sprint changes):** 907 passed, 3 skipped, 0 failed, 910 collected
+(`tests/unit` 811 incl. the 8 label-independence tests, `tests/integration` 92, `tests/e2e` 2, `backend/tests` 5), 155.3 s; frontend 11 passed; saved in
+`artifacts/validation/submission_rerun_20261029/test_suite_run.json`. The run below it (899 / 902) is the previous one on the same branch family.
+
+**Previous full run (2026-10-29, branch `docs/submission-readiness-20261029`, `evidence/gps-hw-verify-20261029` c849012 plus the passive GPS-health change):** 899 passed, 3 skipped, 0 failed, 902 collected
+(`tests/unit` 803, `tests/integration` 92, `tests/e2e` 2, `backend/tests` 5; the 3 skips are POSIX PTY tests in `tests/unit/test_mavlink_serial.py`), 149.6 s,
+same command as below. +16 tests: `tests/unit/test_gps_health.py` (13), `tests/unit/test_run_serial_ids.py` (+3). Frontend: `npm --prefix frontend test` 10 passed (+2),
+`npm --prefix frontend run build` ok. Stage-1 regression (`aegis benchmark --out <scratch> --no-figures`): 6535 / 4 / 16826 / 65, 378 of 378 non-timing cells equal.
+`test_tlog_tees_the_clean_downlink_and_stays_receive_only` was flaky (it asserted the first loopback frame; passed 4 of 8 isolated runs on the **unmodified** HEAD and 5 of 8 on this tree,
+because the transport purges input at open); it now tolerates up to 3 lost head frames and passes 14 of 14.
+
+**Previous full run (2026-10-29, `main` a44dd9c plus the `--tlog` change to `run_serial_ids.py` and its 2 tests):** 883 passed, 3 skipped (POSIX PTY tests, skipped on Windows), 0 failed
 (`.venv/Scripts/python.exe -m pytest -p no:cacheprovider -o addopts="" -q -rfE`, 155 s). The 2026-10-26 run on the pre-integration tree was 809 passed.
 - Tree: the GPS iteration-2 tree, `HEAD` `90b9aa2` + uncommitted changes, `src`+`configs` diff sha256 `b4d434e3…7eaf`.
 - Run by the lead with `.venv/Scripts/python.exe -m pytest -p no:cacheprovider -o addopts="" -q -rfE` from the repo
@@ -26,7 +37,7 @@ The suite covers raw serial framing and MAVLink parsing up to the SIM-only defen
 |---|---|---|
 | `python scripts/verify_stage2.py` | Demo of the 8 defense code paths on hand-built inputs (SIM; not validation evidence) | seconds |
 | `pytest tests/unit/test_mitigation.py tests/unit/test_hal.py` | Core Stage 2 autonomous defense and HAL tests | < 2 s |
-| `pytest tests/unit -q` | Fast unit test suite (550+ tests) | ~15 s |
+| `pytest tests/unit -q` | Fast unit test suite (600+ tests) | ~15 s |
 | `pytest tests/integration -q` | Multi-mode attack detection and pipeline tests | ~30 s |
 | `pytest tests/e2e -q` | Full end-to-end slice with SHA-256 ledger check | ~10 s |
 | `pytest` | Complete verification suite (`pytest -q` prints the count) | ~2.5 min |
@@ -36,11 +47,11 @@ The suite covers raw serial framing and MAVLink parsing up to the SIM-only defen
 
 ### Stage 2 Autonomous Prevention & HAL
 - **`test_mitigation.py` (27 tests)**:
-  - `GoldenStateEstimator`: dead-reckoning during GPS loss/spoofing, speed/attitude isolation during telemetry attacks, clean GPS anchoring during non-GPS attacks.
+  - `GoldenFlightState`: dead-reckoning during GPS loss/spoofing, speed/attitude isolation during telemetry attacks, clean GPS anchoring during non-GPS attacks.
   - `FrameSanitizer`: coordinate clamping, altitude correction, CUSUM micro-drift tracking, frame dropping for quarantined sysids.
-  - `KillswitchGuard`: disarm veto in flight, emergency motor stop veto, unauthorized mode change rejection.
-  - `CommandCadenceGuard` (`AF-SEC-01`): enforces 50 ms minimum inter-command interval to defeat command burst attacks.
-  - `AutonomousMitigationEngine`: full closed-loop response generation, priority sorting, GCS notification banner generation.
+  - Command-injection playbook: mid-air disarm and mode-change provenance are flagged and reported (not blocked).
+  - Command cadence check in `AttackSubModeClassifier`: flags burst and replayed commands.
+  - `MitigationController`: closed-loop response generation per attack sub-mode, state machine, recovery.
 - **`test_hal.py` (7 tests)**:
   - Hardware discovery across USB/serial ports (CubePilot, Pixhawk, SiK telemetry, ELRS).
   - Platform and companion compute detection (Raspberry Pi, Jetson, Rockchip).

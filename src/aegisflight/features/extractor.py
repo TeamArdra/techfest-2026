@@ -26,6 +26,7 @@ from pymavlink.dialects.v20 import ardupilotmega as _apm
 from ..core.geo import EARTH_RADIUS_M, wrap_deg_180
 from ..core.types import MessageEnvelope, TelemetrySnapshot
 from ..mavlink.codec import MODE_NAMES
+from .mission import MissionTracker
 
 # Position-residual sliding window (in position fixes; GPS ≈ 5 Hz => ~3 s).
 # A bounded window (rather than an infinite leaky integrator) accumulates the
@@ -162,6 +163,35 @@ class FeatureFrame:
     pos_residual_nav_m: float | None = None
     pos_step_max_m: float = 0.0
     pos_vel_shortfall_gated_m: float = 0.0
+    # ADDITIVE (2026-10-28): EKF health and GPS receiver signature. NOT in ML_FEATURES. All are
+    # None (``gps_sat_jump``: 0) unless the extended MAVLink messages are present, so the SIM stream
+    # and any link without them is unchanged.
+    # ``ekf_vel_var`` / ``ekf_pos_var`` / ``ekf_compass_var``: EKF_STATUS_REPORT velocity_variance,
+    # pos_horiz_variance, compass_variance (ArduPilot normalised innovation ratios; >= 1.0 = the EKF
+    # rejects its inputs, >= 0.5 warning); None if never received or older than 2 s.
+    # ``gps_sat_jump``: |change| of GPS_RAW_INT.satellites_visible between consecutive reports, held
+    # for 1 s after it happens. ``gps_snr_spread_db``: std of the non-zero GPS_STATUS satellite_snr
+    # values (None without GPS_STATUS, older than 2 s, or fewer than 8 satellites);
+    # ``gps_snr_sats``: how many were non-zero. ``gps_vel_disagree_ms``: |GPS_RAW_INT.vel -
+    # hypot(GLOBAL_POSITION_INT vx, vy)|. The two receiver-signature fields that SIM also carries
+    # (sat jump, vel disagreement) are reported only once EKF_STATUS_REPORT or GPS_STATUS has been
+    # received, which keeps the SIM stream and the Stage-1 benchmark untouched.
+    ekf_vel_var: float | None = None
+    ekf_pos_var: float | None = None
+    ekf_compass_var: float | None = None
+    gps_sat_jump: int = 0
+    gps_snr_spread_db: float | None = None
+    gps_snr_sats: int = 0
+    gps_vel_disagree_ms: float | None = None
+    # ADDITIVE (2026-10-28): mission-path check. NOT in ML_FEATURES. ``mission_known``: a COMPLETE
+    # mission was observed AND the check is active (MISSION_CURRENT seen <= 3 s ago, flight_mode
+    # AUTO, armed, fresh position). ``mission_xtrack_m``: horizontal distance to the current mission
+    # leg SEGMENT; ``mission_wp_dist_m``: distance to its target waypoint; ``mission_wp_seq``: that
+    # waypoint's seq. All None / False when inactive (always so on the SIM stream).
+    mission_known: bool = False
+    mission_xtrack_m: float | None = None
+    mission_wp_dist_m: float | None = None
+    mission_wp_seq: int | None = None
 
     @property
     def battery_v_rate_abs(self) -> float:
@@ -206,6 +236,16 @@ class FeatureExtractor:
         self._last_ekf_t = -1e9
         self._ekf_flags: int | None = None
         self._nosol_since: float | None = None  # first report of the current no-solution run
+        self._ekf_vars: tuple[float, float, float] | None = None  # (vel, pos_horiz, compass)
+        self._ext_seen = False  # EKF_STATUS_REPORT or GPS_STATUS ever received
+        self._prev_sats: int | None = None
+        self._prev_valid = False
+        self._sat_jump = 0
+        self._sat_jump_t = -1e9
+        self._raw_vel_ms: float | None = None
+        self._raw_vel_t = -1e9
+        self._snr: tuple[float, int] | None = None  # (spread dB, n satellites) or None
+        self._snr_t = -1e9
 
         # navigation bookkeeping
         self._resid_incs: deque[tuple[float, float]] = deque(maxlen=_RESID_WINDOW)
@@ -221,6 +261,8 @@ class FeatureExtractor:
         self._accel_prev: tuple[float, float] | None = None  # (t, accel)
         self._batt_hist: deque[tuple[float, float]] = deque(maxlen=4)  # (t, voltage)
         self._alt_hist: deque[tuple[float, float]] = deque(maxlen=4)  # (t, baro_alt)
+
+        self._mission = MissionTracker()
 
         # command log
         self._commands: deque[CommandEvent] = deque(maxlen=200)
@@ -256,6 +298,9 @@ class FeatureExtractor:
 
         name = msg.msgname
         f = msg.fields
+        if name.startswith("MISSION_"):
+            self._mission.update(msg)
+            return
         if name == "HEARTBEAT":
             m_type = f.get("type", 0)
             if m_type != 6:  # Ignore GCS heartbeats for vehicle state
@@ -302,6 +347,28 @@ class FeatureExtractor:
             self.snapshot.satellites = int(f.get("satellites_visible", 0))
             self.snapshot.gps_fix_type = int(f.get("fix_type", 0))
             self.snapshot.hdop = f.get("eph", 0) / 100.0
+            sats = self.snapshot.satellites
+            # a jump counts only with a 3D fix on BOTH reports: satellites returning after a fix
+            # loss (or leaving with it) is receiver recovery / jamming, handled by other rules
+            valid = self.snapshot.gps_fix_type >= 3
+            if self._prev_sats is not None and valid and self._prev_valid and sats != self._prev_sats:
+                self._sat_jump = abs(sats - self._prev_sats)
+                self._sat_jump_t = t
+            self._prev_sats = sats
+            self._prev_valid = valid
+            vel = f.get("vel")
+            if vel is not None and int(vel) != 65535:  # 65535 = unknown
+                self._raw_vel_ms = int(vel) / 100.0
+                self._raw_vel_t = t
+        elif name == "GPS_STATUS" and "satellite_snr" in f:
+            self._ext_seen = True
+            vals = [float(x) for x in f["satellite_snr"] if x]
+            self._snr_t = t
+            if len(vals) >= 8:
+                mean = sum(vals) / len(vals)
+                self._snr = ((sum((x - mean) ** 2 for x in vals) / len(vals)) ** 0.5, len(vals))
+            else:
+                self._snr = None
         elif name == "EKF_STATUS_REPORT" and "flags" in f:
             flags = int(f["flags"])
             if ekf_has_horizontal_solution(flags):
@@ -310,10 +377,24 @@ class FeatureExtractor:
                 self._nosol_since = t  # a new no-solution run (first one, or after a report gap)
             self._last_ekf_t = t
             self._ekf_flags = flags
+            self._ext_seen = True
+            if all(k in f for k in ("velocity_variance", "pos_horiz_variance", "compass_variance")):
+                self._ekf_vars = (
+                    float(f["velocity_variance"]),
+                    float(f["pos_horiz_variance"]),
+                    float(f["compass_variance"]),
+                )
         elif name == "COMMAND_LONG":
             params = tuple(f.get(f"param{i}", 0.0) for i in range(1, 8))
             self._commands.append(
                 CommandEvent(t, msg.sysid, msg.compid, int(f.get("command", 0)), params)
+            )
+        elif name == "SET_MODE":
+            # the older plain SET_MODE message (some ground stations still use it) is the same intent as
+            # MAV_CMD_DO_SET_MODE (176): record it as that command so provenance and pilot-override logic see it
+            self._commands.append(
+                CommandEvent(t, msg.sysid, msg.compid, 176,
+                             (float(f.get("base_mode", 0)), float(f.get("custom_mode", 0)), 0.0, 0.0, 0.0, 0.0, 0.0))
             )
 
     # -- navigation helpers ------------------------------------------------- #
@@ -460,6 +541,37 @@ class FeatureExtractor:
             yaw_deg = math.degrees(snap.yaw) % 360.0
             yaw_course = abs(wrap_deg_180(yaw_deg - course))
 
+        # ---- EKF health / GPS receiver signature (ADDITIVE 2026-10-28) ----
+        ekf_vars = self._ekf_vars if ekf_seen and t - self._last_ekf_t <= _LINK_GAP_S else None
+        sat_jump = 0
+        vel_disagree: float | None = None
+        if self._ext_seen:
+            if t - self._sat_jump_t <= 1.0:
+                sat_jump = self._sat_jump
+            if (
+                self._raw_vel_ms is not None
+                and t - self._raw_vel_t <= _LINK_GAP_S
+                and snap.gps_age <= _LINK_GAP_S
+            ):
+                vel_disagree = abs(self._raw_vel_ms - gps_speed)
+        snr = self._snr if t - self._snr_t <= _LINK_GAP_S else None
+
+        # ---- mission path (ADDITIVE 2026-10-28) ----
+        m_known, m_xt, m_wd, m_seq = False, None, None, None
+        mt = self._mission
+        if (
+            mt.complete
+            and 0.0 <= t - mt.current_t <= 3.0
+            and snap.flight_mode == "AUTO"
+            and snap.armed is True
+            and snap.lat is not None
+            and snap.lon is not None
+            and snap.gps_age <= _LINK_GAP_S
+        ):
+            mev = mt.evaluate(snap.lat, snap.lon)
+            if mev is not None:
+                m_known, m_xt, m_wd, m_seq = True, mev[0], mev[1], mev[2]
+
         # ---- command ----
         recent = [c for c in self._commands if c.recv_time >= t - self.cmd_window_s]
         cmd_rate = len(recent) / self.cmd_window_s if self.cmd_window_s > 0 else 0.0
@@ -500,6 +612,17 @@ class FeatureExtractor:
             pos_residual_nav_m=pos_residual_nav if ekf_seen else None,
             pos_step_max_m=pos_step_max,
             pos_vel_shortfall_gated_m=pos_vel_shortfall_gated,
+            ekf_vel_var=ekf_vars[0] if ekf_vars else None,
+            ekf_pos_var=ekf_vars[1] if ekf_vars else None,
+            ekf_compass_var=ekf_vars[2] if ekf_vars else None,
+            gps_sat_jump=sat_jump,
+            gps_snr_spread_db=snr[0] if snr else None,
+            gps_snr_sats=snr[1] if snr else 0,
+            gps_vel_disagree_ms=vel_disagree,
+            mission_known=m_known,
+            mission_xtrack_m=m_xt,
+            mission_wp_dist_m=m_wd,
+            mission_wp_seq=m_seq,
         )
 
     # -- small numeric helpers --------------------------------------------- #

@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { SettingsModal } from "./components/SettingsModal";
 import { AlertsPanel } from "./components/AlertsPanel";
 import { ControlPanel } from "./components/ControlPanel";
 import { DefensePanel } from "./components/DefensePanel";
@@ -13,15 +14,18 @@ import {
   ValidationPanel,
 } from "./components/evalPanels";
 import { useLiveData } from "./hooks/useLiveData";
+import { ChecksPanel, BridgePanel, useBridge } from "./components/liveChecks";
 import { envView, linkView } from "./lib/source";
 
 export default function App() {
   const live = useLiveData();
+  const bridge = useBridge();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const m = live.metrics;
   const chainOk = m?.event_log.chain_ok !== false;
   // every source label below comes from the backend's own report (environment + link state)
   const env = envView(live.environment);
-  const lv = linkView(live.link, live.connected, live.updateAgeS);
+  const lv = linkView(live.link, live.connected, live.updateAgeS, live.environment);
   useEffect(() => {
     document.title = `AegisFlight — UAV IDS (${env.badge})`;
   }, [env.badge]);
@@ -35,7 +39,9 @@ export default function App() {
         env={env}
         link={lv}
         defenseMode={live.defenseMode}
+        onSettings={() => setSettingsOpen(true)}
       />
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       <SourceBar
         source={live.source}
         link={live.link}
@@ -63,7 +69,8 @@ export default function App() {
             defenseMode={live.defenseMode}
             mitigation={live.mitigation}
             attackActive={live.attackActive}
-            topology={live.topology}
+            origin={live.origin}
+            environment={live.environment}
             note={env.trackNote}
           />
           <AlertsPanel
@@ -78,12 +85,16 @@ export default function App() {
               mitigation={live.mitigation}
               threat={live.threat}
               telemetry={live.telemetry}
-              topology={live.topology}
-              topologyReasons={live.topologyReasons}
-              sim={live.environment === "SIM"}
+              topologyInfo={live.topologyInfo}
+              bridgeTopology={bridge.st?.topology ?? null}
+              environment={live.environment}
+              signing={live.signing}
             />
           </ErrorBoundary>
         </section>
+
+        {live.environment && live.environment !== "SIM" && <ChecksPanel checks={live.checks} />}
+        <BridgePanel url={bridge.url} st={bridge.st} bad={bridge.bad} setSt={bridge.setSt} />
 
         {/* 2. secondary: runtime performance · attack-vector coverage */}
         <section className="secondary">
@@ -107,7 +118,6 @@ export default function App() {
             activeAttack={live.attackActive}
             controls={env.controls}
             environment={env.badge}
-            topology={live.topology}
           />
         </section>
 

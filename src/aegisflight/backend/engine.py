@@ -36,6 +36,7 @@ from ..attacks.base import NoAttack
 from ..config import AegisConfig, load_config
 from ..core.enums import AttackType, IntegrityStatus
 from ..core.geo import haversine_m, offset_latlon
+from ..core.gps_health import GpsHealthObserver
 from ..logging import EventStore
 from ..mitigation import DefenseMode, MitigationController, MitigationState
 from ..mitigation.types import AttackSubMode
@@ -58,8 +59,13 @@ class LinkMonitor:
     is fed back into the detectors: detector-facing presence lives in ``pipeline.last_frame``.
     """
 
-    def __init__(self, stale_after_s: float, min_fix: int, min_sats: int) -> None:
+    _UPLINK_MSGS = frozenset({"COMMAND_LONG", "COMMAND_INT", "SET_MODE"})
+
+    def __init__(self, stale_after_s: float, min_fix: int, min_sats: int,
+                 gcs_sysids: tuple[int, ...] = (255, 254)) -> None:
         self.stale_after_s = stale_after_s
+        self.gcs_sysids = tuple(int(x) for x in gcs_sysids)
+        self.uplink_frames = 0  # frames sent BY a ground station or carrying COMMAND / SET_MODE (uplink evidence)
         self.min_fix, self.min_sats = min_fix, min_sats
         self.t: float | None = None
         self.frames = 0
@@ -70,6 +76,8 @@ class LinkMonitor:
         self.gps_raw_t: float | None = None
         self.gpi_t: float | None = None
         self.gpi_zero: bool | None = None
+        # vehicle-stated estimator / GPS-health conditions: status only, never an alert (core/gps_health.py)
+        self.health = GpsHealthObserver(stale_after_s=2.0)
 
     def observe(self, tick: TelemetryTick) -> None:
         self.t = tick.t
@@ -77,10 +85,13 @@ class LinkMonitor:
             self.last_frame_t = tick.t
         for m in tick.messages:
             self.frames += 1
+            if m.sysid in self.gcs_sysids or m.msgname in self._UPLINK_MSGS:
+                self.uplink_frames += 1
             e = self.msgs.setdefault(m.msgname, [0, tick.t])
             e[0] += 1
             e[1] = tick.t
             f = m.fields
+            self.health.observe(m.msgname, f, tick.t)
             if m.msgname == "GPS_RAW_INT":
                 self.fix = int(f.get("fix_type", 0))
                 self.sats = int(f.get("satellites_visible", 0))
@@ -94,6 +105,7 @@ class LinkMonitor:
 
     def snapshot(self) -> dict:
         valid = None if self.fix is None else bool(self.fix >= self.min_fix and (self.sats or 0) >= self.min_sats)
+        h = self.health.snapshot(self.t if self.t is not None else 0.0)
         return {
             "frames": self.frames,
             "last_frame_age_s": self._age(self.last_frame_t),
@@ -102,7 +114,11 @@ class LinkMonitor:
             "gps": {"fix_type": self.fix, "fix_name": GPS_FIX_NAMES.get(self.fix) if self.fix is not None else None,
                     "satellites": self.sats, "valid_fix": valid,
                     "gps_raw_age_s": self._age(self.gps_raw_t),
-                    "position_age_s": self._age(self.gpi_t), "position_zero": self.gpi_zero},
+                    "position_age_s": self._age(self.gpi_t), "position_zero": self.gpi_zero,
+                    # additive: what the vehicle itself says about this position (not an authenticity check)
+                    "hdop": h["hdop"], "ekf_flags": h["ekf_flags"], "ekf_age_s": h["ekf_age_s"],
+                    "horizontal_solution": h["horizontal_solution"], "gps_healthy": h["gps_healthy"],
+                    "quality_flags": h["quality_flags"]},
         }
 
 # Rolling window (wall-clock seconds) used to report *current* live throughput.
@@ -127,8 +143,12 @@ class LiveEngine:
         # the firmware fixture is part of the simulation; a real source has no verifier (integrity UNKNOWN)
         self.fw_dir = tempfile.mkdtemp(prefix="aegis_live_fw_") if self.is_sim else None
         p = self.cfg.detector.get("protocol", {})
+        if not self.is_sim:  # real / recorded link: learn its own normal message rate (SIM unchanged)
+            if p.get("auto_rate_baseline") is None:
+                p["auto_rate_baseline"] = True
         self.link = LinkMonitor(float(p.get("heartbeat_timeout_s", 3.0)),
-                                int(p.get("min_gnss_fix_type", 3)), int(p.get("min_gnss_satellites", 5)))
+                                int(p.get("min_gnss_fix_type", 3)), int(p.get("min_gnss_satellites", 5)),
+                                tuple(p.get("expected_gcs_sysids", (255, 254))))
         self.feed: LiveFeed | None = None
         self._queue: asyncio.Queue | None = None
         self._feed_ended = False
@@ -161,7 +181,13 @@ class LiveEngine:
         self._last_threat: dict = {}  # last DECISION's threat block (for status)
         self._last_assessment = None
         self._last_mitigation_action = None
-        self.mitigation = MitigationController(mode=DefenseMode(self.spec.defense_mode))
+        self._signing_key: bytes | None = None
+        if self.spec.signing_key_file:
+            from ..detectors.crossend import load_signing_key
+            self._signing_key = load_signing_key(self.spec.signing_key_file)
+        self.signing_configured = self._signing_key is not None
+        self.unsigned_acknowledged = False
+        self.mitigation = MitigationController(mode=DefenseMode(self.spec.defense_mode), secret_key=self._signing_key)
         self._run_seq = 0
         self._run_id = self._new_run_id()
 
@@ -181,11 +207,10 @@ class LiveEngine:
         self._last_cp_t: float | None = None
         self._top_a_detour_t: float = 0.0
 
-        # Topology configuration: "auto" | "a" | "b" | "a+b" | "ids"
-        self.topology: str = "b"
+        # The SIM twin models an inline (hybrid) deployment; the real topology is detected (topology_info()).
+        self.topology: str = "a+b"
         self.topology_reasons: list[str] = [
-            "Topology B (dashboard model): inline FrameSanitizer statistics only",
-            "No companion bridge or hardware link is verified; nothing is transmitted to a vehicle",
+            "Simulation twin models an inline deployment; nothing is transmitted to a vehicle",
         ]
 
         self._build()
@@ -212,7 +237,11 @@ class LiveEngine:
                                  meta=self.spec.run_meta())
 
     def _build(self) -> None:
-        self.pipeline = IDSPipeline(self.cfg, model_path=self.model_path, firmware_dir=self.fw_dir)
+        crossend = None
+        if not self.is_sim:  # inert until a bridge summary is seen; never used for SIM
+            from ..detectors.crossend import CrossEndMonitor, load_signing_key
+            crossend = CrossEndMonitor(load_signing_key(self.spec.signing_key_file) if self.spec.signing_key_file else None)
+        self.pipeline = IDSPipeline(self.cfg, model_path=self.model_path, firmware_dir=self.fw_dir, crossend=crossend)
         if self.is_sim:
             self.source = SimulatedTelemetrySource(self.cfg, NoAttack(), seed=42)
             self._gen = self.source.stream()
@@ -258,8 +287,9 @@ class LiveEngine:
                 pass
 
         self.feed.start(deliver)
-        # The GCS notifier only ever uses its own loopback UDP socket; it is never given the vehicle
-        # link (self.feed.transport), so live sources stay receive-only.
+        # STATUSTEXT alerts may also go out over the vehicle link's transport (UDP target set separately)
+        if self.gcs_notifier is not None and getattr(self.feed, "transport", None) is not None:
+            self.gcs_notifier.transport = self.feed.transport
         self._task = asyncio.create_task(self._live_loop())
 
     async def stop(self) -> None:
@@ -340,7 +370,7 @@ class LiveEngine:
         self._ips_speed = None
         self._last_cp_t = None
         self._top_a_detour_t = 0.0
-        self.link = LinkMonitor(self.link.stale_after_s, self.link.min_fix, self.link.min_sats)
+        self.link = LinkMonitor(self.link.stale_after_s, self.link.min_fix, self.link.min_sats, self.link.gcs_sysids)
         # Restore the simulated vehicle to a clean baseline: this reflashes the
         # firmware fixture to known-good AND clears extractor/detector/fusion
         # state (see IDSPipeline.reset).
@@ -350,10 +380,29 @@ class LiveEngine:
         self._gen = self.source.stream()
         self._start_run()
 
-    def set_defense_mode(self, mode: str) -> dict:
-        if mode == DefenseMode.ACTIVE_IPS.value and not self.is_sim:
-            raise ValueError("active-ips is simulation-only; live sources are receive-only")
+    def signing_info(self) -> dict:
+        return {"configured": self.signing_configured}
+
+    def signing_gate(self, mode: str, allow_unsigned: bool = False) -> dict | None:
+        """None when the posture change is allowed, else the 409 body. Only a non-SIM source going active-ips
+        without a signing key is gated; allow_unsigned=True is the operator's explicit acknowledgement."""
+        if self.is_sim or mode != "active-ips" or self.signing_configured:
+            return None
+        if allow_unsigned is not True:
+            return {"ok": False, "error": "signing_required",
+                    "message": "Unsigned links cannot stop a counter-tracking forger; provision a key and start with "
+                               "--signing-key-file, or acknowledge the risk to proceed unsigned.",
+                    "signing": self.signing_info()}
+        return None
+
+    def set_defense_mode(self, mode: str, allow_unsigned: bool = False) -> dict:
         self.mitigation.set_mode(mode)
+        if (mode == "active-ips" and not self.is_sim and not self.signing_configured and allow_unsigned is True):
+            self.unsigned_acknowledged = True
+            self.mitigation._add_action(time.time(), "UNSIGNED_ACK",
+                                        "active-ips enabled on an unsigned link (operator acknowledged)")
+        elif mode != "active-ips":
+            self.unsigned_acknowledged = False
         if self.mitigation.mode == DefenseMode.ACTIVE_IPS and self._cp_lat is not None:
             # Seed recovery from current position: for GPS attacks, use trusted dead-reckoning;
             # for command hijacks, seed from current deviated position so the drone smoothly rejoins track
@@ -377,40 +426,41 @@ class LiveEngine:
                 self._last_mitigation_action.ekf_switched = False
         return {"mode": self.mitigation.mode.value}
 
-    def set_topology(self, topology: str) -> dict:
-        t = str(topology).lower().strip()
-        if t not in ("auto", "a", "b", "a+b", "ids"):
-            raise ValueError(f"Unknown topology '{topology}', must be one of: auto, a, b, a+b, ids")
-        self.topology = t
-        if t == "a":
-            self.topology_reasons = [
-                "Topology A selected: Sidecar counter-command recovery via MavlinkActuator",
-                "Command-path attacks experience short reaction detour before recovery",
-            ]
-        elif t == "b":
-            self.topology_reasons = [
-                "Topology B selected: Inline FrameSanitizer packet filtering + counter-commands",
-                "Zero detour on command injection & rogue SysID; hostile frames dropped before FC",
-            ]
-        elif t == "a+b":
-            self.topology_reasons = [
-                "Topology A+B Hybrid selected: Inline filtering on primary link + sidecar recovery on secondary",
-            ]
-        elif t == "ids":
-            self.topology_reasons = [
-                "IDS-only selected: Zero actuation, passthrough monitoring only",
-            ]
-        else:  # auto
-            self.topology_reasons = [
-                "Auto: Topology B shown by default (no hardware or companion detection is performed)",
-                "No companion bridge or hardware link is verified; nothing is transmitted to a vehicle",
-            ]
-        return {"topology": self.topology, "reasons": self.topology_reasons}
+    def topology_info(self) -> dict:
+        """Detected topology (read-only): derived from the source and what the link has actually shown."""
+        from ..hal.topology_status import replay_topology, sidecar_topology, sim_topology
+        posture = self.mitigation.mode
+        if self.is_sim:
+            return sim_topology(posture)
+        if self.spec.kind == "replay":
+            return replay_topology(posture)
+        if self.spec.kind in ("serial", "udp"):
+            st = self.feed.transport_stats() if self.feed is not None else None
+            conn = st.get("connected") if st else None
+            name = self.spec.port if self.spec.kind == "serial" else f"udp:{self.spec.udp_port}"
+            writable = True  # serial / udp transports carry counter-commands; replay never reaches here
+            return sidecar_topology(posture, connected=conn if isinstance(conn, bool) else None,
+                                    name=str(name) if name else None,
+                                    uplink_seen=self.link.uplink_frames > 0, writable=writable)
+        from ..hal.topology_status import unknown_topology
+        return unknown_topology(posture)
+
+    def _transmit(self, frames: list[bytes]) -> None:
+        """Send counter-actuation frames on the live transport. Only in ACTIVE_IPS; a no-op for SIM / replay
+        (no transport) and for PASSIVE / ADVISORY, which never actuate."""
+        if self.mitigation.mode != DefenseMode.ACTIVE_IPS or not frames:
+            return
+        transport = getattr(self.feed, "transport", None) if self.feed is not None else None
+        if transport is None:
+            return
+        for f in frames:
+            with contextlib.suppress(Exception):
+                transport.send(f)
 
     def defense_override(self, action: str) -> dict:
         act = self.mitigation.manual_override(action)
         self._last_mitigation_action = act
-        # counter_frames are reported, never transmitted (no source here may write to a vehicle link)
+        self._transmit(act.counter_frames)
         return act.to_dict()
 
     def set_attack(
@@ -546,7 +596,6 @@ class LiveEngine:
         # Compact telemetry optimization:
         # During active mitigation (state != NOMINAL), skip intermediate non-decision ticks
         # to save companion compute and GCS network bandwidth.
-        # SIM only: on a live source every tick is shown (recorded telemetry is never thinned or altered).
         if self.is_sim and self.mitigation.state != MitigationState.NOMINAL and assessment is None:
             return
 
@@ -561,7 +610,7 @@ class LiveEngine:
                 self._last_mitigation_action = act
 
                 # Topology B inline frame sanitization stats & filtering
-                if self.mitigation.mode == DefenseMode.ACTIVE_IPS and self.topology in ("b", "a+b", "auto"):
+                if self.mitigation.mode == DefenseMode.ACTIVE_IPS and self.is_sim:
                     for msg_env in tick.messages:
                         if msg_env.sysid in self.mitigation.sanitizer.quarantined_sysids:
                             self.mitigation.sanitizer.frames_dropped += 1
@@ -570,10 +619,10 @@ class LiveEngine:
                         elif self.mitigation.sanitizer.sanitize_alt and msg_env.msgname in ("GLOBAL_POSITION_INT", "VFR_HUD"):
                             self.mitigation.sanitizer.frames_sanitized += 1
 
-                # counter_frames are reported in the mitigation block only; they are never transmitted
+                # Transmit counter-actuation frames if in ACTIVE_IPS mode
+                self._transmit(act.counter_frames)
 
-        if self.is_sim:
-            # the cyber-physical twin is a simulation aid; recorded / live telemetry is shown as received
+        if self.is_sim:  # simulated physics twin: never for a real / recorded vehicle
             self._step_cyber_physical_twin(tick.t, self.pipeline._telemetry_dict(), assessment)
         update = self._make_update(tick.t, assessment)
         if assessment is not None:
@@ -871,13 +920,38 @@ class LiveEngine:
             summary=summary,
         ).to_dict()
 
+    def checks(self) -> dict | None:
+        """Live-source integrity checks (mission path, cross-end, receiver); None for SIM."""
+        if self.is_sim:
+            return None
+        f = self.pipeline.last_frame
+
+        def g(name: str):
+            return getattr(f, name, None) if f is not None else None
+
+        def r(v, n):
+            return None if v is None else round(float(v), n)
+
+        ce = getattr(self.pipeline, "crossend", None)
+        st = ce.stats() if ce is not None else None
+        sat = g("gps_sat_jump")
+        return {
+            "mission": {"known": bool(g("mission_known")), "xtrack_m": r(g("mission_xtrack_m"), 2),
+                        "wp_seq": g("mission_wp_seq")},
+            "crossend": {"active": bool(st and st["summaries"] > 0), "matched": st["matched"] if st else 0,
+                         "mismatches": st["mismatches"] if st else 0,
+                         "last_summary_age_s": r(st["last_summary_age_s"], 2) if st else None},
+            "receiver": {"ekf_vel_var": r(g("ekf_vel_var"), 4), "ekf_pos_var": r(g("ekf_pos_var"), 4),
+                         "sat_jump": None if sat is None else int(sat), "snr_spread": r(g("gps_snr_spread_db"), 2)},
+        }
+
     def _make_update(self, t: float, assessment) -> dict:
         source_desc = dict(self.spec.describe())
         source_desc["defense_mode"] = self.mitigation.mode.value
         raw_tele = self.pipeline._telemetry_dict()
         sanitized_tele = dict(raw_tele)
 
-        if self._cp_lat is not None:
+        if self.is_sim and self._cp_lat is not None:
             if self.mitigation.mode != DefenseMode.ACTIVE_IPS:
                 raw_tele["lat"] = self._cp_lat
                 raw_tele["lon"] = self._cp_lon
@@ -896,7 +970,7 @@ class LiveEngine:
                 sanitized_tele["armed"] = self._ips_armed if self._ips_armed is not None else True
                 sanitized_tele["groundspeed"] = round(self._ips_speed, 2) if self._ips_speed is not None else 12.0
 
-        if self._last_mitigation_action is not None and self.mitigation.mode == DefenseMode.ACTIVE_IPS:
+        if self.is_sim and self._last_mitigation_action is not None and self.mitigation.mode == DefenseMode.ACTIVE_IPS:
             act = self._last_mitigation_action
             if act.sub_mode == AttackSubMode.TELEM_SPEED_MISMATCH:
                 gs = math.hypot(self.mitigation.golden.vx_ms, self.mitigation.golden.vy_ms)
@@ -910,8 +984,11 @@ class LiveEngine:
             "environment": self.spec.environment,
             "source": source_desc,
             "defense_mode": self.mitigation.mode.value,
+            "signing": self.signing_info(),
+            "unsigned_acknowledged": self.unsigned_acknowledged,
             "topology": self.topology,
             "topology_reasons": self.topology_reasons,
+            "topology_info": self.topology_info(),
             "link": self.link_status(),
             "run_id": self._run_id,
             "t": round(t, 2),
@@ -919,6 +996,7 @@ class LiveEngine:
             "sanitized_telemetry": sanitized_tele,
             "attack_active": self._active_attack_name,
             "distance_m": round(self._distance_m, 1),
+            "checks": self.checks(),
         }
         if assessment is not None:
             msg["threat"] = {
@@ -952,8 +1030,11 @@ class LiveEngine:
             "environment": self.spec.environment,
             "source": source_desc,
             "defense_mode": self.mitigation.mode.value,
+            "signing": self.signing_info(),
+            "unsigned_acknowledged": self.unsigned_acknowledged,
             "topology": self.topology,
             "topology_reasons": self.topology_reasons,
+            "topology_info": self.topology_info(),
             "mitigation": self._last_mitigation_action.to_dict() if self._last_mitigation_action else self._initial_mitigation_dict(),
             "link": self.link_status(),
             "sim_time_s": round(self._sim_t, 1),
@@ -969,6 +1050,7 @@ class LiveEngine:
                                         (IntegrityStatus.VALID if self.is_sim else IntegrityStatus.UNKNOWN).value),
             "distance_m": round(self._distance_m, 1),
             "run_id": self._run_id,
+            "checks": self.checks(),
         }
 
     def metrics(self) -> dict:

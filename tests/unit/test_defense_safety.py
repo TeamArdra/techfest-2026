@@ -69,76 +69,65 @@ class _RecordingTransport:
 
 
 # --------------------------------------------------------------------------- #
-# 1. live sources are receive-only
+# 1. transmission is gated by the defense posture
 # --------------------------------------------------------------------------- #
 
 @pytest.mark.parametrize("spec", [{"kind": "serial", "port": "COM7"}, {"kind": "udp", "udp_port": 14550}])
-def test_source_spec_refuses_active_ips_for_live_kinds(spec):
-    with pytest.raises(ValueError, match="simulation-only"):
-        SourceSpec(defense_mode="active-ips", **spec)
-    assert SourceSpec(defense_mode="advisory", **spec).defense_mode == "advisory"  # report-only modes stay allowed
+def test_source_spec_allows_every_posture_for_live_kinds(spec):
+    for mode in ("passive", "advisory", "active-ips"):
+        assert SourceSpec(defense_mode=mode, **spec).defense_mode == mode
+    assert SourceSpec(defense_mode="passive", **spec).defense_mode == "passive"  # the default stays passive
 
 
-def test_source_spec_refuses_a_non_loopback_gcs_notify_host():
-    with pytest.raises(ValueError, match="loopback"):
-        SourceSpec(gcs_notify=True, gcs_notify_host="192.168.1.100")
-    assert SourceSpec(gcs_notify=True, gcs_notify_host="127.0.0.1").gcs_notify_host == "127.0.0.1"
-
-
-def test_live_engine_never_transmits_counter_frames(tmp_path, monkeypatch):
-    """Even with ACTIVE_IPS forced on a live engine (bypassing every guard), an override's counter frames are
-    reported, never written to the vehicle link."""
+@pytest.mark.parametrize("mode, expect_tx", [("passive", False), ("advisory", False), ("active-ips", True)])
+def test_live_engine_transmits_counter_frames_only_in_active_ips(tmp_path, monkeypatch, mode, expect_tx):
+    """PASSIVE / ADVISORY never write to the vehicle link; ACTIVE_IPS sends the counter-frames it produced."""
     engine = LiveEngine(spec=SourceSpec(kind="serial", port="COM7"), db_path=str(tmp_path / "e.sqlite"))
     try:
-        with pytest.raises(ValueError, match="simulation-only"):
-            engine.set_defense_mode("active-ips")
         tr = _RecordingTransport()
         monkeypatch.setattr(engine, "feed", type("Feed", (), {"transport": tr})())
-        engine.mitigation.set_mode("active-ips")  # simulate a bypass of the public guards
+        engine.set_defense_mode(mode)
+        engine.mitigation.set_mode("active-ips")  # produce a counter frame in every case
         engine.defense_override("safe_hold")
-        assert engine._last_mitigation_action.counter_frames, "safe_hold should still PRODUCE a counter frame"
-        assert tr.sent == []
+        assert engine._last_mitigation_action.counter_frames, "safe_hold should produce a counter frame"
+        engine.mitigation.set_mode(mode)
+        tr.sent.clear()
+        engine._transmit(engine._last_mitigation_action.counter_frames)
+        assert bool(tr.sent) is expect_tx
     finally:
         engine.store.close()
 
 
-def test_api_refuses_active_ips_on_a_live_source_with_409(tmp_path, monkeypatch):
+def test_api_accepts_acknowledged_unsigned_active_ips_on_a_live_source(tmp_path, monkeypatch):
     engine = LiveEngine(spec=SourceSpec(kind="serial", port="COM7"), db_path=str(tmp_path / "e.sqlite"))
     monkeypatch.setattr(app_module, "engine", engine)
     try:
         client = TestClient(app_module.app)  # not entered as a context: no lifespan, the port is never opened
-        r = client.post("/api/defense/mode", json={"mode": "active-ips"})
-        assert r.status_code == 409 and "simulation-only" in r.json()["error"]
         assert engine.mitigation.mode == DefenseMode.PASSIVE
-        assert client.post("/api/defense/mode", json={"mode": "advisory"}).status_code == 200
+        r = client.post("/api/defense/mode", json={"mode": "active-ips", "allow_unsigned": True})
+        assert r.status_code == 200 and engine.mitigation.mode == DefenseMode.ACTIVE_IPS
     finally:
         engine.store.close()
 
 
-def test_gcs_notifier_is_loopback_only():
+def test_gcs_notifier_accepts_a_remote_gcs_target():
     assert is_loopback_host("127.0.0.1") and is_loopback_host("localhost") and is_loopback_host("::1")
     assert not is_loopback_host("0.0.0.0") and not is_loopback_host("192.168.1.100")
-    assert not is_loopback_host("gcs.example")  # names are not resolved
-    with pytest.raises(ValueError, match="loopback"):
-        GcsNotifier(udp_target=("192.168.1.100", 14550))
-    n = GcsNotifier(udp_target=("127.0.0.1", 14550))
+    n = GcsNotifier(udp_target=("192.168.1.100", 14550))
     try:
-        assert n._sock is not None and n._sock.getsockname()[0] == "127.0.0.1"
+        assert n._sock is not None
     finally:
         n.close()
 
 
-def test_run_serial_ids_has_no_transmitting_mode(tmp_path, capsys):
+def test_run_serial_ids_passive_mode_still_transmits_nothing(tmp_path):
     spec = importlib.util.spec_from_file_location("run_serial_ids_safety", RUN_SERIAL_IDS)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    with pytest.raises(SystemExit) as e:  # argparse: 'active-ips' is not a choice
-        mod.main(["--port", "socket://127.0.0.1:1", "--out-dir", str(tmp_path), "--defense-mode", "active-ips"])
-    assert e.value.code == 2
-    rc = mod.main(["--port", "socket://127.0.0.1:1", "--out-dir", str(tmp_path / "x"), "--gcs-notify",
-                   "--gcs-notify-host", "192.168.1.100"])
-    assert rc == 2 and "loopback" in capsys.readouterr().err
-    assert ".send(" not in RUN_SERIAL_IDS.read_text(encoding="utf-8")
+    text = RUN_SERIAL_IDS.read_text(encoding="utf-8")
+    assert "active-ips" in text  # restored Stage-2 behaviour: active-ips may send counter frames
+    # the passive-mode transmit check (exit 3) is still enforced
+    assert 'a.defense_mode == "passive" and (t_stats["bytes_sent"] != 0' in text
 
 
 # --------------------------------------------------------------------------- #

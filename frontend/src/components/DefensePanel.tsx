@@ -1,22 +1,25 @@
 import { useEffect, useState } from "react";
 import { api } from "../services/api";
-import type { DefenseMode, MitigationActionItem, MitigationInfo, Telemetry, Threat } from "../types";
+import { describe, selectTopology } from "../lib/topology";
+import { ActiveIpsDialog } from "./ActiveIpsDialog";
+import { needsActiveIpsDialog, signingText, type SigningInfo } from "../lib/posture";
+import type { DefenseMode, Environment, MitigationActionItem, MitigationInfo, Telemetry, Threat, TopologyInfo } from "../types";
 
 interface Props {
   mode: DefenseMode;
   mitigation: MitigationInfo | null;
   threat: Threat | null;
   telemetry: Telemetry | null;
-  topology?: string;
-  topologyReasons?: string[];
-  /** false for every live / recorded source: those are receive-only, so ACTIVE IPS is not offered */
-  sim?: boolean;
+  topologyInfo?: TopologyInfo | null;
+  bridgeTopology?: TopologyInfo | null;
+  environment?: Environment | null;
+  signing?: SigningInfo | null;
 }
 
 const MODES: Array<{ id: DefenseMode; label: string; desc: string }> = [
   { id: "passive", label: "PASSIVE", desc: "IDS only · zero bytes transmitted" },
-  { id: "advisory", label: "ADVISORY", desc: "STATUSTEXT alerts to a loopback GCS · zero control actuation" },
-  { id: "active-ips", label: "ACTIVE IPS", desc: "SIM only · modelled sanitization + counter-actions (never transmitted)" },
+  { id: "advisory", label: "ADVISORY", desc: "HUD STATUSTEXT alerts · zero control actuation" },
+  { id: "active-ips", label: "ACTIVE IPS", desc: "Counter-commands transmitted on a live link · SIM models inline sanitization" },
 ];
 
 function getStatesForMode(mode: DefenseMode) {
@@ -71,7 +74,9 @@ function getPilotAdvisory(subMode: string): string {
   return "Monitor flight parameters; standby for pilot action";
 }
 
-export function DefensePanel({ mode, mitigation, threat, telemetry, topology, topologyReasons, sim }: Props) {
+export function DefensePanel({ mode, mitigation, threat, telemetry, topologyInfo, bridgeTopology, environment, signing }: Props) {
+  const [dialog, setDialog] = useState(false);
+  const [dialogErr, setDialogErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [overrideMsg, setOverrideMsg] = useState<string | null>(null);
   const [optimisticMode, setOptimisticMode] = useState<DefenseMode | null>(null);
@@ -167,19 +172,32 @@ export function DefensePanel({ mode, mitigation, threat, telemetry, topology, to
     }
   }
 
-  const handleModeChange = async (newMode: DefenseMode) => {
-    if (newMode === activeMode || busy) return;
+  const applyMode = async (newMode: DefenseMode, allowUnsigned?: boolean) => {
     setOptimisticMode(newMode);
     setBusy(true);
     setOverrideMsg(null);
+    setDialogErr(null);
     try {
-      await api.setDefenseMode(newMode);
+      const res = await api.setDefenseMode(newMode, allowUnsigned);
+      if (res && res.ok === false) {
+        setOptimisticMode(null);
+        const msg = res.message || res.error || "mode change refused";
+        if (res.error === "signing_required") { setDialogErr(msg); setDialog(true); } else { setOverrideMsg(`Failed to switch mode: ${msg}`); }
+      } else {
+        setDialog(false);
+      }
     } catch (err) {
       setOptimisticMode(null);
       setOverrideMsg(`Failed to switch mode: ${err}`);
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleModeChange = async (newMode: DefenseMode) => {
+    if (newMode === activeMode || busy) return;
+    if (needsActiveIpsDialog(environment, activeMode, newMode)) { setDialogErr(null); setDialog(true); return; }
+    await applyMode(newMode);
   };
 
   const handleOverride = async (action: "safe_hold" | "reset_quarantine" | "ack_takeover") => {
@@ -209,6 +227,11 @@ export function DefensePanel({ mode, mitigation, threat, telemetry, topology, to
 
   return (
     <section className="panel def-panel" data-testid="defense-panel">
+      {dialog && (
+        <ActiveIpsDialog signing={signing ?? null} busy={busy} error={dialogErr}
+          onCancel={() => { setDialog(false); setDialogErr(null); }}
+          onConfirm={(u) => { void applyMode("active-ips", u); }} />
+      )}
       <div className="panel-head">
         <div className="title-row">
           <h3>HYBRID AUTONOMOUS DEFENSE & RECOVERY</h3>
@@ -236,63 +259,16 @@ export function DefensePanel({ mode, mitigation, threat, telemetry, topology, to
         <div className="res-badge">{resBadge}</div>
       </div>
 
-      {/* 0.1 Hardware & Routing Topology Card */}
-      <div style={{
-        marginTop: 8,
-        padding: "8px 12px",
-        borderRadius: 6,
-        background: "rgba(10,15,21,0.65)",
-        border: "1px solid rgba(255,255,255,0.08)",
-        display: "flex",
-        flexDirection: "column",
-        gap: 4,
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.06em" }}>
-              DEPLOYED TOPOLOGY
-            </span>
-            <span style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              padding: "2px 7px",
-              borderRadius: 4,
-              background: topology === "a" ? "rgba(59,130,246,0.18)" : "rgba(34,197,94,0.18)",
-              color: topology === "a" ? "#60a5fa" : "var(--ok)",
-              border: `1px solid ${topology === "a" ? "rgba(59,130,246,0.3)" : "rgba(34,197,94,0.3)"}`,
-            }}>
-              {topology === "a"
-                ? "TOPOLOGY A · SIDECAR ACTUATOR"
-                : topology === "a+b"
-                ? "TOPOLOGY A+B · HYBRID ROUTING"
-                : topology === "ids"
-                ? "TOPOLOGY IDS · PASSTHROUGH ONLY"
-                : "TOPOLOGY B · INLINE SANITIZER BRIDGE"}
-            </span>
-          </div>
-          <span style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)" }}>
-            {topology === "a"
-              ? "MAVLinkActuator Counter-Commands"
-              : "FrameSanitizer Inline Filter + Actuator"}
-          </span>
-        </div>
-        <div style={{ fontSize: 11, color: "#9ca3af", lineHeight: 1.4 }}>
-          {topology === "a"
-            ? "Sidecar configuration on secondary TELEM port: FC executes rogue frames briefly (0.4s reaction window) before counter-command overrides return vehicle to survey mission."
-            : topology === "ids"
-            ? "Zero-transmission monitoring mode: Link frames are forwarded without interception or counter-command generation."
-            : "Direct inline link between GCS radio and FC: Rogue SysID frames and unauthorized commands are dropped inline before reaching the flight controller (0.0 m detour)."}
-        </div>
-        {topologyReasons && topologyReasons.length > 0 && (
-          <div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--mono)", marginTop: 2 }}>
-            {topologyReasons[0]}
-          </div>
-        )}
-      </div>
+      {/* 0.1 Read-only topology status (detected by the software, never operator-selected) */}
+      <TopologyCard backend={topologyInfo} bridge={bridgeTopology} />
 
       {/* 1. Operational Mode Switcher */}
       <div className="def-section">
         <div className="def-section-title">OPERATIONAL POSTURE SELECTOR</div>
+        {environment && environment !== "SIM" && (
+          <div className="topo-note" data-testid="signing-indicator" style={{ fontWeight: 700, color: signing?.configured ? "var(--ok)" : "var(--warn)" }}>{signingText(signing)}</div>
+        )}
+        <div className="topo-note">Posture is your choice; the Topology capability rows depend on it.</div>
         <div className="mode-toggle-group" role="radiogroup" aria-label="Defense Mode Selector">
           {MODES.map((m) => {
             const isSelected = activeMode === m.id;
@@ -302,7 +278,7 @@ export function DefensePanel({ mode, mitigation, threat, telemetry, topology, to
                 type="button"
                 className={`mode-btn ${isSelected ? "active" : ""}`}
                 onClick={() => handleModeChange(m.id)}
-                disabled={busy || (m.id === "active-ips" && sim === false)}
+                disabled={busy}
                 aria-checked={isSelected}
                 role="radio"
               >
@@ -680,5 +656,44 @@ export function DefensePanel({ mode, mitigation, threat, telemetry, topology, to
         {overrideMsg && <div className="override-feedback">{overrideMsg}</div>}
       </div>
     </section>
+  );
+}
+
+function TopologyCard({ backend, bridge }: { backend?: TopologyInfo | null; bridge?: TopologyInfo | null }) {
+  const sel = selectTopology(backend, bridge);
+  if (!sel) {
+    return (
+      <div className="topo-card" data-testid="topology-card">
+        <span className="topo-title">TOPOLOGY</span> <span className="topo-muted">Topology not reported</span>
+      </div>
+    );
+  }
+  const v = describe(sel);
+  return (
+    <div className="topo-card" data-testid="topology-card">
+      <div className="topo-head">
+        <span className="topo-title">TOPOLOGY</span>
+        <span className={`topo-badge topo-${v.kind === "A+B" ? "ab" : v.kind.toLowerCase()}`} data-testid="topology-badge">{v.badge}</span>
+        <span className={`topo-src topo-src-${v.source}`} data-testid="topology-source">{v.sourceText}</span>
+        <span className="topo-muted">{v.originText}</span>
+      </div>
+      <div className="topo-rows">
+        {v.caps.map((c) => (
+          <div key={c.id} className="topo-row" data-testid={`topo-${c.id}`}>
+            <span>{c.label}</span>
+            <b className={c.text === "yes" ? "topo-yes" : c.text === "no" ? "topo-no" : "topo-muted"}>{c.text.toUpperCase()}</b>
+          </div>
+        ))}
+        {v.links.map((l) => (
+          <div key={l.id} className="topo-row" data-testid={`topo-link-${l.id}`}>
+            <span>{l.label}{l.name ? ` (${l.name})` : ""}</span>
+            <b className={l.state === "connected" ? "topo-yes" : l.state === "disconnected" ? "topo-no" : "topo-muted"}>{l.state}</b>
+          </div>
+        ))}
+      </div>
+      {v.reasons.length > 0 && (
+        <ul className="topo-reasons">{v.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
+      )}
+    </div>
   );
 }

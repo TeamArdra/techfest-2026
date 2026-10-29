@@ -1,0 +1,10 @@
+# Overrides only (load with --config-dir configs/ardupilot_copter). Per-vehicle profile for ArduCopter
+# (multirotor) links. An engineering profile, not a calibration against real flights.
+# - protocol.auto_rate_baseline: the link's own message rate (SITL streams ~120-145 msg/s vs the Stage-1
+#   nominal 28) is learned after the first heartbeat instead of a fixed nominal/max.
+# - physics.yaw_course_enabled=false: a multirotor's yaw is independent of its track, so the heading-vs-course
+#   rule gave false TELEMETRY_MANIPULATION alarms. This DISABLES the frozen-attitude telemetry check here.
+protocol:
+  auto_rate_baseline: true
+physics:
+  yaw_course_enabled: false

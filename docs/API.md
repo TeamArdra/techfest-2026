@@ -104,6 +104,33 @@ Example (REPLAY of the BENCH capture 007 at its end; scratch run, 2026-10-20):
 the first decision `integrity_status` is `VALID` for SIM and `UNKNOWN` otherwise.
 `sim_time_s` is the source's tick clock (replay / monitor time for non-SIM).
 
+`checks` (in `/api/status` and every WebSocket update): `null` for SIM, else
+`{"mission":{"known","xtrack_m","wp_seq"},"crossend":{"active","matched","mismatches","last_summary_age_s"},
+"receiver":{"ekf_vel_var","ekf_pos_var","sat_jump","snr_spread"}}`, taken from the last feature frame and the
+cross-end monitor; unavailable values are `null`. For non-SIM sources `telemetry` is exactly what the pipeline
+received (no simulated twin) and every tick is broadcast.
+
+### `GET /api/topology` (read-only)
+
+The operator does not choose a topology; it is detected from how the software is connected. `POST /api/topology` was
+removed (404/405). The same `topology_info` object is in `GET /api/status` and every WebSocket `update`; the bridge
+status server (`GET /status`) carries it as `topology`. Legacy keys `topology` (`a`, `a+b`, `sim`, `replay`) and
+`reasons` remain on this route.
+
+```
+"topology_info": {"kind": "A" | "A+B" | "SIM" | "REPLAY" | "UNKNOWN", "label": str,
+  "source": "detected" | "modelled" | "none", "posture": "passive" | "advisory" | "active-ips",
+  "links": {"fc": {"connected": bool|null, "name": str|null}, "gcs": {"connected": bool|null, "name": str|null}},
+  "uplink_visible": bool|null, "can_block_frames": bool, "can_send_counter_commands": bool, "reasons": [str]}
+```
+
+- `A`: sidecar on one port (serial/UDP source). Sees only what the flight controller sends there; `uplink_visible`
+  is true only once a ground-station frame (sysid in `expected_gcs_sysids`) or a COMMAND/SET_MODE was seen;
+  never blocks frames; counter-commands only in `active-ips`.
+- `A+B`: inline bridge. `can_block_frames` needs `active-ips` and both links connected; counter-commands need
+  `active-ips` and the FC link.
+- `SIM` is a modelled inline twin; `REPLAY` has no wiring. `reasons` state only what was observed.
+
 ### `GET /api/metrics`
 ```json
 {"messages_processed":1620,"decisions":300,"alerts":15,"throughput_msgs_per_s":26.7,
@@ -208,3 +235,11 @@ thread that appends the alerts.
   dashboard** — the pending gate is `docs/HARDWARE_BENCH_PIXHAWK6X.md` §6.10.
 - SIM data is a simulation. A BENCH source is receive-only bench telemetry, not
   flight data, and its alerts describe that link (see `docs/DETECTION.md`).
+
+## Signing gate (`/api/defense/mode`)
+
+`GET /api/status` and every WebSocket update carry `signing: {"configured": bool}` (true when `aegis serve` got
+`--signing-key-file`; counter-frames are then signed) and `unsigned_acknowledged`. `POST /api/defense/mode` accepts an
+optional boolean `allow_unsigned`. For a non-SIM source, `active-ips` without a key and without `allow_unsigned: true`
+returns `409 {"ok": false, "error": "signing_required", "message": ..., "signing": {"configured": false}}`. SIM, `passive`
+and `advisory` are never gated. The bridge's own `POST /posture` is documented in `docs/INLINE_IPS.md`.

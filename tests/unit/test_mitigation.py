@@ -151,6 +151,7 @@ def test_advisory_mode_statustext_frames():
 
 def test_active_ips_gps_spoofing_ekf_switch():
     ctrl = MitigationController(mode=DefenseMode.ACTIVE_IPS)
+    ctrl.set_capabilities(ekf_secondary=True)  # the switch is only sent when a secondary is declared
     # 1. Nominal tick sets golden anchor
     snap0 = _make_dummy_snapshot(t=1.0, lat=18.9220, lon=72.8347, alt=25.0)
     frame0 = _make_dummy_frame(snap0)
@@ -170,7 +171,8 @@ def test_active_ips_gps_spoofing_ekf_switch():
         evidence=["horizontal position divergence > 200m"],
     )
 
-    action = ctrl.step(frame1, asmt1)
+    ctrl.step(frame1, asmt1)  # first threat tick: not yet confirmed
+    action = ctrl.step(frame1, asmt1)  # confirmed on the 2nd consecutive tick
     assert ctrl.state == MitigationState.AUTO_MITIGATING
     assert action.sub_mode == AttackSubMode.GPS_GRADUAL_DRIFT
     assert action.ekf_switched is True
@@ -183,6 +185,7 @@ def test_active_ips_gps_spoofing_ekf_switch():
 
 def test_active_ips_quarantine_recovery():
     ctrl = MitigationController(mode=DefenseMode.ACTIVE_IPS, recovery_clean_ticks=25)
+    ctrl.set_capabilities(ekf_secondary=True)
     # Step into attack
     snap0 = _make_dummy_snapshot(t=1.0, lat=18.9220, lon=72.8347)
     ctrl.step(_make_dummy_frame(snap0), _make_dummy_assessment(t=1.0, threat=False))
@@ -191,6 +194,10 @@ def test_active_ips_quarantine_recovery():
     ctrl.step(
         _make_dummy_frame(snap1),
         _make_dummy_assessment(t=2.0, threat=True, attack_type=AttackType.GPS_SPOOFING, severity=Severity.CRITICAL),
+    )
+    ctrl.step(
+        _make_dummy_frame(_make_dummy_snapshot(t=2.2, lat=18.9250, lon=72.8347)),
+        _make_dummy_assessment(t=2.2, threat=True, attack_type=AttackType.GPS_SPOOFING, severity=Severity.CRITICAL),
     )
     assert ctrl.state == MitigationState.AUTO_MITIGATING
 
@@ -563,6 +570,7 @@ def test_trajectory_return_to_normal_with_active_ips():
 
     # 3. Switch to ACTIVE_IPS mid-attack: trajectory must steer back toward dead-reckoned lon (~72.9133)
     ctrl.set_mode(DefenseMode.ACTIVE_IPS)
+    ctrl.set_capabilities(ekf_secondary=True)
     for step_idx in range(1, 12):
         t = 1.0 + step_idx * 0.2
         # Spoofed lon keeps drifting further East
@@ -573,7 +581,7 @@ def test_trajectory_return_to_normal_with_active_ips():
         )
         act_ips = ctrl.step(_make_dummy_frame(snap_k), asmt_k)
         assert act_ips.sanitize_gps is True
-        assert act_ips.ekf_switched is True
+        assert act_ips.ekf_switched is (step_idx >= 2)  # confirmed on the 2nd consecutive tick
 
     # After ~11 ticks in ACTIVE_IPS, effective_lon has returned close to the nominal DR lon (72.9133)
     # and is far from the runaway spoofed lon (~72.9183)
@@ -720,12 +728,14 @@ def test_cusum_micro_drift_integrator_ids_and_ips():
 
     # 4. ACTIVE_IPS (Defense) mode: switches EKF and clamps micro-drift coordinates
     ctrl_ips = MitigationController(mode=DefenseMode.ACTIVE_IPS)
+    ctrl_ips.set_capabilities(ekf_secondary=True)
     ctrl_ips.step(_make_dummy_frame(_make_dummy_snapshot(t=0.0, lat=19.1334, lon=72.9133)), _make_dummy_assessment(t=0.0, threat=False))
+    ctrl_ips.step(frame_micro, asmt_micro)
     act_ips = ctrl_ips.step(frame_micro, asmt_micro)
     assert act_ips.sub_mode == AttackSubMode.GPS_GRADUAL_DRIFT
     assert act_ips.sanitize_gps is True
     assert act_ips.ekf_switched is True
-    assert len(act_ips.counter_frames) == 1
+    assert len(act_ips.counter_frames) == 2  # STATUSTEXT warning + EKF switch
 
 
 # --- 24. Control-Plane Token Auth & CORS/Origin Lockdown ---
@@ -942,19 +952,15 @@ def test_rest_topology_endpoints():
     data_get = resp_get.json()
     assert data_get["ok"] is True
     assert "topology" in data_get
-    assert "auto" in data_get["available"]
+    assert data_get["topology"] == "sim" and data_get["topology_info"]["kind"] == "SIM"
+    assert data_get["reasons"] == data_get["topology_info"]["reasons"]
+    assert "available" not in data_get
 
-    # POST valid topology
-    for top in ("a", "b", "a+b", "ids", "auto"):
-        resp_post = client.post("/api/topology", json={"topology": top})
-        assert resp_post.status_code == 200
-        assert resp_post.json()["ok"] is True
-        assert resp_post.json()["topology"] == top
-
-    # POST invalid topology
-    resp_bad = client.post("/api/topology", json={"topology": "invalid_topology"})
-    assert resp_bad.status_code == 400
-    assert resp_bad.json()["ok"] is False
+    # the selector is gone: a POST is refused (404/405), the detected topology is unchanged
+    for body in ({"topology": "a"}, {"topology": "invalid_topology"}):
+        assert client.post("/api/topology", json=body).status_code in (404, 405)
+    assert client.get("/api/topology").json()["topology"] == "sim"
+    assert client.get("/api/status").json()["topology_info"]["kind"] == "SIM"
 
 
 # --- 27. Closed-Loop Cyber-Physical Simulation & Topology A/B Verification Across All 20 Submodes ---
@@ -962,8 +968,7 @@ def test_rest_topology_endpoints():
 def test_closed_loop_topology_a_and_b_across_all_20_submodes():
     """Verify cyber-physical vehicle flight dynamics across all 20 attack sub-modes:
     1. PASSIVE (IDS): 0 bytes sent, vehicle follows unmitigated hijacked dynamics.
-    2. Topology A (Sidecar): MavlinkActuator restores AUTO, with brief reaction detour.
-    3. Topology B (Inline): FrameSanitizer drops/filters inline, 0.0 m detour.
+    2. ACTIVE_IPS (modelled inline twin): FrameSanitizer drops/filters inline, 0.0 m detour.
     """
     from aegisflight.benchmark.extended import MODES
 
@@ -1014,7 +1019,6 @@ def test_closed_loop_topology_a_and_b_across_all_20_submodes():
                 assert up_passive["telemetry"]["flight_mode"] == "GUIDED"
 
             # 2. Test ACTIVE_IPS under Topology B (Inline Bridge)
-            engine.set_topology("b")
             engine.set_defense_mode("active-ips")
             # Step twin under Topology B
             for step_i in range(5):
@@ -1022,7 +1026,7 @@ def test_closed_loop_topology_a_and_b_across_all_20_submodes():
 
             up_top_b = engine._make_update(13.0, asmt_atk)
             assert up_top_b["defense_mode"] == "active-ips"
-            assert up_top_b["topology"] == "b"
+            assert up_top_b["topology"] == "a+b" and up_top_b["topology_info"]["kind"] == "SIM"
             # In Topology B: 0.0 m detour, command attacks blocked inline, flight stays AUTO at 12 m/s
             if submode in ("mode_flip", "gcs_replay", "arm_disarm_burst", "rogue_command"):
                 assert up_top_b["sanitized_telemetry"]["flight_mode"] == "AUTO"
@@ -1030,24 +1034,14 @@ def test_closed_loop_topology_a_and_b_across_all_20_submodes():
                 assert up_top_b["sanitized_telemetry"]["rel_alt"] == 60.0
                 assert up_top_b["sanitized_telemetry"]["armed"] is True
 
-            # 3. Test ACTIVE_IPS under Topology A (Sidecar Actuator)
-            engine.set_topology("a")
-            engine.set_defense_mode("active-ips")
-            # First 0.3s: reaction detour occurs
-            engine._step_cyber_physical_twin(14.2, base_tele, asmt_atk)
-            up_top_a_early = engine._make_update(14.2, asmt_atk)
-            assert up_top_a_early["topology"] == "a"
-            if submode == "mode_flip":
-                # During early reaction window, FC starts responding to command
-                assert up_top_a_early["sanitized_telemetry"]["flight_mode"] in ("LAND", "AUTO")
-
-            # After >0.4s: counter-actuation takes effect and restores AUTO
+            # The twin models the inline (hybrid) deployment only: still AUTO later in the same mode
             for step_i in range(5):
                 engine._step_cyber_physical_twin(14.4 + (step_i + 1) * 0.2, base_tele, asmt_atk)
-            up_top_a_late = engine._make_update(15.4, asmt_atk)
+            up_top_late = engine._make_update(15.4, asmt_atk)
             if submode in ("mode_flip", "gcs_replay", "arm_disarm_burst", "rogue_command"):
-                assert up_top_a_late["sanitized_telemetry"]["flight_mode"] == "AUTO"
-                assert up_top_a_late["sanitized_telemetry"]["rel_alt"] == 60.0
+                assert up_top_late["sanitized_telemetry"]["flight_mode"] == "AUTO"
+                assert up_top_late["sanitized_telemetry"]["rel_alt"] == 60.0
+
 
 
 

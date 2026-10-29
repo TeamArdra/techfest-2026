@@ -20,7 +20,7 @@ aegis train                            # train models/isoforest.joblib
 aegis benchmark                        # metrics + figures -> artifacts/
 aegis serve                            # dashboard http://127.0.0.1:8000
 aegis verify-log <db.sqlite>           # check hash chain
-pytest                                 # 545 passed, 3 skipped (Windows PTY)
+pytest                                 # `pytest -q` prints the count (a few PTY tests skip on Windows)
 ruff check src tests scripts backend   # lint (keep clean)
 python scripts/run_demo.py             # narrated headless demo
 ```
@@ -37,6 +37,7 @@ docs in `docs/` (start at `docs/README.md`, then `docs/HANDOFF.md`).
   `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
 - Detectors read only a `FeatureFrame`; `core/` imports nothing internal; ground
   truth (`FlightState`, attack `label`) is benchmark-only.
+- **Autonomous JIT Skills:** Do not load skills indiscriminately. When a task requires specialized domain expertise (e.g. Wireshark pcap, firmware security, React performance), install only that skill just-in-time from `docs/SKILLS_REGISTRY.md`, log it, and uninstall it upon completion to preserve context window tokens.
 
 ## Do NOT change casually
 `ML_FEATURES` order (model depends on it — retrain), `FlightState`/

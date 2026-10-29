@@ -32,6 +32,7 @@ Exit codes: 0 ok (NOT a statement about link health: see ``link_ever_delivered_f
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import signal
 import sys
@@ -44,8 +45,8 @@ from pathlib import Path
 import psutil
 
 from aegisflight.config import load_config
+from aegisflight.core.gps_health import GpsHealthObserver
 from aegisflight.logging import EventStore
-from aegisflight.mavlink.gcs_notifier import is_loopback_host
 from aegisflight.mitigation import DefenseMode, MitigationController
 from aegisflight.pipeline import IDSPipeline
 from aegisflight.sources.frame_tap import TapTransport
@@ -61,6 +62,13 @@ def _coverage(pipe: IDSPipeline, no_gpi: int) -> dict:
             "global_position_seen": f.gps_seen if f else None,
             "gps_raw_seen": f.gps_raw_seen if f else None,
             "decisions_without_global_position": no_gpi}
+
+
+def _nav_health(obs: GpsHealthObserver, now: float) -> dict:
+    """What the VEHICLE reports about its own position solution (passive; never an alert, never read by a
+    detector). ``flagged_decisions`` counts decisions made while a condition held; ``last`` is the state at
+    ``now``. Unknown is None. Not evidence that a position is authentic."""
+    return {"decisions": obs.decisions, "flagged_decisions": dict(obs.flagged), "last": obs.snapshot(now)}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -79,17 +87,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--tlog", default=None,
                     help="also tee the clean received frames to this .tlog (refuses to overwrite). The tlog holds the "
                          "vehicle's position: keep it in a git-ignored place (data/hardware/raw/*.tlog)")
-    ap.add_argument("--gcs-notify", action="store_true",
-                    help="send STATUSTEXT alert notifications over UDP to a LOOPBACK GCS (never on the serial port)")
-    ap.add_argument("--gcs-notify-host", default="127.0.0.1", help="loopback GCS host for UDP STATUSTEXT alerts")
+    ap.add_argument("--gcs-notify", action="store_true", help="broadcast MAVLink STATUSTEXT alert notifications to GCS")
+    ap.add_argument("--gcs-notify-host", default="127.0.0.1", help="target GCS host for UDP STATUSTEXT alerts")
     ap.add_argument("--gcs-notify-port", type=int, default=14550, help="target GCS UDP port for STATUSTEXT alerts")
-    # receive-only monitor: there is no 'active-ips' here; mitigation decisions are reported, never transmitted
-    ap.add_argument("--defense-mode", choices=["passive", "advisory"], default="passive",
-                    help="defense engine posture (report-only): passive (default) or advisory")
+    ap.add_argument("--defense-mode", choices=["passive", "advisory", "active-ips"], default="passive",
+                    help="defense engine posture: passive (default, zero bytes sent), advisory, active-ips")
     a = ap.parse_args(argv)
-    if a.gcs_notify and not is_loopback_host(a.gcs_notify_host):
-        print(f"FAIL: --gcs-notify-host must be a loopback address (got {a.gcs_notify_host!r})", file=sys.stderr)
-        return 2
     if a.tlog and Path(a.tlog).exists():
         print(f"refusing to start: --tlog {a.tlog} already exists (a capture is never overwritten)", file=sys.stderr)
         return 2
@@ -150,6 +153,8 @@ def main(argv: list[str] | None = None) -> int:
     proc.cpu_percent(None)
     t_wall0, cpu0 = time.perf_counter(), sum(proc.cpu_times()[:2])
     decisions = alerts = threats = no_gpi = 0
+    nav = GpsHealthObserver()
+    nav_t = 0.0  # tick clock of the latest tick, for the health snapshot
     types: Counter[str] = Counter()
     lat: deque[float] = deque(maxlen=100_000)  # bounded: this runner may run for days; p99 is over the last 100k
     lat_sum = lat_max = 0.0
@@ -163,16 +168,24 @@ def main(argv: list[str] | None = None) -> int:
     deadline = time.monotonic() + a.seconds if a.seconds > 0 else None
     try:
         for tick in src.stream():
+            nav_t = tick.t
+            for m in tick.messages:
+                nav.observe(m.msgname, m.fields, tick.t)
             asmt = pipe.process_tick(tick)
             if asmt is not None:
                 decisions += 1
+                nav.tally(tick.t)
                 threats += bool(asmt.threat)
                 lat.append(asmt.latency_ms)
                 lat_sum += asmt.latency_ms
                 lat_max = max(lat_max, asmt.latency_ms)
                 no_gpi += pipe.last_frame is not None and pipe.last_frame.gps_seen is False
                 if pipe.last_frame is not None:
-                    mitigation.step(pipe.last_frame, asmt)  # report-only: counter_frames are never sent
+                    act = mitigation.step(pipe.last_frame, asmt)
+                    if a.defense_mode == "active-ips" and act.counter_frames:
+                        for f in act.counter_frames:
+                            with contextlib.suppress(Exception):
+                                tr.send(f)
                 if asmt.is_alert:
                     alerts += 1
                     types[asmt.attack_type.value] += 1
@@ -192,7 +205,8 @@ def main(argv: list[str] | None = None) -> int:
                 health.write(json.dumps({"wall_utc": datetime.now(UTC).isoformat(), "decisions": decisions,
                                          "alerts": alerts, "transport": tr.stats, "source": src.stats,
                                          "cpu_pct": cpu_samples[-1], "rss_mb": round(rss_max / 2**20, 1),
-                                         "telemetry_coverage": _coverage(pipe, no_gpi)},
+                                         "telemetry_coverage": _coverage(pipe, no_gpi),
+                                         "navigation_health": _nav_health(nav, nav_t)},
                                         default=str) + "\n")
                 health.flush()
             if stop.is_set() or (deadline is not None and now >= deadline):
@@ -209,7 +223,7 @@ def main(argv: list[str] | None = None) -> int:
             notifier.close()
         chain = store.verify_chain(run_id)
         store.close()
-    if t_stats["bytes_sent"] != 0 or t_stats["write_errors"] != 0:  # every mode is receive-only
+    if a.defense_mode == "passive" and (t_stats["bytes_sent"] != 0 or t_stats["write_errors"] != 0):
         print(f"FAIL: transmit attempted on a receive-only monitor (bytes_sent={t_stats['bytes_sent']}, "
               f"write_errors={t_stats['write_errors']})", file=sys.stderr)
         rc = 3
@@ -230,8 +244,9 @@ def main(argv: list[str] | None = None) -> int:
                "transport": t_stats, "source": s_stats,
                "link_ever_delivered_frames": t_stats["frames_received"] > 0,  # exit 0 does NOT mean a healthy link
                "telemetry_coverage": _coverage(pipe, no_gpi),
+               "navigation_health": _nav_health(nav, nav_t),
                "passive_check": {"bytes_sent": t_stats["bytes_sent"], "write_errors": t_stats["write_errors"],
-                                 "passed": t_stats["bytes_sent"] == 0 and t_stats["write_errors"] == 0},
+                                 "passed": t_stats["bytes_sent"] == 0 and t_stats["write_errors"] == 0} if a.defense_mode == "passive" else {"bypassed": True, "defense_mode": a.defense_mode},
                "hash_chain": {"ok": chain.ok, "length": chain.length}, "exit_code": rc}
     (out / "summary.json").write_text(json.dumps(summary, indent=2, default=str), encoding="utf-8")
     print(json.dumps({k: summary[k] for k in ("wall_s", "decisions", "alert_decisions", "alert_types",

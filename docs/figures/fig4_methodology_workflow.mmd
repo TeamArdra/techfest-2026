@@ -1,0 +1,4 @@
+flowchart LR
+  A["Ingest + parse"] --> B["Extract features"] --> C["Detect (4 layers)"] --> D["Fuse"] --> E["Alert + hash-chain log"] --> F["Evaluate"]
+  G["Attack injection (SIM hooks / SITL proxy)"] --> A
+  F -. "false alarms, misses" .-> H["Thresholds, calibration, gates"] -.-> C

@@ -20,7 +20,7 @@ detail and `docs/CODEBASE_MAP.md` for dependency directions.
 | **Logging** | Tamper-evident log | `ThreatAssessment` → SQLite | `EventStore` | — | `test_integrity_and_logging` | SQLite (single-node) |
 | **Metrics** | Scoring + resources | labels → `Evaluation` | `evaluate`, `ResourceSampler` | — | `test_fusion_and_metrics` | — |
 | **Benchmark** | Authoritative metrics | grid → results+figures | `run_session`, `run_benchmark` | — | (drives all) | ~min-scale runtime (ML inference) |
-| **Mitigation** | Autonomous closed-loop IPS | `ThreatAssessment` → `MitigationPlan` | `AutonomousMitigationEngine`, `GoldenStateEstimator`, `FrameSanitizer`, `KillswitchGuard` | `mitigation.*` | `test_mitigation` | Posture-gated execution |
+| **Mitigation** | Autonomous closed-loop IPS | `ThreatAssessment` → `MitigationPlan` | `MitigationController`, `GoldenFlightState`, `AttackSubModeClassifier`, `ParameterEstimator`, `MavlinkActuator`, `FrameSanitizer` | `mitigation.*` | `test_mitigation` | Posture-gated execution |
 | **HAL** | Hardware auto-discovery & bridge | Serial/USB/OS → Link Topology | `HALDiscovery`, `InlineBridge`, `TopologySelector`, `PlatformProfile` | `hal.*` | `test_hal` | Requires OS serial port access |
 | **Desktop GCS** | Native Operator Console | WS/REST → Tauri UI | Tauri 2.0 Rust wrapper, MapPanel, DefensePanel | — | (manual) | Native desktop / web |
 | **Backend** | Live API + WS | HTTP/WS ↔ `LiveEngine` | `LiveEngine`, FastAPI app | — | `backend/tests` | Single engine instance |

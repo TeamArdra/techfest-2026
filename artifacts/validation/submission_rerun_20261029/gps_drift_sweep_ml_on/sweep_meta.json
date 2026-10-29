@@ -1,0 +1,38 @@
+{
+  "script": "scripts/sweep_gps_drift.py",
+  "git_head": "d0d134b3b211e0691df9c9ead18cadbaf95c9ec3",
+  "environment": "SIM",
+  "ml": true,
+  "model_sha256": "3fe74cddf3689e169610ffd783b109b6539cc6c03629bd1e4bb8b1d3842939c4",
+  "seeds": [
+    50000,
+    50001,
+    50002,
+    50003,
+    50004,
+    50005,
+    50006,
+    50007,
+    50008,
+    50009
+  ],
+  "rates_ms": [
+    0.5,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    8,
+    12
+  ],
+  "configs_sha256": {
+    "attacks.yaml": "0b369d6595f0ec1ac57886d2c2dc4777512f53a5aa519bc32d9a3eb10a31e407",
+    "detector.yaml": "be7876745a26e1a9de23acb1e079cab18165887df3ad8cd9800f67dae4e1f8be",
+    "simulation.yaml": "bab802fbf572dcd1e71aa3a87594967deb73f7fc2db94745f6e45014275489df"
+  },
+  "benign_sessions": 10,
+  "benign_sessions_with_false_positive": 1,
+  "note": "characterisation after the floor was already pinned by unit tests; not independent validation; velocity-inconsistent drift only"
+}

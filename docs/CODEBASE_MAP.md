@@ -25,7 +25,7 @@ aegisflight/
 ├── backend/         # FastAPI app + LiveEngine (REST + WebSocket)
 └── cli/             # `aegis` CLI (simulate/benchmark/train/serve/verify-log)
 
-frontend/            # React 19 + TS dashboard + Tauri 2.0 Rust desktop GCS
+frontend/            # React 18 + TS dashboard + Tauri 2.0 Rust desktop GCS
 rust/aegis_fastpath/ # zero-allocation Rust MAVLink frame sanitizer
 scripts/             # verify_stage2.py, train_models.py, benchmark.py, run_demo.py
 configs/             # simulation.yaml, detector.yaml, attacks.yaml

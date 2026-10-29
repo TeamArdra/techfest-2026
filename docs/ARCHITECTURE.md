@@ -1,5 +1,11 @@
 # AegisFlight — System Architecture & Deep Dive Specification
 
+> **Status note (integration review):** this page is a design description. What is implemented, measured or only modelled is
+> recorded in `docs/VALIDATION_EVIDENCE.md` and the README. In particular: the defense layer is report-only on every live or
+> recorded source; Topology B is implemented as `aegis ips-bridge` (`docs/INLINE_IPS.md`) and tested on synthetic frames and loopback serial only; the older `InlineBridge` class, its 150 ms watchdog and `rust/aegis_fastpath` are
+> not on that path, and nothing has a measured figure on hardware; nothing has been measured on a companion computer; the measured decision
+> compute is 17.7 ms mean / 23.6 ms p95 with ML on (`artifacts/benchmarks/summary.md`, SIM).
+
 > **Pushpak Grand Challenge 2026–27 (IIT Bombay Techfest) — Security of Drones, Objective 2**  
 > *Autonomous Cyber-Physical Intrusion Detection (IDS) & Prevention (IPS) System for Unmanned Aerial Vehicles*
 
@@ -30,9 +36,9 @@ Unlike conventional network IDSs that treat telemetry frames as opaque strings o
 ```
 
 ### Core Architectural Guarantees
-1. **Deterministic Latency**: Mean decision compute time of $\le 3.2\text{ ms}$ (audit suite $\le 1.0\text{ ms}$), well inside the $\le 45\text{ ms}$ hard real-time requirement.
-2. **Zero-Emission Invariant in IDS Mode**: In `PASSIVE` mode, AegisFlight guarantees mathematically that `bytes_sent = 0` ($0$ packets transmitted over RF/UART, no control surface perturbation).
-3. **Fail-Open Hardware Watchdog**: When deployed inline (Topology B), a hardware watchdog thread guarantees that if companion compute processing stalls beyond $150\text{ ms}$, the bridge immediately defaults to **transparent fail-open bypass**, preserving pilot command link integrity.
+1. **Deterministic Latency**: Measured decision compute is 17.7 ms mean / 23.6 ms p95 with ML on (SIM, host CPU; `artifacts/benchmarks/summary.md`). The $\le 45\text{ ms}$ figure is a design target, not measured on a companion computer.
+2. **Zero-Emission Invariant in IDS Mode**: In `PASSIVE` mode (the default) and `ADVISORY` AegisFlight sends no control frames: `bytes_sent = 0`, checked by `tests/unit/test_defense_safety.py` ($0$ packets transmitted over RF/UART, no control surface perturbation).
+3. **Fail-Open Hardware Watchdog**: Design intent for inline deployment (Topology B, not wired): `InlineBridge.check_watchdog` models a watchdog that would that if companion compute processing stalls beyond $150\text{ ms}$, the bridge immediately defaults to **transparent fail-open bypass**, preserving pilot command link integrity.
 4. **Frozen Contract Preservation**: Preserves the 11-feature contract (`ML_FEATURES`), `ThreatAssessment.to_dict()` structure, and core enums, ensuring 100% backward compatibility with offline benchmarks and datasets.
 
 ---
@@ -89,7 +95,7 @@ Unlike conventional network IDSs that treat telemetry frames as opaque strings o
 
 ## 3. Hardware Abstraction Layer (`src/aegisflight/hal/`)
 
-AegisFlight includes a production-grade Hardware Abstraction Layer designed for heterogeneous drone hardware:
+AegisFlight includes a Hardware Abstraction Layer (design and unit-tested; not wired into the pipeline) designed for heterogeneous drone hardware:
 
 ### 3.1 Hardware Auto-Discovery (`discovery.py`)
 Automatically scans local serial interfaces and matches hardware signatures against known vendor/product tables:
@@ -242,5 +248,5 @@ AegisFlight has been validated across 9 comprehensive verification suites:
 | **Real Flights — PX4 Review** | 40 Real Multirotor Telemetry Logs | Validated under real-world sensor noise and dropouts |
 | **Hardware-in-the-Loop Bench** | Pixhawk 6X over 115,200 Baud UART | Zero frame loss, DMA buffer verified |
 | **Stage 2 Verification Suite** (`verify_stage2.py`) | 8 Comprehensive Audit Suites | **8/8 Suites Passed in 40.5 ms** (100% compliant) |
-| **Unit Test Suite** (`pytest`) | Core, Detectors, Mitigation, HAL | **285+ Passed, 0 Failures** |
+| **Unit Test Suite** (`pytest`) | Core, Detectors, Mitigation, HAL | `pytest -q` prints the current count |
 | **Frontend Production Build** | TypeScript + Vite + Tauri Rust | **Built in 259 ms, 0 errors** |

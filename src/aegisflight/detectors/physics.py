@@ -98,6 +98,9 @@ class PhysicsDetector(Detector):
         # heading-vs-course tolerance (deg); config key added for per-vehicle profiles,
         # the default stays the Stage-1 constant 25.0
         self.yaw_course_deg = float(p.get("yaw_course_deg", 25.0))
+        # False for multirotors (yaw is independent of the track): disables the heading-vs-course
+        # (frozen-attitude) telemetry rule. Default True = Stage-1 behaviour.
+        self.yaw_course_enabled = bool(p.get("yaw_course_enabled", True))
         self.hysteresis_ticks = int(p.get("hysteresis_ticks", 2))
         self.cusum_enabled = bool(p.get("cusum_enabled", False))
         self.cusum_threshold_m = float(p.get("cusum_threshold_m", 1.2))
@@ -116,6 +119,18 @@ class PhysicsDetector(Detector):
         # as captured); the report is unauthenticated, so an injected one can activate it (it needs
         # >= 2 s of sustained no-solution reports).
         self.estimator_gate = bool(p.get("estimator_gate", True))
+        # EKF-health / receiver-signature rules (2026-10-28). UNCALIBRATED engineering defaults, not
+        # measured evidence (docs/DETECTION.md). Inert while the extended messages are absent.
+        self.ekf_var_warn = float(p.get("ekf_var_warn", 0.5))
+        self.ekf_var_reject = float(p.get("ekf_var_reject", 1.0))
+        self.sat_jump_min = int(p.get("sat_jump_min", 6))
+        self.snr_spread_min_db = float(p.get("snr_spread_min_db", 1.5))
+        self.snr_min_sats = int(p.get("snr_min_sats", 8))
+        self.vel_disagree_ms = float(p.get("gps_ekf_vel_disagree_ms", 3.0))
+        # Mission-path check (2026-10-28): UNCALIBRATED engineering defaults (docs/DETECTION.md).
+        self.mission_xtrack_alert_m = float(p.get("mission_xtrack_alert_m", 60.0))
+        self.mission_hysteresis_ticks = int(p.get("mission_hysteresis_ticks", 5))
+        self._mission_streak = 0
         self._soft_streak = 0
 
     def process(self, frame: FeatureFrame) -> DetectorResult:
@@ -194,6 +209,17 @@ class PhysicsDetector(Detector):
                 "(sustained sub-noise velocity divergence)"
             )
 
+        # ---- 2D Page-Hinkley / CUSUM micro-drift (< 0.3 m/s) ----
+        cusum_val = max(frame.cusum_drift_m, self.cusum.magnitude_m)
+        signals["cusum_drift_m"] = cusum_val
+        if (self.cusum_enabled or self.cusum.triggered) and cusum_val >= self.cusum_threshold_m:
+            s = ramp(cusum_val, self.cusum_threshold_m, self.cusum_threshold_m * 3.0)
+            bump(AttackType.GPS_SPOOFING, max(0.65, s), hard_hit=True)
+            evidence.append(
+                f"CUSUM micro-drift residual {cusum_val:.2f} m ≥ {self.cusum_threshold_m:.1f} m "
+                "(sustained sub-noise velocity divergence)"
+            )
+
         # ---- GPS altitude vs baro (telemetry manipulation / spoofing) ----
         ad = frame.gps_baro_alt_diff_m
         signals["gps_baro_alt_diff_m"] = ad
@@ -242,10 +268,13 @@ class PhysicsDetector(Detector):
         # ---- heading (attitude) vs course-over-ground (frozen attitude) ----
         yc = frame.yaw_course_diff_deg
         signals["yaw_course_diff_deg"] = yc
-        if yc > self.yaw_course_deg:
+        if self.yaw_course_enabled and yc > self.yaw_course_deg:
             s = ramp(yc, self.yaw_course_deg, 90.0)
             bump(AttackType.TELEMETRY_MANIPULATION, max(0.5, s))
             evidence.append(f"heading/course mismatch {yc:.0f}° (attitude inconsistent with track)")
+
+        self._receiver_rules(frame, bump, evidence, signals)
+        self._mission_rule(frame, bump, evidence, signals)
 
         # ---- hysteresis on soft (non-hard) triggers ----
         if score > 0.0:
@@ -268,6 +297,85 @@ class PhysicsDetector(Detector):
             signals=signals,
         )
 
+    def _receiver_rules(
+        self,
+        frame: FeatureFrame,
+        bump: Callable[..., None],
+        evidence: list[str],
+        signals: dict[str, float],
+    ) -> None:
+        """EKF-health and GPS receiver-signature rules; every field is None/0 when its message is
+        absent, so each rule is inert then. All are soft (damped until ``hysteresis_ticks``)."""
+        gs = AttackType.GPS_SPOOFING
+        ev, ep = frame.ekf_vel_var, frame.ekf_pos_var
+        if ev is not None and ep is not None:
+            worst = max(ev, ep)
+            signals["ekf_innovation_var"] = worst
+            if worst >= self.ekf_var_reject:
+                bump(gs, 0.7)
+                evidence.append(
+                    f"EKF innovation ratio {worst:.2f} ≥ {self.ekf_var_reject:.1f} "
+                    "(velocity/position variance: estimator rejecting its inputs)"
+                )
+            elif worst >= self.ekf_var_warn:
+                bump(gs, 0.3)
+                evidence.append(
+                    f"EKF innovation ratio {worst:.2f} ≥ {self.ekf_var_warn:.1f} (warning level)"
+                )
+        if frame.gps_sat_jump >= self.sat_jump_min and frame.snapshot.gps_fix_type >= 3:
+            signals["gps_sat_jump"] = float(frame.gps_sat_jump)
+            bump(gs, 0.6)
+            evidence.append(
+                f"satellites_visible changed by {frame.gps_sat_jump} between reports "
+                f"(≥ {self.sat_jump_min}) with the fix still valid"
+            )
+        sp = frame.gps_snr_spread_db
+        if sp is not None and frame.gps_snr_sats >= self.snr_min_sats:
+            signals["gps_snr_spread_db"] = sp
+            if sp < self.snr_spread_min_db:
+                bump(gs, 0.6)
+                evidence.append(
+                    f"GPS_STATUS SNR spread {sp:.2f} dB < {self.snr_spread_min_db:.1f} dB over "
+                    f"{frame.gps_snr_sats} satellites (uniform-power signals)"
+                )
+        vd = frame.gps_vel_disagree_ms
+        if vd is not None:
+            signals["gps_vel_disagree_ms"] = vd
+            if vd > self.vel_disagree_ms:
+                bump(gs, max(0.55, ramp(vd, self.vel_disagree_ms, self.vel_disagree_ms * 3)))
+                evidence.append(
+                    f"GPS_RAW_INT velocity differs from EKF velocity by {vd:.1f} m/s "
+                    f"> {self.vel_disagree_ms:.0f} m/s"
+                )
+
+    def _mission_rule(
+        self,
+        frame: FeatureFrame,
+        bump: Callable[..., None],
+        evidence: list[str],
+        signals: dict[str, float],
+    ) -> None:
+        """Reported track far from the commanded mission leg while in AUTO. Inert (streak cleared)
+        when ``mission_xtrack_m`` is None. Wind or a legitimate reroute can also cause it."""
+        xt = frame.mission_xtrack_m
+        if xt is None or not frame.mission_known:
+            self._mission_streak = 0
+            return
+        signals["mission_xtrack_m"] = xt
+        if xt <= self.mission_xtrack_alert_m:
+            self._mission_streak = 0
+            return
+        self._mission_streak += 1
+        if self._mission_streak < self.mission_hysteresis_ticks:
+            return
+        s = 0.6 + 0.25 * min(1.0, max(0.0, (xt / self.mission_xtrack_alert_m - 1.0) / 2.0))
+        # own sustained hysteresis already applied, so no extra soft damping
+        bump(AttackType.GPS_SPOOFING, s, hard_hit=True)
+        seq = f" (waypoint {frame.mission_wp_seq})" if frame.mission_wp_seq is not None else ""
+        evidence.append(
+            f"reported track is {xt:.0f} m from the commanded mission leg while in AUTO{seq}"
+        )
+
     def _residual_rule(self, pr: float, bump: Callable[..., None], evidence: list[str]) -> None:
         """The Stage-1 position-residual thresholds (soft / hard), unchanged."""
         if pr >= self.pos_resid_hard:
@@ -283,4 +391,5 @@ class PhysicsDetector(Detector):
 
     def reset(self) -> None:
         self._soft_streak = 0
+        self._mission_streak = 0
         self.cusum.reset()

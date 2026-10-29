@@ -47,10 +47,10 @@ One telemetry tick, traced through the real code. (Diagram:
    `ThreatAssessment` (with `latency_ms` stamped by the pipeline).
 
 10. **Autonomous Mitigation & Prevention (Stage 2).**
-    If posture is `ACTIVE_IPS`, `mitigation/engine.py` evaluates the `ThreatAssessment`.
+    If posture is `ACTIVE_IPS`, `mitigation/controller.py` (`MitigationController.step`) evaluates the `ThreatAssessment`.
     - In **Topology B** (Inline): `FrameSanitizer` drops rogue frames or clamps coordinates before they reach the autopilot ($0.0\text{ m}$ detour).
-    - In **Topology A** (Sidecar): `GoldenStateEstimator` dead-reckoning provides synthetic coordinates and issues `MAV_CMD_DO_REPOSITION` counter-commands.
-    - Safety-critical vetoes: `KillswitchGuard` immediately vetoes mid-air disarm and forced landing commands.
+    - In **Topology A** (Sidecar): `GoldenFlightState` dead-reckoning provides trusted coordinates and `MavlinkActuator` encodes counter-commands (set mode, EKF source switch). Modelled in SIM only; nothing is transmitted on a live source.
+    - Safety-critical vetoes: `AttackSubModeClassifier` flags a mid-air disarm or a command-cadence violation and the controller records it (`REPLAY_GUARD` / `VETO_DISARM`). It is reported, not blocked: no code path drops the command before the autopilot.
     - Pilot GCS notification: `gcs_notifier.py` dispatches `STATUSTEXT` alert banners.
 
 11. **Persist alerts.**
@@ -58,7 +58,7 @@ One telemetry tick, traced through the real code. (Diagram:
     a row to the per-run SHA-256 rolling block hash chain (live backend / `aegis simulate --db`).
 
 12. **Expose over REST.**
-    `backend/app.py` → `/api/status`, `/api/events`, `/api/metrics`, `/api/topology`, `/api/defense-mode` read and control the engine + store.
+    `backend/app.py` → `/api/status`, `/api/events`, `/api/metrics`, `/api/topology` (read-only, detected), `/api/defense-mode` read and control the engine + store.
 
 13. **Publish live.**
     `backend/engine.py` → `LiveEngine._loop` broadcasts an update

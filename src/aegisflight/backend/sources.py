@@ -10,7 +10,7 @@ existing ingestion stack unchanged -- the same components ``scripts/hardware/run
 
 The environment label is DERIVED, never user-settable, so replayed or loopback data cannot be presented
 as physical telemetry: a ``socket://`` virtual serial port is ``REPLAY``, only a real serial port is
-``BENCH``. Nothing here transmits: ``transport.send`` is never called (the transports count bytes_sent).
+``BENCH``. The feed itself only receives; counter-frames are sent by ``LiveEngine`` only in ACTIVE_IPS.
 """
 
 from __future__ import annotations
@@ -25,7 +25,6 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from ..mavlink.gcs_notifier import is_loopback_host
 from ..sources.stream import TelemetryTick
 
 KINDS = ("sim", "replay", "serial", "udp")
@@ -53,17 +52,14 @@ class SourceSpec:
     gcs_notify_host: str = "127.0.0.1"
     gcs_notify_port: int = 14550
     defense_mode: str = "passive"
+    # optional 32-byte MAVLink signing key file: authenticates the bridge cross-end summary (detectors/crossend.py)
+    signing_key_file: str | None = None
 
     def __post_init__(self) -> None:
         if self.kind not in KINDS:
             raise ValueError(f"unknown source kind {self.kind!r}; choose one of {KINDS}")
         if self.defense_mode not in ("passive", "advisory", "active-ips"):
             raise ValueError(f"unknown defense_mode {self.defense_mode!r}; choose one of 'passive', 'advisory', 'active-ips'")
-        if self.kind != "sim" and self.defense_mode == "active-ips":
-            # live sources are receive-only: counter-commands are never transmitted to a real or SITL autopilot
-            raise ValueError("defense_mode 'active-ips' is simulation-only; live sources are receive-only")
-        if self.gcs_notify and not is_loopback_host(self.gcs_notify_host):
-            raise ValueError(f"gcs_notify_host must be a loopback address (got {self.gcs_notify_host!r})")
         if self.kind == "serial":
             if not self.port:
                 raise ValueError("serial source needs a port (e.g. COM7)")
@@ -132,6 +128,7 @@ class SourceSpec:
             d["tlog"] = Path(d["tlog"]).name
         if d.get("config_dir") and Path(d["config_dir"]).is_absolute():
             d["config_dir"] = Path(d["config_dir"]).name
+        d["signing_key_file"] = bool(self.signing_key_file)  # never record a local path
         d.update(environment=self.environment, physical=self.physical, ml=self.ml_enabled)
         if self.kind == "serial" and self.physical:
             d["usb"] = serial_port_identity(self.port)
@@ -183,6 +180,7 @@ def spec_from_env(env: dict[str, str] | None = None) -> SourceSpec:
         gcs_notify_host=e.get("AEGIS_GCS_NOTIFY_HOST") or "127.0.0.1",
         gcs_notify_port=int(e.get("AEGIS_GCS_NOTIFY_PORT") or "14550"),
         defense_mode=e.get("AEGIS_DEFENSE_MODE", "passive") or "passive",
+        signing_key_file=e.get("AEGIS_SIGNING_KEY_FILE") or None,
     )
 
 

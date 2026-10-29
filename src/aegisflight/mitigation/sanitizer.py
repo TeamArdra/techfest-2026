@@ -93,11 +93,17 @@ class FrameSanitizer:
             if not (self.sanitize_gps or self.sanitize_alt):
                 return [ctx.raw]
 
-            if ctx.signed or not ctx.raw or ctx.raw[0] != _V2_MAGIC or len(ctx.raw) < 40:
+            if ctx.signed or not ctx.raw or ctx.raw[0] != _V2_MAGIC or len(ctx.raw) < 12:
                 return [ctx.raw]
 
             try:
-                buf = bytearray(ctx.raw)
+                # MAVLink 2 trims trailing zero bytes of the payload (vz / hdg are often 0), so a short frame is
+                # re-emitted at the full 28-byte length before the fields are patched.
+                payload_len = ctx.raw[1]
+                if payload_len > 28 or len(ctx.raw) != 12 + payload_len:
+                    return [ctx.raw]
+                buf = bytearray(ctx.raw[:10]) + bytearray(ctx.raw[10:10 + payload_len]) + bytearray(28 - payload_len)
+                buf[1] = 28
                 # lat @ 14..18, lon @ 18..22, alt @ 22..26, relative_alt @ 26..30
                 if self.sanitize_gps and (self.lat_offset_deg != 0.0 or self.lon_offset_deg != 0.0):
                     lat_val = struct.unpack_from("<i", buf, 14)[0]
@@ -114,10 +120,11 @@ class FrameSanitizer:
                     struct.pack_into("<i", buf, 22, alt_val - bias_mm)
                     struct.pack_into("<i", buf, 26, rel_alt_val - bias_mm)
 
-                payload_len = buf[1]
+                if bytes(buf[10:38]) == bytes(ctx.raw[10:10 + payload_len]) + bytes(28 - payload_len):
+                    return [ctx.raw]  # nothing to correct: forward the original bytes untouched
                 header_len = 10
-                crc = x25_crc(buf[1:header_len + payload_len] + bytes([104]))
-                struct.pack_into("<H", buf, header_len + payload_len, crc)
+                crc = x25_crc(bytes(buf[1:header_len + 28]) + bytes([104]))
+                buf += struct.pack("<H", crc)
                 self.frames_sanitized += 1
                 return [bytes(buf)]
             except Exception:

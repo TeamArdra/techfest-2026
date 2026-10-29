@@ -20,6 +20,8 @@ protocol:
   heartbeat_timeout_s: 3.0          # missing heartbeat => link fault
   max_msg_rate_hz: 400.0            # aggregate rate above this => flood (DoS)
   nominal_msg_rate_hz: 28.0         # expected steady-state aggregate rate
+  # auto_rate_baseline: (unset = on for non-SIM sources, off for SIM; true/false force it) true: learn the link's normal msg rate for rate_learn_s after the first heartbeat (non-SIM sources enable it)
+  rate_learn_s: 20.0
   msg_rate_spike_factor: 3.0        # rate > factor*nominal => suspicious
   max_seq_gap: 30                   # per-source sequence jump => loss/DoS
   min_interarrival_ms: 0.4          # bursts faster than this are abnormal
@@ -62,6 +64,7 @@ physics:
   battery_rise_v: 0.4               # voltage should not spontaneously rise
   battery_drop_rate_v_s: 2.0        # nor collapse impossibly fast
   attitude_rate_consistency: 1.2    # attitude-vs-rate mismatch tolerance
+  yaw_course_enabled: true          # false for multirotors: disables heading-vs-course (frozen-attitude) rule
   hysteresis_ticks: 2               # consecutive ticks before firing (soft)
   # Estimator-aware GPS residual (2026-10-25; v2 2026-10-26). A position fix is "gated" when a fresh
   # EKF_STATUS_REPORT says no horizontal solution (CONST_POS_MODE, or no POS_HORIZ_ABS/REL bit) and
@@ -73,6 +76,16 @@ physics:
   # one can activate it (>= 2 s of no-solution reports). Needs reports at least every 2 s.
   # false = Stage-1 rule. Details: docs/DETECTION.md "Estimator-aware position residual".
   estimator_gate: true
+  # EKF-health / GPS receiver-signature rules (2026-10-28). UNCALIBRATED engineering defaults, not
+  # measured evidence; inert unless EKF_STATUS_REPORT / GPS_STATUS are received. docs/DETECTION.md.
+  ekf_var_warn: 0.5                 # EKF velocity/position innovation ratio: evidence only
+  ekf_var_reject: 1.0               # >= this: EKF rejecting its inputs (soft vote, hysteresis)
+  sat_jump_min: 6                   # |change| of satellites_visible between GPS_RAW_INT reports
+  snr_spread_min_db: 1.5            # std of GPS_STATUS SNRs below this = uniform-power signals
+  snr_min_sats: 8                   # ... with at least this many satellites
+  gps_ekf_vel_disagree_ms: 3.0      # |GPS_RAW_INT.vel - GLOBAL_POSITION_INT speed|
+  mission_xtrack_alert_m: 60.0      # mission-path check (2026-10-28), uncalibrated; inert without an observed mission
+  mission_hysteresis_ticks: 5       # consecutive decisions beyond the threshold
 
 # ------------------------------------------------------------------ #
 # Detector C: ML anomaly detector (Isolation Forest, trained benign-only)

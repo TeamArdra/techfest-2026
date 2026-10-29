@@ -61,3 +61,19 @@ No mock/demo data — every number comes from the backend.
 The header shows a persistent **● Simulation** badge and the footer states all
 data/attacks are local simulations — simulated attacks must never look like a
 real UAV under attack.
+
+## Running against a live link / the desktop app
+
+Start the backend on the CLI default port with the source you want (see `aegis serve --help`), e.g. `aegis serve --port 8000 ...`, then:
+
+- **Browser dev server** (`npm run dev`, :5173) proxies `/api`, `/health`, `/ws` to `VITE_BACKEND_PORT` (default 8000).
+- **Backend URL** resolution, first match wins: `window.__AEGIS_BACKEND__`, localStorage `aegis_backend_url`, build-time `VITE_BACKEND_URL`, inside the Tauri desktop app `http://127.0.0.1:8000`, otherwise same-origin. Set or clear it from the header **Settings** button (http/https URLs only; the page reloads to reconnect). The WebSocket scheme follows the URL scheme.
+- **Inline IPS bridge**: enter the bridge status URL (e.g. `http://127.0.0.1:<port>`; localStorage `aegis_bridge_url`) in Settings. The dashboard polls `<url>/status` every 2 s and shows an "Inline IPS bridge" panel (hidden when unset, "unreachable" on error).
+- For REPLAY/SITL/BENCH sources the flight track shows only the as-received positions (no protected/ghost overlay), ignores invalid fixes (null, NaN, out of range, 0/0, receiver reports no fix) and shows "NO POSITION FIX" until a valid one arrives. The origin is the first valid fix of the run. A "Checks" panel shows mission cross-track, cross-end matches/mismatches and receiver EKF/satellite health.
+
+## Active IPS confirmation and bridge posture control
+- Switching to ACTIVE IPS on a non-SIM source (Defense panel or Inline IPS bridge panel) opens `ActiveIpsDialog`. It explains that the monitor sends counter-commands (the bridge also drops hostile frames) and shows `Signing: configured` or `Signing: NOT configured`. Unsigned links also show the risk text and require "I understand — proceed unsigned", which sends `allow_unsigned: true`. A 409 `signing_required` answer is shown in the dialog. SIM and switches back to passive/advisory never show it.
+- The Defense area shows a Signing indicator for non-SIM sources (from `signing` in `/api/status` and WS updates).
+- The bridge panel shows posture and remote-control state. With control enabled and a token set it offers the three posture buttons (`POST <bridge>/posture`, `Authorization: Bearer`). Otherwise it explains: start the bridge with `--control-token-file`, then enter the token in Settings. 401/403/network errors are displayed.
+- Settings has an optional "Bridge control token" (localStorage `aegis_bridge_token`, masked). It is only ever sent in the Authorization header, never in a URL or log.
+- Pure logic lives in `src/lib/posture.ts` (tests: `tests/posture.test.ts`).

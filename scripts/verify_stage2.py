@@ -136,6 +136,7 @@ def audit_ips_trajectory_recovery() -> None:
 
     # B. ACTIVE IPS mode verification (EKF switch + Dead-Reckoning Recovery)
     ctrl_ips = MitigationController(mode=DefenseMode.ACTIVE_IPS)
+    ctrl_ips.set_capabilities(ekf_secondary=True)
     ctrl_ips.step(FeatureFrame(t=0.0, snapshot=snap0), _make_asmt(t=0.0, threat=False))
 
     # Multiple ticks of spoofing
@@ -296,8 +297,10 @@ def audit_cusum_micro_drift() -> None:
     act_ids = ctrl_ids.step(frame_m, asmt_m)
 
     ctrl_ips = MitigationController(mode=DefenseMode.ACTIVE_IPS)
+    ctrl_ips.set_capabilities(ekf_secondary=True)
     ctrl_ips.step(FeatureFrame(t=0.0, snapshot=snap_m), _make_asmt(t=0.0, threat=False))
-    act_ips = ctrl_ips.step(frame_m, asmt_m)
+    ctrl_ips.step(frame_m, asmt_m)
+    act_ips = ctrl_ips.step(frame_m, asmt_m)  # GPS fault is confirmed on the 2nd consecutive tick
 
     if (
         res_p.triggered
@@ -352,11 +355,9 @@ def audit_closed_loop_topology_a_and_b() -> None:
     client = TestClient(app)
     r_top_get = client.get("/api/topology")
     assert r_top_get.status_code == 200 and r_top_get.json()["ok"] is True
-    r_top_b = client.post("/api/topology", json={"topology": "b"})
-    assert r_top_b.status_code == 200 and r_top_b.json()["topology"] == "b"
-    r_top_a = client.post("/api/topology", json={"topology": "a"})
-    assert r_top_a.status_code == 200 and r_top_a.json()["topology"] == "a"
-    _pass("REST API /api/topology GET and POST operational across all supported topologies")
+    assert client.post("/api/topology", json={"topology": "b"}).status_code in (404, 405)
+    assert client.get("/api/status").json()["topology_info"]["kind"] == "SIM"
+    _pass("REST API /api/topology is read-only and reports the detected topology (POST refused)")
 
     # 2. Verify Closed-Loop Vehicle Dynamics across all 20 submodes
     spec = SourceSpec(kind="sim", defense_mode="passive")
@@ -400,26 +401,14 @@ def audit_closed_loop_topology_a_and_b() -> None:
                 assert up_pass["telemetry"]["armed"] is False
 
             # Check Topology B (Inline filtering) in ACTIVE_IPS
-            engine.set_topology("b")
             engine.set_defense_mode("active-ips")
             engine._step_cyber_physical_twin(11.0, base_tele, asmt)
             up_b = engine._make_update(11.0, asmt)
             assert up_b["sanitized_telemetry"]["flight_mode"] == "AUTO"
-            assert up_b["topology"] == "b"
-
-            # Check Topology A (Sidecar counter-actuation) in ACTIVE_IPS
-            engine.set_topology("a")
-            engine.set_defense_mode("active-ips")
-            # Step reaction detour and then counter-actuation recovery
-            engine._step_cyber_physical_twin(11.2, base_tele, asmt)
-            for s in range(4):
-                engine._step_cyber_physical_twin(11.4 + s * 0.2, base_tele, asmt)
-            up_a = engine._make_update(12.2, asmt)
-            assert up_a["sanitized_telemetry"]["flight_mode"] == "AUTO"
-            assert up_a["topology"] == "a"
+            assert up_b["topology"] == "a+b" and up_b["topology_info"]["kind"] == "SIM"
 
     assert submode_count == 20
-    _pass("All 20/20 attack sub-modes verified in closed-loop: PASSIVE (unmitigated impact) vs Top-A (sidecar detour/recovery) vs Top-B (inline filtering)")
+    _pass("All 20/20 attack sub-modes verified in closed-loop: PASSIVE (unmitigated impact) vs ACTIVE_IPS (modelled inline filtering)")
 
 
 def main() -> None:

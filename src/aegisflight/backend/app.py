@@ -272,10 +272,13 @@ def set_defense_mode(payload: dict, request: Request) -> JSONResponse:
             content={"ok": False, "error": f"unknown defense mode '{mode}'",
                      "choices": ["passive", "advisory", "active-ips"]},
         )
-    try:
-        res = get_engine().set_defense_mode(mode)
-    except ValueError as exc:  # active-ips on a live source: receive-only
-        return JSONResponse(status_code=409, content={"ok": False, "error": str(exc)})
+    allow_unsigned = (payload or {}).get("allow_unsigned")
+    if allow_unsigned is not None and not isinstance(allow_unsigned, bool):
+        return JSONResponse(status_code=400, content={"ok": False, "error": "allow_unsigned must be a boolean"})
+    eng = get_engine()
+    if (gated := eng.signing_gate(mode, allow_unsigned is True)) is not None:
+        return JSONResponse(status_code=409, content=gated)
+    res = eng.set_defense_mode(mode, allow_unsigned=allow_unsigned is True)
     return JSONResponse(content={"ok": True, **res})
 
 
@@ -296,34 +299,10 @@ def defense_override(payload: dict, request: Request) -> JSONResponse:
 
 @app.get("/api/topology")
 def get_topology() -> dict:
-    eng = get_engine()
-    return {
-        "ok": True,
-        "topology": getattr(eng, "topology", "b"),
-        "reasons": getattr(eng, "topology_reasons", []),
-        "available": ["auto", "a", "b", "a+b", "ids"],
-    }
-
-
-@app.post("/api/topology")
-def set_topology(payload: dict, request: Request) -> JSONResponse:
-    if (auth_err := _require_control_auth(request)) is not None:
-        return auth_err
-    top = (payload or {}).get("topology")
-    if not top or str(top).lower() not in ("auto", "a", "b", "a+b", "ids"):
-        return JSONResponse(
-            status_code=400,
-            content={
-                "ok": False,
-                "error": f"unknown topology '{top}'",
-                "choices": ["auto", "a", "b", "a+b", "ids"],
-            },
-        )
-    try:
-        res = get_engine().set_topology(str(top).lower())
-        return JSONResponse(content={"ok": True, **res})
-    except Exception as exc:
-        return JSONResponse(status_code=400, content={"ok": False, "error": str(exc)})
+    """Read-only detected topology; legacy ``topology`` / ``reasons`` keys kept for compatibility."""
+    from ..hal.topology_status import legacy_name
+    info = get_engine().topology_info()
+    return {"ok": True, **info, "topology": legacy_name(info), "reasons": info["reasons"], "topology_info": info}
 
 
 # --------------------------------------------------------------------------- #

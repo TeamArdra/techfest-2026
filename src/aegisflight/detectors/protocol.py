@@ -71,6 +71,75 @@ class ProtocolDetector(Detector):
         self.never_seen_gps_vote = AttackType[str(p.get("never_seen_gps_vote", "DOS"))]
         self.never_seen_gps_max = max(0.5, min(1.0, float(p.get("never_seen_gps_max_score", 1.0))))
         self._t0: float | None = None
+        # Link-rate baseline (default OFF, so Stage-1 / SIM / replay behave exactly as before). When
+        # on, the link's own normal message rate is learned over ``rate_learn_s`` after the first
+        # heartbeat and the rate thresholds are raised (never lowered) from it, then frozen.
+        self.auto_rate_baseline = bool(p.get("auto_rate_baseline", False))
+        self.rate_learn_s = float(p.get("rate_learn_s", 20.0))
+        self._cfg_nominal = self.nominal_rate
+        self._cfg_max = self.max_rate
+        self._learn_t0: float | None = None
+        self._learn_samples: list[float] = []
+        self._learn_done = not self.auto_rate_baseline
+        self._learn_note: str | None = None
+        # A GCS that connects (and asks for its telemetry streams) AFTER the first heartbeat raises the link's
+        # normal rate by an order of magnitude, so a one-shot baseline learned before that is too low. A stable
+        # plateau above the spike threshold that lasts ``rate_relearn_s`` (and stays below the configured hard
+        # flood limit, which is never relaxed) is adopted as the new baseline, at most twice per session.
+        self.rate_relearn_s = float(p.get("rate_relearn_s", 30.0))
+        self._plateau: list[tuple[float, float]] = []
+        self._relearns = 0
+
+    def _relearn_plateau(self, t: float, rate: float, spike: float) -> None:
+        if self._relearns >= 2 or not (spike < rate < self._cfg_max):
+            self._plateau.clear()
+            return
+        self._plateau.append((t, rate))
+        if t - self._plateau[0][0] < self.rate_relearn_s:
+            return
+        rates = sorted(r for _, r in self._plateau)
+        if rates[-1] > 2.0 * rates[0]:  # not stable: a burst, not a new normal
+            self._plateau = [(t, rate)]
+            return
+        med = rates[len(rates) // 2]
+        self.nominal_rate = max(self.nominal_rate, med)
+        self._relearns += 1
+        self._plateau.clear()
+        self._learn_note = (f"link message-rate baseline re-learned after a stable plateau: nominal {self.nominal_rate:.0f} msg/s "
+                            f"(hard flood limit {self.max_rate:.0f} unchanged)")
+
+    def _learn_rate(self, frame: FeatureFrame) -> bool:
+        """Advance baseline learning; True while learning (rate alarms suppressed)."""
+        if self._learn_done:
+            return False
+        if not (frame.heartbeat_seen if frame.heartbeat_seen is not None else frame.heartbeat_age_s < _NEVER_SEEN_S):
+            return True  # learning starts at the first heartbeat
+        if self._learn_t0 is None:
+            self._learn_t0 = frame.t
+        if frame.t - self._learn_t0 < self.rate_learn_s:
+            if frame.msg_rate_hz > 0.0:
+                self._learn_samples.append(float(frame.msg_rate_hz))
+            return True
+        self._learn_done = True
+        xs = sorted(self._learn_samples)
+        if not xs:
+            self._learn_note = "link message-rate baseline learning rejected (no rate samples); configured thresholds kept"
+            return False
+        med = xs[len(xs) // 2] if len(xs) % 2 else 0.5 * (xs[len(xs) // 2 - 1] + xs[len(xs) // 2])
+        p95 = xs[min(len(xs) - 1, int(0.95 * len(xs)))]
+        if xs[-1] > self._cfg_max or p95 > 5.0 * med:
+            self._learn_note = (
+                f"link message-rate baseline learning rejected (peak {xs[-1]:.0f} msg/s, p95 {p95:.0f}, "
+                f"median {med:.0f}: looks like a flood); configured thresholds kept"
+            )
+            return False
+        self.nominal_rate = max(self._cfg_nominal, med)
+        self.max_rate = max(self._cfg_max, 4.0 * med)
+        self._learn_note = (
+            f"link message-rate baseline learned: median {med:.0f} msg/s -> nominal {self.nominal_rate:.0f}, "
+            f"flood limit {self.max_rate:.0f} (frozen)"
+        )
+        return False
 
     def process(self, frame: FeatureFrame) -> DetectorResult:
         evidence: list[str] = []
@@ -85,8 +154,15 @@ class ProtocolDetector(Detector):
 
         # ---- message-rate flood (DoS) ----
         rate = frame.msg_rate_hz
+        learning = self._learn_rate(frame)
         spike = self.nominal_rate * self.spike_factor
-        if rate >= self.max_rate:
+        if learning:
+            if frame.heartbeat_seen is not False and self._learn_t0 is not None:
+                evidence.append("coverage: learning link message-rate baseline (rate alarms suppressed)")
+            spike = float("inf")
+        if learning and rate < self.max_rate:
+            pass  # a rate above the configured hard limit is still a flood while the baseline is being learned
+        elif rate >= self.max_rate:
             bump(AttackType.DOS, 1.0)
             evidence.append(f"message flood: {rate:.0f} msg/s ≥ hard limit {self.max_rate:.0f}")
         elif rate > spike:
@@ -96,13 +172,15 @@ class ProtocolDetector(Detector):
                 f"message-rate spike: {rate:.0f} msg/s > {self.spike_factor:.0f}×nominal "
                 f"({spike:.0f})"
             )
+        if self.auto_rate_baseline and self._learn_done and not learning:
+            self._relearn_plateau(frame.t, rate, spike)
         signals["msg_rate_hz"] = rate
 
         # ---- sequence gaps (loss / scramble / flood) ----
         if frame.max_seq_gap > self.max_seq_gap:
             s = ramp(frame.max_seq_gap, self.max_seq_gap, self.max_seq_gap * 4)
             # attribute to DoS if the rate is also elevated, else a MAVLink anomaly
-            attack = AttackType.DOS if rate > spike else AttackType.MAVLINK_ANOMALY
+            attack = AttackType.DOS if (rate > spike and not learning) else AttackType.MAVLINK_ANOMALY
             bump(attack, max(0.55, s))
             evidence.append(f"sequence gap {frame.max_seq_gap} > {self.max_seq_gap:.0f}")
         signals["max_seq_gap"] = float(frame.max_seq_gap)
@@ -271,6 +349,8 @@ class ProtocolDetector(Detector):
             bump(AttackType.COMMAND_INJECTION, 0.95)
             evidence.append(f"{frame.sig_invalid_count} frame(s) failed MAVLink-2 signature verification")
 
+        if self._learn_note is not None and "rejected" in self._learn_note:
+            evidence.append(f"coverage: {self._learn_note}")
         if coverage is not None:  # score-0 coverage note: always the last protocol evidence item
             evidence.append(coverage)
 
@@ -288,3 +368,10 @@ class ProtocolDetector(Detector):
         self._gnss_ever_valid = False
         self._t0 = None
         self._last_cmd_seen.clear()
+        self.nominal_rate, self.max_rate = self._cfg_nominal, self._cfg_max
+        self._learn_t0 = None
+        self._learn_samples.clear()
+        self._learn_done = not self.auto_rate_baseline
+        self._learn_note = None
+        self._plateau.clear()
+        self._relearns = 0

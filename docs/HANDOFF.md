@@ -41,7 +41,7 @@ simulation — no real drone or network is involved.**
 | ArduPilot & PX4 SITL Integration | ✅ COMPLETE (`docs/ARDUPILOT_SITL.md`, `docs/STAGE2_RUNBOOK.md`) |
 
 ## What you can demonstrate today
-`aegis serve --defense-mode active-ips` (SIM only; live sources refuse it and are receive-only) → dashboard → click an attack → live detection + the SIM-only mitigation model (counter-actions are shown, never transmitted; Topology B sanitisation is not wired); firmware tamper → SHA-256 INVALID alert; event log verifiable via `aegis verify-log`. Demo of the defense code paths on hand-built inputs: `python scripts/verify_stage2.py` (not validation evidence). Full test suite: `pytest`.
+`aegis serve --defense-mode active-ips` (on a live source this transmits counter-commands; the default `passive` does not) → dashboard → click an attack → live detection + the SIM-only mitigation model (counter-actions are shown, never transmitted; Topology B sanitisation is not wired); firmware tamper → SHA-256 INVALID alert; event log verifiable via `aegis verify-log`. Demo of the defense code paths on hand-built inputs: `python scripts/verify_stage2.py` (not validation evidence). Full test suite: `pytest`.
 
 ## Current limitations (be honest)
 - A *constant, fully-consistent* GPS offset is only detected at the transition
@@ -93,6 +93,7 @@ Demo script: `docs/DEMO_RUNBOOK.md`.
   - Confirmed explicitly by the user on 2026-10-26, after the v2 rework: "Yes, confirm the extension".
   - The extractor also reads `EKF_STATUS_REPORT.flags` (ardupilotmega id 193). The codec does not
     encode it, so SIM is unaffected.
+  - Extended 2026-10-28, additive: MISSION_COUNT/ITEM/ITEM_INT/CURRENT/ITEM_REACHED read by the extractor for the mission-path check; user requested it in chat on 2026-10-28; ML_FEATURES unchanged.
   - Callers: `PhysicsDetector` only, via the new optional `FeatureFrame` fields `ekf_flags`,
     `ekf_age_s`, `nav_solution`, `nav_gated`, `pos_residual_nav_m`, `pos_step_max_m` and
     `pos_vel_shortfall_gated_m` (v2, 2026-10-26).
@@ -102,6 +103,7 @@ Demo script: `docs/DEMO_RUNBOOK.md`.
     - 44 of 44 links without `EKF_STATUS_REPORT` replay byte-identically.
     - ALFA before/after differs only in the `unlabelled` category.
     - Evidence: `artifacts/validation/estimator_gate_v2/` (README, manifest).
+  - Extended 2026-10-28, additive: EKF_STATUS_REPORT variances, GPS_RAW_INT eph/vel, GPS_STATUS read by the extractor; user requested the EKF-health and receiver-signature rules in chat on 2026-10-28; ML_FEATURES unchanged.
   - See `docs/DETECTION.md` "Estimator-aware position residual".
 - **The event schema / hash-chain canonicalisation** — breaks existing logs.
 - **The benchmark scoring policy** (warmup/grace) — changing it changes reported
@@ -118,7 +120,7 @@ Demo script: `docs/DEMO_RUNBOOK.md`.
 2. **Serial & UDP transports & SITL integration**: Fully verified with ArduPilot 4.7.1 and PX4 1.14 (`docs/ARDUPILOT_SITL.md`, `docs/STAGE2_RUNBOOK.md`).
 3. **Hardware Abstraction Layer (HAL)**: Auto-discovery across flight controllers, companion computers, and dynamic latency budgets (`src/aegisflight/hal/`).
 4. **Dual-Topology Autonomous Prevention**: Topology A (Sidecar Actuator) and Topology B (Inline Transparent Bridge with 150 ms fail-open watchdog).
-5. **Cross-Platform Native Desktop GCS**: Tauri 2.0 (Rust) + React 19 + TypeScript (`frontend/src-tauri/`).
+5. **Cross-Platform Native Desktop GCS**: Tauri 2.0 (Rust) + React 18 + TypeScript (`frontend/src-tauri/`).
 6. **Immutable Forensic Hash Chain**: SQLite rolling block hash chain for tamper-evident audit logs.
 
 ## Recommended Next Steps (Future Roadmap)

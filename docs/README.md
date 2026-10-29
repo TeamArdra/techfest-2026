@@ -1,6 +1,6 @@
 # AegisFlight — Documentation Index
 
-Start here. AegisFlight is a production-grade, hybrid UAV Intrusion Detection and
+Start here. AegisFlight is a hybrid UAV Intrusion Detection and
 Autonomous Prevention System (IDS/IPS) for the **PUSHPAK Grand Challenge 2026-27
 (IIT Bombay Techfest) — Security of Drones, Objective 2**.
 

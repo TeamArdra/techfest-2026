@@ -124,6 +124,14 @@ export interface GpsLink {
   gps_raw_age_s: number | null;
   position_age_s: number | null;
   position_zero: boolean | null;
+  // vehicle-stated estimator / GPS health (core/gps_health.py); optional: absent on older backends.
+  // null = unknown. Not an authenticity check.
+  hdop?: number | null;
+  ekf_flags?: number | null;
+  ekf_age_s?: number | null;
+  horizontal_solution?: boolean | null;
+  gps_healthy?: boolean | null;
+  quality_flags?: string[];
 }
 
 // Application-level link health (backend/engine.py link_status); ages are on the source's tick clock.
@@ -138,16 +146,58 @@ export interface LinkStatus {
   error: string | null;
 }
 
+export interface Checks {
+  mission: { known: boolean; xtrack_m: number | null; wp_seq: number | null };
+  crossend: { active: boolean; matched: number; mismatches: number; last_summary_age_s: number | null };
+  receiver: { ekf_vel_var: number | null; ekf_pos_var: number | null; sat_jump: number | null; snr_spread: number | null };
+}
+
+export type TopologyKind = "A" | "A+B" | "SIM" | "REPLAY" | "UNKNOWN";
+export type TopologySource = "detected" | "modelled" | "none";
+
+export interface TopologyLink {
+  connected: boolean | null;
+  name: string | null;
+}
+
+// Read-only wiring report produced by the backend (or the inline bridge). Never operator-selected.
+export interface TopologyInfo {
+  kind: TopologyKind;
+  label: string;
+  source: TopologySource;
+  posture: DefenseMode;
+  links: { fc?: TopologyLink; gcs?: TopologyLink };
+  uplink_visible: boolean | null;
+  can_block_frames: boolean;
+  can_send_counter_commands: boolean;
+  reasons: string[];
+}
+
+export interface BridgeStatus {
+  topology?: TopologyInfo | null;
+  mode?: string;
+  state?: string;
+  frames?: Record<string, number>;
+  latency_us?: { p50?: number; p95?: number; max?: number; samples?: number };
+  policy?: Record<string, number | boolean | string | null>;
+  signing?: { configured: boolean; unsigned_acknowledged?: boolean };
+  control?: { enabled: boolean };
+  analyser?: { decisions?: number; alerts?: number; errors?: number; counter_frames_sent?: number; summary?: unknown };
+  last_error?: string | null;
+  crossend?: { sent?: number };
+}
+
 export interface Update {
   type: "update";
   sim: boolean;
   environment: Environment;
   source: SourceInfo;
   defense_mode?: DefenseMode;
-  topology?: string;
-  topology_reasons?: string[];
+  signing?: { configured: boolean; unsigned_acknowledged?: boolean };
+  topology_info?: TopologyInfo | null;
   mitigation?: MitigationInfo;
   link: LinkStatus;
+  checks?: Checks | null;
   run_id: string;
   t: number;
   telemetry: Telemetry;
@@ -188,8 +238,8 @@ export interface Status {
   environment: Environment;
   source: SourceInfo;
   defense_mode?: DefenseMode;
-  topology?: string;
-  topology_reasons?: string[];
+  signing?: { configured: boolean; unsigned_acknowledged?: boolean };
+  topology_info?: TopologyInfo | null;
   mitigation?: MitigationInfo;
   link: LinkStatus;
   sim_time_s: number;

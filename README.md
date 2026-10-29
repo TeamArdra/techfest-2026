@@ -1,7 +1,7 @@
 # AegisFlight
 
 <p align="center">
-  <strong>Autonomous Cyber-Physical Intrusion Detection & Prevention System (IDS/IPS) for Unmanned Aerial Vehicles</strong>
+  <strong>Cyber-Physical Intrusion Detection System for Unmanned Aerial Vehicles</strong> (passive by default; an optional inline prevention bridge is verified on ArduCopter SITL only)
 </p>
 
 <p align="center">
@@ -19,11 +19,11 @@
 
 ## 1. Executive Overview
 
-**AegisFlight** is a cyber-physical intrusion detection system for UAVs running MAVLink v2 telemetry (ArduPilot and PX4 autopilots), with a simulation-only prevention (IPS) model in the dashboard.
+**AegisFlight** is a cyber-physical intrusion detection system for UAVs running MAVLink v2 telemetry (ArduPilot and PX4 autopilots), with a three-posture defense layer (PASSIVE / ADVISORY / ACTIVE IPS) and a cyber-physical twin in the dashboard.
 
 Modern UAVs operating in contested or civilian airspace are vulnerable to RF telemetry injection, GPS spoofing, Denial-of-Service (DoS) floods, and rogue command overrides (e.g. forced mid-air disarming or unauthorized waypoint redirects). Conventional IT security solutions treat telemetry packets as opaque network blobs and fail to account for aircraft aerodynamics or latency constraints.
 
-In the simulator, the dashboard runs a **cyber-physical flight twin** and shows what the defense layer's counter-actions would do. Decision compute is 17.7 ms mean / 23.6 ms p95 with ML on (`artifacts/benchmarks/summary.md`, SIM). Prevention is not measured, and nothing is transmitted on live sources.
+In the simulator, the dashboard runs a **cyber-physical flight twin** and shows what the defense layer's counter-actions would do. Decision compute is 17.7 ms mean / 23.6 ms p95 with ML on (`artifacts/benchmarks/summary.md`, SIM). Prevention is not measured on any vehicle. Nothing is transmitted in the default `passive` posture; `active-ips` sends counter-commands and the inline bridge (`docs/INLINE_IPS.md`) can drop hostile frames, both verified on ArduCopter SITL / loopback only.
 
 ```
                        ┌──────────────────────────────────────────────────┐
@@ -47,12 +47,12 @@ In the simulator, the dashboard runs a **cyber-physical flight twin** and shows 
 
 - **Dual-Topology Execution Model**:
   - **Topology A (Sidecar Companion Actuator)**: *design, modelled in SIM only.* A companion on a secondary UART would issue corrective counter-commands; nothing transmits on a live source.
-  - **Topology B (Inline Bridge)**: *design, not wired.* `hal/inline_bridge.py`, `mitigation/sanitizer.py` and the Rust crate `rust/aegis_fastpath` contain frame-sanitisation code, but no relay uses them and no latency, detour or watchdog figure has been measured.
+  - **Topology B (Inline Bridge)**: `aegis ips-bridge` (`hal/inline_ips.py`, `mitigation/inline_policy.py`) sits between the flight controller port and the GCS radio port and drops hostile frames before the autopilot sees them (`docs/INLINE_IPS.md`). Tested on synthetic frames and loopback serial only; no flight controller, radio or companion-computer measurement and no hardware bypass yet. The Rust crate `rust/aegis_fastpath` is still not on the path.
   - **Topology A+B (Hybrid)**: *design only.*
-  - **Topology selection**: the dashboard shows a chosen topology; no hardware or companion detection drives it.
+  - **Topology detection**: not selectable. The software reports `A` (single-port sidecar) or `A+B` (inline bridge) from how it is connected (`GET /api/topology`, `topology_info`); SIM and replay are labelled as such.
 - **Multi-Detector Evidence Fusion**:
-  - **Protocol / Rule Engine**: MAVLink v2 framing checks, sequence gaps, frequency bounding, rogue sysid quarantine, and command cadence guards (`AF-SEC-01`: $\le 50\text{ ms}$ inter-command limit).
-  - **Cyber-Physical Consistency**: Cross-checks GPS vs barometric altitude, integrated velocity vs reported coordinates, attitude vs ground track, and 2D CUSUM micro-drift tracking (`AF-SEC-02`).
+  - **Protocol / Rule Engine**: MAVLink v2 framing checks, sequence gaps, frequency bounding, rogue sysid quarantine, and command provenance / burst checks.
+  - **Cyber-Physical Consistency**: Cross-checks GPS vs barometric altitude, integrated velocity vs reported coordinates, attitude vs ground track, and 2D CUSUM micro-drift tracking.
   - **Machine Learning Anomaly Ensemble**: Unsupervised Isolation Forest + Mahalanobis distance ensemble trained exclusively on benign flight dynamics across an 11-feature sliding window.
   - **Firmware Integrity & Cryptographic Attestation**: Real SHA-256 manifest verification and MAVLink v2 packet signing (`signing.py`).
 - **Closed-Loop Cyber-Physical Flight Twin**:
@@ -81,8 +81,11 @@ Tested across 6 seeds $\times$ 7 baseline scenarios (23,430 decisions):
 The defense layer (`src/aegisflight/mitigation/`) is a **simulation-dashboard model**: on the SIM source it shows
 what a counter-action would do, using the dashboard's cyber-physical twin. **No prevention metric (detour, survival,
 mitigation rate, watchdog time) has been measured** in SIM, SITL or hardware, and none is claimed here.
-- On every live or recorded source (serial, UDP/SITL, replay) the defense layer is **report-only**: `active-ips` is
-  refused, counter-frames are never transmitted, and STATUSTEXT notifications go only to a loopback GCS over UDP.
+- Posture gates transmission on every source. `PASSIVE` (the default) and `ADVISORY` send nothing to the vehicle
+  (`bytes_sent = 0`); `ADVISORY` adds STATUSTEXT alerts to a GCS. `ACTIVE_IPS` encodes counter-commands (mode restore, EKF source
+  switch, optional signing) and, on a live serial or UDP link, transmits them. That transmit path is unit-tested with a recording
+  transport only; it has not been exercised against a real or SITL autopilot, and its effect is unmeasured. Replay has no
+  transport, so nothing is sent.
 
 ### Stage 2 defense demo (`scripts/verify_stage2.py`)
 A demo of the defense code paths on **hand-built inputs** (SIM). It is not validation evidence and measures no
@@ -327,11 +330,11 @@ For deployment directly on a physical drone companion computer connected to a Pi
    pip install -e ".[dev]"
    ```
 
-3. **Run in Autonomous Defense Daemon Mode**:
+3. **Run the receive-only monitor on the telemetry link** (no companion deployment has been measured; `active-ips` would transmit counter-commands on this link; leave the default `--defense-mode passive` unless that is intended; `active-ips` on a real link is refused without a signing key unless you pass `--allow-unsigned` or acknowledge the risk in the dashboard):
    ```bash
-   # Automatically discovers telemetry ports, locks onto flight controller, and enables IPS:
-   aegis serve --defense-mode active-ips --topology auto --port 8000
+   aegis serve --source serial --serial-port /dev/serial0 --baud 115200 --port 8000
    ```
+   Ports are not auto-discovered by the CLI (`hal/discovery.py` is not wired in); name the port explicitly.
 
 #### 2. NVIDIA Jetson (Orin / Nano / Xavier — JetPack 5.x / 6.x)
 - Hardware UART `/dev/ttyTHS1` (J41 40-pin header pins 8 & 10) or USB `/dev/ttyUSB0`.
@@ -361,9 +364,9 @@ ruff check src tests scripts
 ## 7. Interactive Demonstration Runbook
 
 1. **Nominal Flight**: Start `aegis serve --defense-mode active-ips`. The live altitude profile holds steady at $60\text{ m}$; speed is $12\text{ m/s}$; threat score is $0.0$.
-2. **GPS Spoofing & Dead-Reckoning Recovery**: Inject GPS spoofing via the UI. Within $360\text{ ms}$, the threat state escalates to `HIGH / GPS_SPOOFING`. In Topology B, spoofed coordinates are clamped in-place ($0.0\text{ m}$ detour); in Topology A, synthetic dead-reckoning counter-commands seamlessly maintain route heading.
-3. **Command Injection & Failsafe Veto**: Trigger unauthorized land or mid-air disarm. The mitigation engine rejects the command under rule `AF-SEC-01`, and the GCS displays `[AEGIS-DEFENSE] Disarm vetoed: altitude > 2m in flight`.
-4. **Topology Switching**: Toggle between `Auto`, `Top-B`, `Top-A`, and `Top-A+B` in the Defense HUD; link routing and actuator status update dynamically.
+2. **GPS Spoofing & Dead-Reckoning Recovery**: Inject GPS spoofing via the UI. In the SIM benchmark the median detection latency is 0.36 s and the threat state escalates to `HIGH / GPS_SPOOFING`. The dashboard twin then models the counter-action (Topology B: inline clamp; Topology A: dead-reckoning plus counter-command). These are SIM models, not measured prevention.
+3. **Command Injection & Failsafe Veto**: Trigger unauthorized land or mid-air disarm. The mitigation controller flags it (`VETO_DISARM` / `REPLAY_GUARD` action in the Defense HUD). It is reported, not blocked: nothing is transmitted to the vehicle.
+4. **Detected topology**: the Defense HUD displays the detected topology (A, A+B, SIM or replay) and what it can do; there is no selector.
 5. **Audit Ledger Verification**: In a second terminal, verify the tamper-evident hash chain:
    ```bash
    aegis verify-log artifacts/aegisflight_live.sqlite
@@ -382,6 +385,7 @@ Detailed technical specifications and engineering logs:
 - [**Hardware Benchmarking (Pixhawk 6X)**](docs/HARDWARE_BENCH_PIXHAWK6X.md) — Physical flight controller bench performance.
 - [**Threat Model Specification**](docs/THREAT_MODEL.md): threat model and attack taxonomy.
 - [**Red-team audit**](docs/REDTEAM_AUDIT_STAGE2.md): withdrawn self-assessment (reasons inside).
+- [**Inline IPS bridge**](docs/INLINE_IPS.md) — Topology B: filtering hostile frames before the autopilot.
 - [**Testing & Quality Assurance**](docs/TESTING.md) — Test taxonomy and verification methodology.
 - [**API & WebSocket Specification**](docs/API.md) — REST endpoints and telemetry schemas.
 
@@ -391,13 +395,17 @@ Detailed technical specifications and engineering logs:
 
 No airworthiness-standard compliance (e.g. RTCA DO-326A / EUROCAE ED-202A) is claimed. Enforced in code and tests
 (`tests/unit/test_defense_safety.py`):
-- live / recorded sources are receive-only: `active-ips` is refused and counter-frames are never transmitted;
-- `scripts/hardware/run_serial_ids.py` fails (exit 3) if any byte is written to the port;
-- STATUSTEXT notifications use a loopback UDP target only, never the vehicle link.
+- `PASSIVE` is the default everywhere and writes nothing to a live link; `ADVISORY` sends no control frames;
+- only `ACTIVE_IPS` transmits counter-commands, and only through the live source's transport (never on replay);
+- `scripts/hardware/run_serial_ids.py` fails (exit 3) if any byte is written to the port in `passive` mode;
+- countermeasures never guess: no force-disarm by default, no unknown or default mode, no override of the pilot's own mode change.
 
 ---
 
 ## 10. License
 
-No licence file is included yet (`LICENSE` is missing); add one before claiming a licence.
+AegisFlight's code is MIT-licensed: see [`LICENSE`](LICENSE) (the copyright-holder line "Team Ardra" is taken from `pyproject.toml`; the
+team should confirm it). Dependencies, datasets and models are listed, with how each licence was determined, in
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md); what a submission archive must contain is in
+[`docs/SUBMISSION_ARCHIVE_MANIFEST.md`](docs/SUBMISSION_ARCHIVE_MANIFEST.md).
 Benchmark numbers in this README come from `artifacts/benchmarks/` (SIM) and are regenerated with `aegis benchmark`.

@@ -1,0 +1,13 @@
+flowchart TB
+  FC["Autopilot (ArduPilot / PX4)"] -- "telemetry radio / UART, MAVLink 1 or 2" --> RX["Laptop serial port (RX only)"]
+  RX --> TR["SerialMavlinkTransport: frame, CRC, resync"]
+  TR --> TAP["TapTransport: optional raw tlog copy"]
+  TAP --> SRC["LiveMavlinkSource: 200 ms ticks"]
+  SRC --> OBS["GpsHealthObserver (status only)"]
+  SRC --> FE["FeatureExtractor -> FeatureFrame"]
+  FE --> D["Protocol | Physics | ML (off live) | Integrity"]
+  D --> FU["FusionEngine: noisy-OR"]
+  FU --> ST["EventStore: SQLite SHA-256 hash chain"]
+  FU --> OUT["alerts.jsonl / health.jsonl / summary.json"]
+  OBS --> OUT
+  ST --> API["FastAPI /api/status, /ws"] --> UI["React dashboard"]

@@ -17,6 +17,7 @@ import argparse
 import contextlib
 import os
 import sys
+from pathlib import Path
 
 from .. import __version__
 
@@ -154,7 +155,15 @@ def _cmd_serve(args: argparse.Namespace) -> int:
                           config_dir=args.config_dir, reconnect=not args.no_reconnect,
                           defense_mode=args.defense_mode,
                           gcs_notify=args.gcs_notify, gcs_notify_host=args.gcs_notify_host,
-                          gcs_notify_port=args.gcs_notify_port)
+                          gcs_notify_port=args.gcs_notify_port,
+                          signing_key_file=getattr(args, "signing_key_file", None))
+        if spec.signing_key_file:
+            from ..detectors.crossend import load_signing_key
+
+            try:
+                load_signing_key(spec.signing_key_file)
+            except (OSError, ValueError, UnicodeDecodeError) as exc:
+                raise ValueError(f"bad --signing-key-file: {exc}") from exc
     except ValueError as exc:
         print(f"aegis serve: {exc}", file=sys.stderr)
         return 2
@@ -172,8 +181,120 @@ def _cmd_serve(args: argparse.Namespace) -> int:
         print("uvicorn not installed", file=sys.stderr)
         return 1
     os.environ.update(_serve_env(spec, args))
+    # kept out of _serve_env (its key set is fixed); a stale shell value is cleared when no key is given
+    if spec.signing_key_file:
+        os.environ["AEGIS_SIGNING_KEY_FILE"] = spec.signing_key_file
+    else:
+        os.environ.pop("AEGIS_SIGNING_KEY_FILE", None)
     print(f"aegis serve: source {spec.environment} ({spec.describe()['label']}) on http://{args.host}:{args.port}")
     uvicorn.run("aegisflight.backend.app:app", host=args.host, port=args.port, reload=args.reload)
+    return 0
+
+
+def _cmd_ips_bridge(args: argparse.Namespace) -> int:
+    """Run the inline IPS bridge between a flight controller port and a GCS/radio port."""
+    import json
+    import time
+
+    from ..hal.inline_ips import InlineIpsBridge
+    from ..sources.mavlink_serial import SerialMavlinkTransport
+
+    if args.fc_port == args.gcs_port:
+        print("aegis ips-bridge: --fc-port and --gcs-port must differ", file=sys.stderr)
+        return 2
+    try:
+        fc = SerialMavlinkTransport(args.fc_port, baudrate=args.fc_baud, allow_url=args.allow_url,
+                                    accept_unverified_ids=True)
+        gcs = SerialMavlinkTransport(args.gcs_port, baudrate=args.gcs_baud, allow_url=args.allow_url,
+                                     accept_unverified_ids=True)
+    except ValueError as exc:
+        print(f"aegis ips-bridge: {exc}", file=sys.stderr)
+        return 2
+    key = None
+    if args.signing_key_file:
+        try:
+            raw = Path(args.signing_key_file).read_bytes()
+            key = raw if len(raw) == 32 else bytes.fromhex(raw.decode("ascii").strip())
+            if len(key) != 32:
+                raise ValueError("key must be 32 bytes")
+        except (OSError, ValueError, UnicodeDecodeError) as exc:
+            print(f"aegis ips-bridge: bad --signing-key-file: {exc}", file=sys.stderr)
+            return 2
+    if args.defense_mode == "active-ips" and key is None and not args.allow_unsigned:
+        print("aegis ips-bridge: refusing --defense-mode active-ips without --signing-key-file: an unsigned link "
+              "cannot stop a counter-tracking forger. Provision a key, or pass --allow-unsigned to accept the risk.",
+              file=sys.stderr)
+        return 2
+    token = None
+    if args.control_token_file:
+        try:
+            token = Path(args.control_token_file).read_text(encoding="utf-8").strip()
+        except (OSError, UnicodeDecodeError) as exc:
+            print(f"aegis ips-bridge: bad --control-token-file: {exc}", file=sys.stderr)
+            return 2
+        if not token:
+            print("aegis ips-bridge: --control-token-file is empty", file=sys.stderr)
+            return 2
+    import ipaddress
+
+    status_host = args.status_host
+    try:
+        loopback = status_host == "localhost" or ipaddress.ip_address(status_host).is_loopback
+    except ValueError:
+        loopback = False
+    if not loopback and token is None:
+        print(f"aegis ips-bridge: refusing --status-host {status_host}: a non-loopback status API requires "
+              "--control-token-file", file=sys.stderr)
+        return 2
+    store = None
+    if args.db:
+        from ..logging import EventStore
+
+        store = EventStore(args.db)
+        run_id = time.strftime("ips-%Y%m%d-%H%M%S")
+        store.start_run(run_id, label="ips-bridge")
+    else:
+        run_id = "ips-bridge"
+    bridge = InlineIpsBridge(fc, gcs, config_dir=args.config_dir, mode=args.defense_mode,
+                             trusted_sysids=tuple(args.trusted_sysid) if args.trusted_sysid else None,
+                             store=store, run_id=run_id, secret_key=key,
+                             allow_unsigned_from_trusted=args.signing_permissive,
+                             signing_max_age_s=args.signing_max_age_s, signing_state_path=args.signing_state,
+                             ekf_secondary=args.ekf_secondary, crossend_interval_s=args.crossend_interval,
+                             contested_policy=args.contested_policy, replay_memory=args.replay_memory,
+                             on_alarm=lambda m: print(f"aegis ips-bridge: ALARM {m}", flush=True))
+    fc.start()
+    gcs.start()
+    bridge.start()
+    status_srv = None
+    if args.status_port:
+        from ..hal.status_server import BridgeStatusServer
+
+        try:
+            status_srv = BridgeStatusServer(
+                bridge, args.status_port, host=status_host, control_token=token, signing_configured=key is not None,
+                allow_unsigned=args.allow_unsigned and args.defense_mode == "active-ips").start()
+            if not loopback:
+                print(f"aegis ips-bridge: WARNING status API reachable from the network on {status_host}:"
+                      f"{args.status_port} (posture control requires the token)", flush=True)
+        except OSError as exc:
+            print(f"aegis ips-bridge: cannot bind status port: {exc}", file=sys.stderr)
+    print(f"aegis ips-bridge: {args.fc_port} <-> {args.gcs_port}, posture {args.defense_mode}", flush=True)
+    if args.defense_mode == "active-ips" and key is None:
+        print("aegis ips-bridge: NOTICE active-ips without signing acknowledged via --allow-unsigned", flush=True)
+    end = None if args.seconds is None else time.monotonic() + args.seconds
+    try:
+        while end is None or time.monotonic() < end:
+            time.sleep(min(args.status_interval, 0.5) if end is not None else args.status_interval)
+            print(json.dumps(bridge.status()), flush=True)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        if status_srv is not None:
+            status_srv.close()
+        bridge.close()
+        if store is not None:
+            store.close()
     return 0
 
 
@@ -240,7 +361,54 @@ def build_parser() -> argparse.ArgumentParser:
                     help="target GCS UDP port for STATUSTEXT alerts (default: 14550)")
     sv.add_argument("--defense-mode", choices=["passive", "advisory", "active-ips"], default="passive",
                     help="defense engine posture: passive (IDS only, zero bytes sent), advisory (GCS alerts), active-ips (autonomous mitigation)")
+    sv.add_argument("--signing-key-file", default=None,
+                    help="32-byte MAVLink-2 key (raw or 64 hex chars) used to authenticate the ips-bridge cross-end summary")
     sv.set_defaults(func=_cmd_serve)
+
+    ib = sub.add_parser("ips-bridge", help="inline IPS between a flight controller port and a GCS/radio port")
+    ib.add_argument("--fc-port", required=True, help="serial port wired to the flight controller (e.g. /dev/ttyAMA0)")
+    ib.add_argument("--fc-baud", type=int, default=921600)
+    ib.add_argument("--gcs-port", required=True, help="serial port wired to the GCS radio (e.g. /dev/ttyUSB0)")
+    ib.add_argument("--gcs-baud", type=int, default=57600)
+    ib.add_argument("--allow-url", action="store_true", help="allow socket:// virtual ports (tests, SITL)")
+    ib.add_argument("--defense-mode", choices=["passive", "advisory", "active-ips"], default="passive",
+                    help="passive/advisory forward every frame byte-identically; active-ips filters and counter-acts")
+    ib.add_argument("--trusted-sysid", type=int, action="append",
+                    help="ground-station sysid allowed to command the vehicle (repeatable; default from detector.yaml)")
+    ib.add_argument("--signing-key-file", default=None,
+                    help="32-byte MAVLink-2 signing key (raw, or 64 hex chars). With it, control traffic must be validly "
+                         "signed with an increasing timestamp; counter-frames are signed too")
+    ib.add_argument("--signing-permissive", action="store_true",
+                    help="rollout only: let UNSIGNED control frames from a trusted sysid through (forged or replayed "
+                         "signed frames are still dropped)")
+    ib.add_argument("--signing-max-age-s", type=float, default=None,
+                    help="also reject signed frames older than this on the bridge clock (needs a correct clock)")
+    ib.add_argument("--signing-state", default=None,
+                    help="file that keeps the last timestamp per stream across restarts (closes the post-restart replay window)")
+    ib.add_argument("--ekf-secondary", action="store_true",
+                    help="declare that the aircraft has a configured non-GPS EKF source set; only then may active-ips "
+                         "send the EKF source switch (default off: GPS faults escalate to ALT_HOLD instead)")
+    ib.add_argument("--crossend-interval", type=float, default=1.0,
+                    help="seconds between cross-end summaries of the last forwarded GLOBAL_POSITION_INT sent to the GCS "
+                         "side only (0 = off); lets a GCS-side 'aegis serve' detect telemetry altered after the bridge")
+    ib.add_argument("--contested-policy", choices=["alert", "drop-sensitive"], default="alert",
+                    help="unsigned link, two transmitters on one sysid: alert = STATUSTEXT only; drop-sensitive = also drop "
+                         "sensitive/control frames from that source in flight (can block the real pilot; forced disarm passes)")
+    ib.add_argument("--replay-memory", type=int, default=4096,
+                    help="unsigned link: number of forwarded sensitive frames remembered for the byte-identical replay filter")
+    ib.add_argument("--config-dir", default=None)
+    ib.add_argument("--db", default=None, help="log alerts to this SQLite hash-chain store")
+    ib.add_argument("--seconds", type=float, default=None, help="run time (default: until Ctrl-C)")
+    ib.add_argument("--status-interval", type=float, default=5.0)
+    ib.add_argument("--status-port", type=int, default=0,
+                    help="serve GET /status (bridge state as JSON) on 127.0.0.1:PORT, read-only (default: off)")
+    ib.add_argument("--allow-unsigned", action="store_true",
+                    help="acknowledge that active-ips without --signing-key-file cannot stop a counter-tracking forger")
+    ib.add_argument("--control-token-file", default=None,
+                    help="file holding a token; enables remote posture control (POST /posture) on the status API")
+    ib.add_argument("--status-host", default="127.0.0.1",
+                    help="bind address of the status API (default 127.0.0.1; non-loopback needs --control-token-file)")
+    ib.set_defaults(func=_cmd_ips_bridge)
 
     v = sub.add_parser("verify-log", help="verify a SQLite event-log hash chain")
     v.add_argument("db", help="path to the SQLite event log")

@@ -262,6 +262,59 @@ ungated fix after a gated one is the *transition* fix. Each fix's residual incre
     and 0.70 m, pinned by the REPLAY-of-BENCH test).
 * `false` restores the Stage-1 rule exactly. Tests: `tests/unit/test_gps_scenarios_fused.py`.
 
+### Real-link hardening (2026-10-29): rate baseline, multirotor yaw, actuation guards
+
+* `protocol.auto_rate_baseline` (default `false`; Stage-1, SIM and replay unchanged). On: for `rate_learn_s` (20 s)
+  after the first heartbeat the median of `msg_rate_hz` is learned and rate alarms are suppressed (score-0 evidence
+  `coverage: learning link message-rate baseline`). Afterwards nominal = max(configured, median) and the flood limit =
+  max(configured, 4 x median), frozen. If during learning the rate exceeds the configured `max_msg_rate_hz` or the
+  p95 is more than 5x the median, learning is rejected (evidence line says so) and the configured thresholds stay.
+  Enabled for every non-SIM live source (`LiveEngine`, `InlineIpsBridge`). A flood that begins inside the 20 s window
+  is not alarmed on until learning ends (and is then rejected), an accepted limitation. Engineering default, not calibrated.
+* `physics.yaw_course_enabled` (default `true`). `false` disables the heading-vs-course rule, i.e. the
+  frozen-attitude telemetry check, for that profile. Used by `configs/ardupilot_copter/` because a multirotor's
+  yaw is independent of its track.
+* Mitigation: a counter set-mode is sent only when the vehicle mode is known and differs from the trusted one; the
+  generic SAFE_HOLD -> ALT_HOLD only inside a GPS episode or for command injection with a real mode difference;
+  rate limiting needs the DOS evidence on 3 consecutive threat ticks.
+
+### EKF-health and GPS receiver-signature rules (2026-10-28, additive)
+
+Software-only checks on messages any flight controller already streams (`EKF_STATUS_REPORT`,
+`GPS_RAW_INT`, `GPS_STATUS`). All vote `GPS_SPOOFING`, are soft (damped until `hysteresis_ticks`),
+and are **inert when the messages are absent**, so SIM, the Stage-1 benchmark and existing replays
+are unchanged. Thresholds are optional `physics` keys in `configs/detector.yaml`.
+
+| Rule | Default | Score |
+|---|---|---|
+| EKF velocity or position variance ≥ `ekf_var_reject` | 1.0 | 0.7 (≥ `ekf_var_warn` 0.5: 0.3, evidence only) |
+| `satellites_visible` jump ≥ `sat_jump_min` with fix_type ≥ 3 on both reports (recovery after a fix loss does not count) | 6 | 0.6 |
+| SNR spread < `snr_spread_min_db` with ≥ `snr_min_sats` satellites | 1.5 dB, 8 | 0.6 |
+| \|`GPS_RAW_INT.vel` − GPS-position speed\| > `gps_ekf_vel_disagree_ms` | 3 m/s | ≥ 0.55 |
+
+**Limits.** These thresholds are uncalibrated engineering defaults, not measured evidence; they
+have only been exercised on synthetic frames (`tests/unit/test_gps_receiver_signature.py`). The
+velocity and satellite-jump fields are reported only once EKF_STATUS_REPORT or GPS_STATUS has been
+received (SIM carries `GPS_RAW_INT` too). The messages are unauthenticated and can be forged. A
+slow drift that stays inside IMU error is physically undetectable by software alone.
+
+### Mission-path check (2026-10-28, additive)
+
+`features/mission.py` rebuilds the commanded mission from MISSION_COUNT / MISSION_ITEM(_INT) /
+MISSION_CURRENT / MISSION_ITEM_REACHED seen on either link direction (a new MISSION_COUNT replaces
+the mission; it is usable only when every seq 0..count-1 arrived). Legs run from the previous
+NAV_WAYPOINT to the waypoint of the current MISSION_CURRENT.seq (first leg: from the first position
+seen in AUTO). The extractor reports `mission_xtrack_m` (distance to the leg segment),
+`mission_wp_dist_m` and `mission_known` only while the mission is complete, MISSION_CURRENT is <= 3 s
+old, mode is AUTO, the vehicle is armed and the position is fresh; otherwise None. PhysicsDetector
+votes GPS_SPOOFING (navigation deviation) when the cross-track exceeds `mission_xtrack_alert_m`
+(60 m) for `mission_hysteresis_ticks` (5) decisions, score 0.6 rising to 0.85 at 3x the threshold.
+
+**Limits.** Thresholds are uncalibrated engineering defaults. Wind or a legitimate reroute can also
+trigger it. Loiter, spline and DO_JUMP-heavy missions are only approximated (only NAV_WAYPOINT in a
+global frame is used). It says nothing when the upload was not observed, and the mission messages
+are unauthenticated and can be forged.
+
 ## Detector C — ML anomaly (`detectors/anomaly.py`)
 
 Benign-trained **ensemble** over the 11-feature `ML_FEATURES` vector, combined

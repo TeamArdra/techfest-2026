@@ -1,8 +1,27 @@
 # AegisFlight — Stage 2 Demonstration Runbook
 
-For demonstrating the Stage 2 UAV Intrusion Detection & Autonomous Prevention
-System (IDS/IPS) for **PUSHPAK Grand Challenge 2026-27 (IIT Bombay Techfest) — Security of Drones, Objective 2**.
+For demonstrating the Stage 2 UAV Intrusion Detection System (passive demo; the defense layer is shown as a **simulation model**; the inline bridge was verified on ArduCopter SITL only, and no prevention
+is demonstrated on a real vehicle) for **PUSHPAK Grand Challenge 2026-27 (IIT Bombay Techfest) — Security of Drones, Objective 2**.
 A teammate can run this without the original author.
+**For recording the submission video use `docs/DEMO_SCRIPT_SOFTWARE_ONLY.md`** (a narrated, step-by-step plan with environment labels
+and a limitation segment); this file is the longer feature tour.
+
+> **What this demo is (2026-10-29).** Segments 1–7 run on the **SIM** source: the dashboard drives a simulator and a cyber-physical
+> *twin*. Detection times, "detour" and "vehicle remains airborne" are what that model shows; they are **not measurements** of a
+> vehicle, and no prevention metric exists (`docs/VALIDATION_EVIDENCE.md`). The map panel is a local-frame track (no tiles, no
+> internet). On live and replayed sources the defense layer is report-only (`active-ips` is refused).
+>
+> **Real-data segment (REPLAY of BENCH data, receive-only, nothing is sent anywhere)** — the 2026-10-28 capture of the powered-on vehicle:
+> ```bash
+> aegis serve --source replay --tlog data/hardware/raw/gps_hw_verify_20261029.tlog --replay-speed 1.0 --db <scratch>/replay.sqlite
+> ```
+> Checked through the API at 10× speed on 2026-10-29 (saved, coordinate-free, in
+> `artifacts/hardware/gps_hw_verify_20261029/replay/navigation_health_api/`): `environment` REPLAY, 5,130 frames, `link.gps` shows `3D_FIX`,
+> 7 satellites, `valid_fix` true **and** `horizontal_solution` false, `gps_healthy` false, `quality_flags` both set; `/api/events` count 0.
+> The header is intended to show the vehicle's own "no horizontal position solution / GPS sensor unhealthy" note beside "valid fix"
+> (wording unit-tested; not screenshotted). Say what it shows: a vehicle stated stationary and disarmed whose own telemetry reports no
+> horizontal solution and an unhealthy GPS sensor (cause not determined), and an IDS that stays quiet while stating that. It is not an
+> attack demonstration. The tlog is local and git-ignored.
 
 ## Pre-demo checklist
 ```bash
@@ -26,41 +45,36 @@ cd frontend && cargo tauri dev
 The GCS displays:
 - **● ACTIVE IPS** (Autonomous Mitigation Enabled)
 - **● Connected** (10 Hz WebSocket telemetry)
-- **Topology: Auto (Top-B: Inline Transparent Bridge)**
+- **Topology: SIM (modelled inline twin)**
 - **Live Vehicle Head Pill**: `[COPTER_MODE_GUIDED · 12.0 m/s · 60.0 m]`
 - **44px Vertical Altitude Profile Strip**: showing real-time 0–100 m elevation track.
 
 ## Segment 1 — Benign Flight Baseline (~20 s)
-- Point out the nominal survey pattern on the satellite map.
+- Point out the nominal survey pattern on the local-frame track panel (there is no satellite map; the dashboard needs no network).
 - Altitude strip holds flat at 60 m cruise; speed is 12 m/s.
 - Threat score sparkline remains flat at 0.0 (below 0.45 threshold); 0 false alarms.
 
 ## Segment 2 — GPS Spoofing & Synthetic Navigation Recovery
 - Click **GPS Spoofing**.
-- **Detection**: Within 360 ms, Physics + Anomaly detectors trigger (`HIGH / GPS_SPOOFING`).
+- **Detection** (SIM; the on-screen latency is not an artifact-backed figure — quote `artifacts/benchmarks/summary.md`: mean 0.361 s, p95 1.40 s): Physics + Anomaly detectors trigger (`HIGH / GPS_SPOOFING`).
 - **Autonomous Mitigation**:
-  - In **Topology B** (Inline): `FrameSanitizer` drops/clamps spoofed coordinates in-place before reaching the autopilot (0.0 m flight detour).
-  - In **Topology A** (Sidecar): `GoldenStateEstimator` dead-reckoning activates, issuing `MAV_CMD_DO_REPOSITION` counter-commands with synthetic clean coordinates.
+  - In **Topology B** (Inline): `aegis ips-bridge` (`docs/INLINE_IPS.md`) drops hostile uplink frames before the autopilot and corrects spoofed position on the downlink; the dashboard's SIM twin shows the effect as a model (no measured detour). Verified on ArduCopter SITL / loopback only, not on hardware.
+  - In **Topology A** (Sidecar): the controller encodes counter-commands (EKF source switch only with a declared secondary source, otherwise ALT_HOLD; mode restore for command injection) and sends them in ACTIVE_IPS only; the dashboard shows the command it would send.
 - Notice the vehicle track continues smoothly along the planned trajectory without jumping or diverging.
 
 ## Segment 3 — Command Injection & Failsafe Veto
 - Click **Command Injection** (e.g., unauthorized land or forced disarm).
 - **Veto Execution**: Mitigation engine detects cadence/provenance violation (`AF-SEC-01`), rejects the rogue command, and notifies the GCS via `STATUSTEXT` banner: `[AEGIS-DEFENSE] Disarm vetoed: altitude > 2m in flight`.
-- Vehicle remains airborne and continues mission uninterrupted.
+- In the SIM twin the vehicle remains airborne and continues the mission (a model of what a veto would do; nothing was vetoed on a vehicle).
 
 ## Segment 4 — Denial of Service & High-Rate Flood
 - Click **Denial of Service**.
 - Threat state escalates to `CRITICAL / DOS`.
 - `FloodMitigator` isolates the rogue telemetry stream; heartbeat and critical attitude frames are preserved on priority channels.
 
-## Segment 5 — Hardware Abstraction Layer & Topology Switching
-- In the **Defense HUD**, switch topology selector between:
-  - **Auto**: Discovers serial ports/VIDs and selects best topology.
-  - **Top-B (Inline Bridge)**: 0.0 m detour, zero-allocation frame filtering.
-  - **Top-A (Sidecar Actuator)**: Secondary companion telemetry override.
-  - **Top-A+B (Hybrid)**: Maximum resilience (inline filter + companion actuator).
-  - **IDS Only (Passive)**: Monitoring and forensic logging only.
-- Point out dynamic routing status cards updating instantly.
+## Segment 5 — Hardware Abstraction Layer & Topology Detection
+- In the **Defense HUD**, read the **detected topology** (no selector): `A` sidecar, `A+B` inline bridge, or SIM/REPLAY. It lists what it can do (block frames, send counter-commands) from the live link and posture.
+- Point out the status card following the posture and link state.
 
 ## Segment 6 — Tamper-Evident Hash Chain Forensics
 - In the second terminal:
@@ -75,7 +89,7 @@ The GCS displays:
   ```bash
   python scripts/verify_stage2.py
   ```
-- 8/8 suites pass in ~40 ms:
+- 8/8 suites pass in about 2 s (1,949.9 ms measured 2026-10-29; hand-built `SIM` inputs, not validation evidence):
   1. GoldenState dead-reckoning test
   2. FrameSanitizer coordinate clamping test
   3. Killswitch disarm & land veto test

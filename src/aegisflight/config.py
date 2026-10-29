@@ -84,6 +84,8 @@ DEFAULT_DETECTOR: dict[str, Any] = {
         "heartbeat_timeout_s": 3.0,
         "max_msg_rate_hz": 400.0,  # aggregate; above this => flood
         "nominal_msg_rate_hz": 28.0,  # expected steady-state aggregate
+        "auto_rate_baseline": None,  # None = auto (on for non-SIM sources, off for SIM); True/False force it. Learn the link's own normal rate (non-SIM sources enable it)
+        "rate_learn_s": 20.0,
         "msg_rate_spike_factor": 3.0,  # rate > factor*nominal => suspicious
         "max_seq_gap": 30,  # sequence jump over window => loss/DoS
         "min_interarrival_ms": 0.4,  # bursts faster than this are abnormal
@@ -119,7 +121,16 @@ DEFAULT_DETECTOR: dict[str, Any] = {
         "battery_rise_v": 0.4,  # voltage should not jump up
         "battery_drop_rate_v_s": 2.0,  # nor drop absurdly fast
         "attitude_rate_consistency": 1.2,  # rad/s mismatch tolerance
+        "yaw_course_enabled": True,  # False for multirotors (yaw independent of track)
         "hysteresis_ticks": 2,  # consecutive ticks before firing
+        "ekf_var_warn": 0.5,  # uncalibrated engineering defaults (docs/DETECTION.md)
+        "ekf_var_reject": 1.0,
+        "sat_jump_min": 6,
+        "snr_spread_min_db": 1.5,
+        "snr_min_sats": 8,
+        "gps_ekf_vel_disagree_ms": 3.0,
+        "mission_xtrack_alert_m": 60.0,  # uncalibrated; inert without an observed mission
+        "mission_hysteresis_ticks": 5,
     },
     "anomaly": {
         "model_path": "models/isoforest.joblib",
