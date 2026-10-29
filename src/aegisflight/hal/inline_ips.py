@@ -123,7 +123,8 @@ class InlineIpsBridge:
         self._secret_key = secret_key
         self.cfg = cfg or load_config(config_dir)
         proto = self.cfg.detector.get("protocol", {})
-        proto.setdefault("auto_rate_baseline", True)
+        if proto.get("auto_rate_baseline") is None:  # unset = auto: on for a live link
+            proto["auto_rate_baseline"] = True
         self.pipeline = IDSPipeline(self.cfg, model_path=None, firmware_dir=None)  # ML is simulation-only
         self.controller = MitigationController(mode=DefenseMode(mode), secret_key=secret_key)
         self.controller.set_capabilities(ekf_secondary=ekf_secondary)

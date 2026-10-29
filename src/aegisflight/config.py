@@ -84,7 +84,7 @@ DEFAULT_DETECTOR: dict[str, Any] = {
         "heartbeat_timeout_s": 3.0,
         "max_msg_rate_hz": 400.0,  # aggregate; above this => flood
         "nominal_msg_rate_hz": 28.0,  # expected steady-state aggregate
-        "auto_rate_baseline": False,  # learn the link's own normal rate (non-SIM sources enable it)
+        "auto_rate_baseline": None,  # None = auto (on for non-SIM sources, off for SIM); True/False force it. Learn the link's own normal rate (non-SIM sources enable it)
         "rate_learn_s": 20.0,
         "msg_rate_spike_factor": 3.0,  # rate > factor*nominal => suspicious
         "max_seq_gap": 30,  # sequence jump over window => loss/DoS

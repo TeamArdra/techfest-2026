@@ -1,7 +1,7 @@
 # AegisFlight — Stage 2 Demonstration Runbook
 
-For demonstrating the Stage 2 UAV Intrusion Detection System (with a **simulation-only** defense model; no prevention
-is demonstrated on any vehicle) for **PUSHPAK Grand Challenge 2026-27 (IIT Bombay Techfest) — Security of Drones, Objective 2**.
+For demonstrating the Stage 2 UAV Intrusion Detection System (passive demo; the defense layer is shown as a **simulation model**; the inline bridge was verified on ArduCopter SITL only, and no prevention
+is demonstrated on a real vehicle) for **PUSHPAK Grand Challenge 2026-27 (IIT Bombay Techfest) — Security of Drones, Objective 2**.
 A teammate can run this without the original author.
 **For recording the submission video use `docs/DEMO_SCRIPT_SOFTWARE_ONLY.md`** (a narrated, step-by-step plan with environment labels
 and a limitation segment); this file is the longer feature tour.

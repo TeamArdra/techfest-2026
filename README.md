@@ -1,7 +1,7 @@
 # AegisFlight
 
 <p align="center">
-  <strong>Cyber-Physical Intrusion Detection System for Unmanned Aerial Vehicles</strong> (passive; the prevention layer is a simulation-only model)
+  <strong>Cyber-Physical Intrusion Detection System for Unmanned Aerial Vehicles</strong> (passive by default; an optional inline prevention bridge is verified on ArduCopter SITL only)
 </p>
 
 <p align="center">
@@ -23,7 +23,7 @@
 
 Modern UAVs operating in contested or civilian airspace are vulnerable to RF telemetry injection, GPS spoofing, Denial-of-Service (DoS) floods, and rogue command overrides (e.g. forced mid-air disarming or unauthorized waypoint redirects). Conventional IT security solutions treat telemetry packets as opaque network blobs and fail to account for aircraft aerodynamics or latency constraints.
 
-In the simulator, the dashboard runs a **cyber-physical flight twin** and shows what the defense layer's counter-actions would do. Decision compute is 17.7 ms mean / 23.6 ms p95 with ML on (`artifacts/benchmarks/summary.md`, SIM). Prevention is not measured, and nothing is transmitted on live sources.
+In the simulator, the dashboard runs a **cyber-physical flight twin** and shows what the defense layer's counter-actions would do. Decision compute is 17.7 ms mean / 23.6 ms p95 with ML on (`artifacts/benchmarks/summary.md`, SIM). Prevention is not measured on any vehicle. Nothing is transmitted in the default `passive` posture; `active-ips` sends counter-commands and the inline bridge (`docs/INLINE_IPS.md`) can drop hostile frames, both verified on ArduCopter SITL / loopback only.
 
 ```
                        ┌──────────────────────────────────────────────────┐

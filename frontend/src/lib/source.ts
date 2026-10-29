@@ -55,7 +55,7 @@ const VIEWS: Record<Environment, EnvView> = {
   BENCH: {
     badge: "BENCH",
     label: "Bench · live serial",
-    footer: "Live receive-only telemetry from a serial link on a bench — not flight data. The IDS never transmits; frame origin is not authenticated (unsigned link).",
+    footer: "Live receive-only telemetry from a serial link on a bench — not flight data. In PASSIVE and ADVISORY the IDS does not transmit; frame origin is not authenticated (unsigned link).",
     telemetryNote: "bench telemetry · not flight data",
     trackNote: "reported positions · bench, not flight",
     distanceNote: "Reported-position path · bench, not flight",

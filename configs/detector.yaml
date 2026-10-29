@@ -20,7 +20,7 @@ protocol:
   heartbeat_timeout_s: 3.0          # missing heartbeat => link fault
   max_msg_rate_hz: 400.0            # aggregate rate above this => flood (DoS)
   nominal_msg_rate_hz: 28.0         # expected steady-state aggregate rate
-  auto_rate_baseline: false         # true: learn the link's normal msg rate for rate_learn_s after the first heartbeat (non-SIM sources enable it)
+  # auto_rate_baseline: (unset = on for non-SIM sources, off for SIM; true/false force it) true: learn the link's normal msg rate for rate_learn_s after the first heartbeat (non-SIM sources enable it)
   rate_learn_s: 20.0
   msg_rate_spike_factor: 3.0        # rate > factor*nominal => suspicious
   max_seq_gap: 30                   # per-source sequence jump => loss/DoS

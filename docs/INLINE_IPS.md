@@ -271,3 +271,11 @@ DO_SET_MODE(GUIDED) (new seq) was forwarded and acked (ack 0, mode 4). Whole run
 **What this does not show:** single runs, a simulated autopilot, loopback with no radio latency or loss, a pymavlink
 pilot rather than real GCS software, and an attacker script that reads the capture file directly (a real one needs a
 radio sniffer).
+
+## SITL finding: late-connecting GCS and the rate baseline (ArduCopter SITL, loopback)
+A ground-side monitor started before the GCS asked for its telemetry streams learned a ~5 msg/s baseline, then raised 55 false
+`DOS` rate-spike alarms over one flight at 140 msg/s. Two defects: the baseline never switched on for live sources (the key had
+an explicit `false` default, so "set if missing" did nothing; unset now means auto: on for live, off for SIM), and a one-shot
+baseline cannot follow a link whose rate steps up later (a stable 30 s plateau below the configured hard flood limit is now
+adopted, at most twice per session; the hard limit is never relaxed). Same flight after the fix, ground-side IDS: 1 alert
+(a heading rule one) and 0 `DOS`. One run; the bridge side was unaffected.

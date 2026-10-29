@@ -82,6 +82,31 @@ class ProtocolDetector(Detector):
         self._learn_samples: list[float] = []
         self._learn_done = not self.auto_rate_baseline
         self._learn_note: str | None = None
+        # A GCS that connects (and asks for its telemetry streams) AFTER the first heartbeat raises the link's
+        # normal rate by an order of magnitude, so a one-shot baseline learned before that is too low. A stable
+        # plateau above the spike threshold that lasts ``rate_relearn_s`` (and stays below the configured hard
+        # flood limit, which is never relaxed) is adopted as the new baseline, at most twice per session.
+        self.rate_relearn_s = float(p.get("rate_relearn_s", 30.0))
+        self._plateau: list[tuple[float, float]] = []
+        self._relearns = 0
+
+    def _relearn_plateau(self, t: float, rate: float, spike: float) -> None:
+        if self._relearns >= 2 or not (spike < rate < self._cfg_max):
+            self._plateau.clear()
+            return
+        self._plateau.append((t, rate))
+        if t - self._plateau[0][0] < self.rate_relearn_s:
+            return
+        rates = sorted(r for _, r in self._plateau)
+        if rates[-1] > 2.0 * rates[0]:  # not stable: a burst, not a new normal
+            self._plateau = [(t, rate)]
+            return
+        med = rates[len(rates) // 2]
+        self.nominal_rate = max(self.nominal_rate, med)
+        self._relearns += 1
+        self._plateau.clear()
+        self._learn_note = (f"link message-rate baseline re-learned after a stable plateau: nominal {self.nominal_rate:.0f} msg/s "
+                            f"(hard flood limit {self.max_rate:.0f} unchanged)")
 
     def _learn_rate(self, frame: FeatureFrame) -> bool:
         """Advance baseline learning; True while learning (rate alarms suppressed)."""
@@ -147,6 +172,8 @@ class ProtocolDetector(Detector):
                 f"message-rate spike: {rate:.0f} msg/s > {self.spike_factor:.0f}×nominal "
                 f"({spike:.0f})"
             )
+        if self.auto_rate_baseline and self._learn_done and not learning:
+            self._relearn_plateau(frame.t, rate, spike)
         signals["msg_rate_hz"] = rate
 
         # ---- sequence gaps (loss / scramble / flood) ----
@@ -346,3 +373,5 @@ class ProtocolDetector(Detector):
         self._learn_samples.clear()
         self._learn_done = not self.auto_rate_baseline
         self._learn_note = None
+        self._plateau.clear()
+        self._relearns = 0

@@ -52,9 +52,9 @@ in PX4 SITL, `artifacts/sitl/P4_signing_summary.md`), not a better threshold. Al
 ## 4. Reading the output and the defense (≈1 min)
 Walk the alert: class, score, evidence strings, contributing detectors, timestamp, hash. Click **Verify SHA-256 Chain** and run
 `aegis verify-log <scratch>/demo_sim.sqlite` in a terminal. The chain detects edits and deletions; it is **not signed**.
-Defense: "ACTIVE IPS" in this console is a **SIM-only model** (never transmitted) and exists in no live source: on serial, UDP and
-replay sources the response is report-only and `active-ips` is refused. Do not show it as a working prevention capability, and do not
-quote its "detour" figure: no prevention metric was measured.
+Defense: in this software-only demo "ACTIVE IPS" is shown as a **SIM model**. On live sources the default `passive` posture sends nothing; the
+`active-ips` posture and the inline bridge (`docs/INLINE_IPS.md`) exist but were verified only on ArduCopter SITL / loopback, never on a real
+vehicle. Do not show it as a working prevention capability, and do not quote its "detour" figure: no prevention metric was measured.
 
 ## 5. REPLAY: the real bench capture (≈1.5 min)
 Stop the server. Then:
